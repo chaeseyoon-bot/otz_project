@@ -1,0 +1,51 @@
+{
+  "tables": {
+    "products": {
+      "count": 0,
+      "columns": [],
+      "rows": []
+    },
+    "product": {
+      "error": "Could not find the table 'public.product' in the schema cache"
+    },
+    "shoes": {
+      "error": "Could not find the table 'public.shoes' in the schema cache"
+    },
+    "bags": {
+      "error": "Could not find the table 'public.bags' in the schema cache"
+    },
+    "acc": {
+      "error": "Could not find the table 'public.acc' in the schema cache"
+    },
+    "items": {
+      "error": "Could not find the table 'public.items' in the schema cache"
+    }
+  },
+  "storage": {
+    "buckets": [],
+    "listings": {},
+    "directProbe": {
+      "1001.png": "400 application/json; charset=utf-8",
+      "1001.webp": "400 application/json; charset=utf-8",
+      "1001_01.png": "400 application/json; charset=utf-8",
+      "1001_03.png": "400 application/json; charset=utf-8",
+      "1001_07.png": "400 application/json; charset=utf-8",
+      "1001_03.webp": "400 application/json; charset=utf-8",
+      "1001_07.webp": "400 application/json; charset=utf-8",
+      "1001_03_big.png": "400 application/json; charset=utf-8",
+      "1001_07_big.png": "400 application/json; charset=utf-8",
+      "1001_03_big.webp": "400 application/json; charset=utf-8",
+      "1001_07_big.webp": "400 application/json; charset=utf-8",
+      "detail_1001_03_big.png": "400 application/json; charset=utf-8",
+      "detail_1001_07_big.png": "400 application/json; charset=utf-8",
+      "1001/03.png": "400 application/json; charset=utf-8",
+      "1001/07.png": "400 application/json; charset=utf-8",
+      "1001/1001_03.png": "400 application/json; charset=utf-8"
+    },
+    "productsListing": {
+      "products/": [],
+      "products/1001": []
+    }
+  },
+  "restSchema": {}
+}

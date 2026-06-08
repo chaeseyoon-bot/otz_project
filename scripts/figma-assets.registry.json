@@ -1,0 +1,414 @@
+{
+  "fileKey": "3bBi5a4TlJxUjdrFmkgp0e",
+  "designNodeId": "2355:318",
+  "exportScale": 2,
+  "assets": [
+    {
+      "output": "banner_01.png",
+      "nodeId": "2418:15853",
+      "format": "png",
+      "legacy": ["146b12b6fd67c869f46e287b369af3d48b8fe241.png", "main_banner_01.png"]
+    },
+    {
+      "output": "banner_02.png",
+      "nodeId": "2418:15855",
+      "format": "png",
+      "legacy": ["93fe2b89a0b292f1a26a6d565185bc50a78053a1.png", "main_banner_02.png"]
+    },
+    {
+      "output": "banner_03.png",
+      "nodeId": "2418:15857",
+      "format": "png",
+      "legacy": ["8a7998674498098865366d8f4dd7eb9aec2c1930.png", "main_banner_03.png"]
+    },
+    {
+      "output": "product_01.png",
+      "nodeId": "3702:6851",
+      "format": "png",
+      "legacy": ["8f5330548cf1690f0cf625dfad19148323ff7b93.png", "product_for_you_01.png"]
+    },
+    {
+      "output": "product_02.png",
+      "nodeId": "3702:7004",
+      "format": "png",
+      "legacy": ["8f1cb001a3ebe2a3a2ca9f6631a583a9bcb3dc0a.png", "product_for_you_02.png"]
+    },
+    {
+      "output": "product_03.png",
+      "nodeId": "3702:7157",
+      "format": "png",
+      "legacy": ["6c6a0151dc6594ffcdb3d29863d2a8f5b204a735.png", "product_for_you_03.png"]
+    },
+    {
+      "output": "product_04.png",
+      "nodeId": "3702:7313",
+      "format": "png",
+      "legacy": ["c266abe19ac5499b9d0ef42ad3e95c0b59df3728.png", "product_for_you_04.png"]
+    },
+    {
+      "output": "product_05.png",
+      "nodeId": "3702:7469",
+      "format": "png",
+      "legacy": ["b4304b9c69540bc70901859c43b279ac26ed547f.png", "product_for_you_05.png"]
+    },
+    {
+      "output": "category_01.png",
+      "nodeId": "2371:6499",
+      "format": "png",
+      "legacy": ["13e0ee3721c2fcd05294f080c299010ba760c88d.png", "category_banner_spring_edition.png"]
+    },
+    {
+      "output": "category_02.png",
+      "nodeId": "2522:6850",
+      "format": "png",
+      "legacy": ["ce8539635afb7643f86dfb133c0134efad498cd3.svg", "category_icon_best.svg", "category_02.svg"]
+    },
+    {
+      "output": "category_03.png",
+      "nodeId": "2522:6902",
+      "format": "png",
+      "legacy": ["3275c3acef70c6fabe5c24e635c620d7c1d05ee7.svg", "category_icon_new.svg", "category_03.svg"]
+    },
+    {
+      "output": "category_04.png",
+      "nodeId": "2521:6648",
+      "format": "png",
+      "legacy": ["9c25d0bdacb2e9103f9c7e8d2e4e3b3af363b420.png", "category_tile_shoes.png"]
+    },
+    {
+      "output": "category_05.png",
+      "nodeId": "2521:6646",
+      "format": "png",
+      "legacy": ["80b3bb76a719feb20dee001f5200a19453b4baa1.png", "category_tile_bags.png"]
+    },
+    {
+      "output": "category_06.png",
+      "nodeId": "2521:6644",
+      "format": "png",
+      "legacy": ["21935985a181cd9a6f4becbf29d1ac56452d4311.png", "category_tile_acc.png"]
+    },
+    {
+      "output": "brand_01_photo.png",
+      "nodeId": "2371:6663",
+      "format": "png",
+      "legacy": ["ef672349847b08d9a1eb8bdf2ef3f34b0a3f26fd.png"]
+    },
+    {
+      "output": "brand_01_overlay.png",
+      "nodeId": "2438:17824",
+      "format": "png",
+      "legacy": ["502beb3257c06addabb1fdba0fd2936bf776b5b4.png", "image 98.png"]
+    },
+    {
+      "output": "brand_01.png",
+      "nodeId": "2371:6662",
+      "format": "png",
+      "legacy": ["brand_intro_slide.png"]
+    },
+    {
+      "output": "brand_02.png",
+      "nodeId": "3127:3288",
+      "format": "png",
+      "legacy": ["73a68fc8869ba7333eb775474c7977139aeef1c8.png", "brand_series_romari.png"]
+    },
+    {
+      "output": "brand_03.png",
+      "nodeId": "2424:16059",
+      "format": "png",
+      "legacy": ["7ec7a0a413a4c44d52df53e590e4e935a325d806.png", "brand_series_lomita.png"]
+    },
+    {
+      "output": "brand_04.png",
+      "nodeId": "2457:26392",
+      "format": "png",
+      "legacy": ["4549b69cd621927eda7055f0e8d71d31c7ae2796.png", "brand_series_topi.png"]
+    },
+    {
+      "output": "brand_05.png",
+      "nodeId": "2457:26390",
+      "format": "png",
+      "legacy": ["9c4f43311f58ecef17b8068ed31f69a439a77941.png", "brand_series_3300.png"]
+    },
+    {
+      "output": "brand_cta.svg",
+      "nodeId": "3302:18790",
+      "format": "svg",
+      "legacy": ["39cc430bbb1a7fcd0d3affa88c01194c66d5387e.svg", "brand_cta_underline_wide.svg"]
+    },
+    {
+      "output": "promo_01.png",
+      "nodeId": "2354:4379",
+      "format": "png",
+      "legacy": ["a12c093a441fe3ea49f4ee0bca39a6e0a01848b0.png", "promo_planning_bg_layer_a.png"]
+    },
+    {
+      "output": "promo_02.png",
+      "nodeId": "2354:4380",
+      "format": "png",
+      "legacy": ["ef672349847b08d9a1eb8bdf2ef3f34b0a3f26fd.png", "promo_planning_bg_layer_b.png"]
+    },
+    {
+      "output": "promo_03.png",
+      "nodeId": "2366:5341",
+      "format": "png",
+      "legacy": ["8831b2e6ead40bc148a7eb95ecdd25eafbe7c0c7.png", "promo_planning_hero_product.png"]
+    },
+    {
+      "output": "coll_banner_01.png",
+      "nodeId": "2354:4598",
+      "format": "png",
+      "legacy": ["e3d1ca4959dacc1abd2b0a62ba72f881de76a221.png", "collection_banner_otz_umu.png"]
+    },
+    {
+      "output": "coll_banner_02.png",
+      "nodeId": "2424:16122",
+      "format": "png",
+      "legacy": ["99443438f810f6edc92a6a664f3a176b82ae30b3.png", "collection_banner_otz_lofa.png"]
+    },
+    {
+      "output": "coll_thumb_01.png",
+      "nodeId": "2424:16111",
+      "format": "png",
+      "legacy": ["0d62f78ba6448667b39f8d0a64f960444bff6a16.png", "collection_grid_card1_thumb_01.png"]
+    },
+    {
+      "output": "coll_thumb_02.png",
+      "nodeId": "2424:16113",
+      "format": "png",
+      "legacy": ["fb9f6b72fc4a918c823be8ddb2275232cc30ae32.png", "collection_grid_card1_thumb_02.png"]
+    },
+    {
+      "output": "coll_thumb_03.png",
+      "nodeId": "2424:16115",
+      "format": "png",
+      "legacy": ["b3960067f0585ae72ab9ef3b0361e6e27d98385d.png", "collection_grid_card1_thumb_03.png"]
+    },
+    {
+      "output": "coll_thumb_04.png",
+      "nodeId": "2424:16117",
+      "format": "png",
+      "legacy": ["966c3dda7af95f1822ecb89c36349e83b8dc4b85.png", "collection_grid_card1_thumb_04.png"]
+    },
+    {
+      "output": "coll_thumb_05.png",
+      "nodeId": "2424:16136",
+      "format": "png",
+      "legacy": ["5d44e8543c6a0e72b0c53f15fc960dd2423fe6b2.png", "collection_grid_card2_thumb_01.png"]
+    },
+    {
+      "output": "coll_thumb_06.png",
+      "nodeId": "2424:16145",
+      "format": "png",
+      "legacy": ["4e4d294ae840fd1319599a937e8855197ed8224b.png", "collection_grid_card2_thumb_02.png"]
+    },
+    {
+      "output": "coll_thumb_07.png",
+      "nodeId": "2424:16142",
+      "format": "png",
+      "legacy": ["57836db1b8bb00af70415781530359aad659a1b5.png", "collection_grid_card2_thumb_03.png"]
+    },
+    {
+      "output": "coll_thumb_08.png",
+      "nodeId": "2424:16138",
+      "format": "png",
+      "legacy": ["1604fbf83f4234168e03b2f7d264928abb5d5763.png", "collection_grid_card2_thumb_04.png"]
+    },
+    {
+      "output": "style_01.png",
+      "nodeId": "2424:16261",
+      "format": "png",
+      "legacy": ["bd6ed902ddd647e6b771ebadbfa8fe1986675f27.png", "styling_card_01_background.png"]
+    },
+    {
+      "output": "style_02.png",
+      "nodeId": "2384:7568",
+      "format": "png",
+      "legacy": ["f3bfed1aa5838219b011ed4474a91fe96156c720.png", "styling_card_01_thumb_primary.png"]
+    },
+    {
+      "output": "style_03.png",
+      "nodeId": "2384:7554",
+      "format": "png",
+      "legacy": ["c112f8f0ac75b4d9f3ac1c2ff180aa43c68a833c.png", "styling_card_01_thumb_secondary.png"]
+    },
+    {
+      "output": "style_04.png",
+      "nodeId": "2424:16263",
+      "format": "png",
+      "legacy": ["036268ae9b9b6f568a440a39a158f3f0179ef976.png", "styling_card_02_background.png"]
+    },
+    {
+      "output": "style_05.png",
+      "nodeId": "2384:7595",
+      "format": "png",
+      "legacy": ["4e4d294ae840fd1319599a937e8855197ed8224b.png", "styling_card_02_thumb_primary.png"]
+    },
+    {
+      "output": "style_06.png",
+      "nodeId": "2384:7609",
+      "format": "png",
+      "legacy": ["f06ea6c5de9ea50510bf6f52c49e0c88c3a6255d.png", "styling_card_02_thumb_secondary.png"]
+    },
+    {
+      "output": "style_07.jpg",
+      "nodeId": "2601:23469",
+      "format": "jpg",
+      "legacy": []
+    },
+    {
+      "output": "style_08.jpg",
+      "nodeId": "2601:23476",
+      "format": "jpg",
+      "legacy": []
+    },
+    {
+      "output": "style_09.jpg",
+      "nodeId": "2601:23492",
+      "format": "jpg",
+      "legacy": []
+    },
+    {
+      "output": "lookbook_01.png",
+      "nodeId": "2424:16305",
+      "format": "png",
+      "legacy": ["84be21aa650465db7f1a750a79995a14b2ac4f12.png", "lookbook_left.png"]
+    },
+    {
+      "output": "lookbook_02.png",
+      "nodeId": "2366:5802",
+      "format": "png",
+      "legacy": ["46165a9b9ef81532d06f56650cd395cebccad95a.png", "lookbook_top_right.png"]
+    },
+    {
+      "output": "lookbook_03.png",
+      "nodeId": "2366:5806",
+      "format": "png",
+      "legacy": ["05adbb1b1f9d154ff20b76a3511c22502876968b.png", "lookbook_bottom_right.png"]
+    },
+    {
+      "output": "lookbook_04.png",
+      "nodeId": "2601:23540",
+      "format": "png",
+      "legacy": []
+    },
+    {
+      "output": "lookbook_05.png",
+      "nodeId": "2601:23542",
+      "format": "png",
+      "legacy": []
+    },
+    {
+      "output": "lookbook_06.png",
+      "nodeId": "2601:23544",
+      "format": "png",
+      "legacy": []
+    },
+    {
+      "output": "lookbook_07.png",
+      "nodeId": "2601:23551",
+      "format": "png",
+      "legacy": []
+    },
+    {
+      "output": "curation_01.png",
+      "nodeId": "2424:16282",
+      "format": "png",
+      "legacy": ["b3fb899df59c33c88ff45705cff4c55110896f45.png", "curation_tile_01.png"]
+    },
+    {
+      "output": "curation_02.png",
+      "nodeId": "2424:16283",
+      "format": "png",
+      "legacy": ["9bce7ad910ba8d2e559e2fb286bc84d27d440643.png", "curation_tile_02.png"]
+    },
+    {
+      "output": "curation_03.png",
+      "nodeId": "2424:16273",
+      "format": "png",
+      "legacy": ["cbfd861a37443f10e148a090de15b5a1c226c6f8.png", "curation_tile_03.png"]
+    },
+    {
+      "output": "curation_04.png",
+      "nodeId": "2424:16274",
+      "format": "png",
+      "legacy": ["89fd3b6c0ead8a10477bc5e82f14c85eca4c99e4.png", "curation_tile_04.png"]
+    },
+    {
+      "output": "icon_chevron.svg",
+      "nodeId": "2626:36631",
+      "format": "svg",
+      "legacy": ["bcffacd28a31d8243b7b52e413e7bcdb26f20409.svg", "icon_chevron_down.svg"]
+    },
+    {
+      "output": "social_01.svg",
+      "nodeId": "2625:34185",
+      "format": "svg",
+      "legacy": ["8269b3c3fa997eab6d388be86ad3b33dbc5bd5c0.svg", "social_instagram.svg"]
+    },
+    {
+      "output": "social_02.svg",
+      "nodeId": "2625:34187",
+      "format": "svg",
+      "legacy": ["9102213189993f4207580e4c3befdc70db4110dc.svg", "social_kakao.svg"]
+    },
+    {
+      "output": "social_03.svg",
+      "nodeId": "2625:34189",
+      "format": "svg",
+      "legacy": ["ba5dbe72797269c51492957b89716fb38d483044.svg", "social_youtube.svg"]
+    },
+    {
+      "output": "social_04.svg",
+      "nodeId": "2625:34191",
+      "format": "svg",
+      "legacy": ["153e4de6b57a1f3e9aca4b21b75d05e18878db05.svg", "social_facebook.svg"]
+    },
+    {
+      "output": "icon_plus.svg",
+      "nodeId": "3702:6865",
+      "format": "svg",
+      "legacy": ["7f2a9bd54d11e8ea1440b7e14ff4ce731dc6886f.svg"]
+    },
+    {
+      "output": "homemain_pop_banner01.jpg",
+      "nodeId": "2786:7835",
+      "format": "jpg",
+      "legacy": ["homamain_pop_banner01.png"]
+    },
+    {
+      "output": "ARCHIVE/detail01_01.png",
+      "nodeId": "2679:11990",
+      "format": "png"
+    },
+    {
+      "output": "ARCHIVE/detail01_02.png",
+      "nodeId": "2679:11993",
+      "format": "png"
+    },
+    {
+      "output": "ARCHIVE/detail01_03.png",
+      "nodeId": "2679:11997",
+      "format": "png"
+    },
+    {
+      "output": "ARCHIVE/detail01_04.png",
+      "nodeId": "2679:12001",
+      "format": "png"
+    },
+    {
+      "output": "ARCHIVE/detail01_05.png",
+      "nodeId": "2679:12003",
+      "format": "png"
+    },
+    {
+      "output": "ARCHIVE/detail01_06.png",
+      "nodeId": "2679:12010",
+      "format": "png"
+    },
+    {
+      "output": "ARCHIVE/detail01_07.png",
+      "nodeId": "2679:12012",
+      "format": "png"
+    }
+  ]
+}

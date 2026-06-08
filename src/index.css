@@ -1,0 +1,76 @@
+@import 'tailwindcss';
+@config '../tailwind.config.js';
+
+:root {
+  --otz-color-primary: #ee6363;
+  --otz-color-white: #ffffff;
+  --otz-color-black: #000000;
+  --otz-color-text-primary: #1a1a1a;
+  --otz-color-text-secondary: #666666;
+  --otz-color-text-tertiary: #999999;
+  --otz-color-surface-subtle: #f6f6f6;
+  --otz-color-overlay-strong: rgba(0, 0, 0, 0.4);
+  --otz-color-overlay-soft: rgba(0, 0, 0, 0.2);
+
+  --otz-space-4: 4px;
+  --otz-space-8: 8px;
+  --otz-space-12: 12px;
+  --otz-space-15: 15px;
+  --otz-space-20: 20px;
+  --otz-space-24: 24px;
+  --otz-space-30: 30px;
+  --otz-space-40: 40px;
+
+  --otz-radius-4: 4px;
+  --otz-radius-20: 20px;
+
+  --otz-font-family-base: 'Pretendard Variable', 'Pretendard', -apple-system, BlinkMacSystemFont, 'Segoe UI',
+    sans-serif;
+  --otz-font-size-body-s: 13px;
+  --otz-font-size-title-l: 20px;
+  --otz-font-size-heading-h3: 28px;
+  --otz-line-body: 1.4;
+  --otz-line-tight: 1.2;
+  --otz-letter-tight: -0.02em;
+}
+
+*,
+*::before,
+*::after {
+  box-sizing: border-box;
+}
+
+html,
+body,
+#root {
+  margin: 0;
+  min-height: 100%;
+}
+
+/* Avoid horizontal page scroll when sections use 100vw / w-screen (scrollbar gutter). */
+html {
+  overflow-x: hidden;
+}
+
+/* Dim overlays must call useLockBodyScroll — background page must not scroll while open. */
+
+body {
+  font-family: var(--otz-font-family-base);
+  color: var(--otz-color-text-primary);
+  background: var(--otz-color-white);
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+a {
+  color: inherit;
+  text-decoration: none;
+}
+
+/* Product card multi-cut slider — clip adjacent slide bleed (sub-pixel). */
+.product-multicut-viewport {
+  width: 100%;
+  max-width: 100%;
+  overflow: hidden;
+  isolation: isolate;
+}
