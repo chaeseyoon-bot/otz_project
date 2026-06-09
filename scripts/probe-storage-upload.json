@@ -1,0 +1,25 @@
+{
+  "project": "https://yuhjfbwmhjpcgpaikvju.supabase.co",
+  "results": [
+    {
+      "step": "first_upload",
+      "ok": false,
+      "error": "The resource already exists"
+    },
+    {
+      "step": "duplicate_upload_no_upsert",
+      "ok": false,
+      "error": "The resource already exists"
+    },
+    {
+      "step": "remove",
+      "ok": true,
+      "error": null
+    },
+    {
+      "step": "upload_after_remove",
+      "ok": false,
+      "error": "The resource already exists"
+    }
+  ]
+}

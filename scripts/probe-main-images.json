@@ -1,0 +1,63 @@
+[
+  {
+    "step": "listBuckets",
+    "ok": true,
+    "buckets": [],
+    "error": null
+  },
+  {
+    "step": "upload_banner_01_upsert_true",
+    "ok": false,
+    "error": "new row violates row-level security policy",
+    "status": "403"
+  },
+  {
+    "step": "upload_versioned_admin_path",
+    "ok": true,
+    "path": "admin/main-0_1780971670886.png",
+    "error": null,
+    "status": null
+  },
+  {
+    "step": "upload_new_upsert_false",
+    "ok": false,
+    "error": "The resource already exists",
+    "status": "409"
+  },
+  {
+    "step": "fresh_upload_banner_01.png",
+    "ok": false,
+    "error": "The resource already exists",
+    "status": "409"
+  },
+  {
+    "step": "remove_banner_01.png",
+    "ok": true,
+    "error": null,
+    "removed": []
+  },
+  {
+    "step": "reupload_banner_01.png",
+    "ok": false,
+    "error": "The resource already exists",
+    "status": "409"
+  },
+  {
+    "step": "fresh_upload_banner_99.png",
+    "ok": false,
+    "error": "The resource already exists",
+    "status": "409"
+  },
+  {
+    "step": "remove_banner_99.png",
+    "ok": true,
+    "error": null,
+    "removed": []
+  },
+  {
+    "step": "reupload_banner_99.png",
+    "ok": false,
+    "error": "The resource already exists",
+    "status": "409"
+  }
+]

@@ -1,5 +1,7 @@
-import { useState } from 'react'
-import { planningBanner } from '../../data/homeSections'
+import { useMemo, useState } from 'react'
+import { PLANNING_BANNER_DIM_OVERLAY } from '../molecules/PlanningBannerMobileSlide'
+import { useAdminHomeMainConfig } from '../../hooks/useAdminHomeMainConfig'
+import { resolvePlanningBanners } from '../../lib/homeMainContentResolver'
 import { mainImageAsset } from '../../lib/mainImagesAssetUrl'
 import { getProductHeartIconDataUri } from '../../lib/productHeartIcon'
 
@@ -148,12 +150,21 @@ function buildInitialLikes(): Record<string, boolean[]> {
 
 /** Figma 2601:23237 — PC: planning banner + collection rail merged */
 export function PlanningDesktopMerchSection() {
+  const { planningBanners, updatedAt } = useAdminHomeMainConfig()
+  const planningSlides = useMemo(
+    () => resolvePlanningBanners(planningBanners),
+    [planningBanners, updatedAt],
+  )
+  const [planningActiveIndex, setPlanningActiveIndex] = useState(0)
   const [activeIndex, setActiveIndex] = useState(0)
   const [likedByCollection, setLikedByCollection] = useState<Record<string, boolean[]>>(buildInitialLikes)
   const total = DESKTOP_COLLECTIONS.length
   const card = DESKTOP_COLLECTIONS[activeIndex]!
   const isFirst = activeIndex <= 0
   const isLast = activeIndex >= total - 1
+  const safePlanningIndex = Math.min(planningActiveIndex, Math.max(0, planningSlides.length - 1))
+  const planningSlide = planningSlides[safePlanningIndex]
+  const showPlanningIndicator = planningSlides.length >= 2
 
   const goPrev = () => setActiveIndex((i) => Math.max(0, i - 1))
   const goNext = () => setActiveIndex((i) => Math.min(total - 1, i + 1))
@@ -165,29 +176,47 @@ export function PlanningDesktopMerchSection() {
     }))
   }
 
+  if (!planningSlide) return null
+
   return (
     <section className="hidden lg:mx-auto lg:block lg:max-w-[1400px] lg:py-[64px]">
       <div className="flex items-stretch gap-5">
         {/* CONTENTS01 — 420×524 */}
         <article className="relative h-[524px] w-[420px] shrink-0 overflow-hidden">
           <img
-            src={planningBanner.imageUrl}
-            alt={planningBanner.title}
+            src={planningSlide.imageUrl}
+            alt={planningSlide.title}
             className="h-full w-full object-cover"
           />
           <div
-            className="pointer-events-none absolute inset-0 bg-gradient-to-b from-transparent from-[56.7%] to-black/20 to-[82.6%] mix-blend-darken"
+            className="pointer-events-none absolute inset-0 mix-blend-darken"
+            style={{ backgroundImage: PLANNING_BANNER_DIM_OVERLAY }}
             aria-hidden
           />
           <div className="absolute inset-x-[30px] bottom-10 flex flex-col items-center gap-4 text-center text-white">
             <span className="rounded-[5px] bg-black px-[18px] py-[6px] text-[15px] font-bold leading-[1.4] tracking-[-0.02em]">
-              {planningBanner.badge}
+              {planningSlide.badge}
             </span>
             <div className="flex flex-col gap-1.5">
-              <h3 className="m-0 text-[24px] font-extrabold leading-[1.2] tracking-[-0.02em]">{planningBanner.title}</h3>
-              <p className="m-0 text-[14px] font-normal leading-[1.4] tracking-[-0.02em]">{planningBanner.subtitle}</p>
+              <h3 className="m-0 text-[24px] font-extrabold leading-[1.2] tracking-[-0.02em]">{planningSlide.title}</h3>
+              <p className="m-0 text-[14px] font-normal leading-[1.4] tracking-[-0.02em]">{planningSlide.subtitle}</p>
             </div>
           </div>
+
+          {showPlanningIndicator ? (
+            <div className="absolute bottom-0 left-1/2 z-20 flex w-full max-w-[420px] -translate-x-1/2 gap-[3px] p-[3px]">
+              {planningSlides.map((slide, index) => (
+                <button
+                  key={slide.id}
+                  type="button"
+                  aria-label={`${index + 1}번 기획전 배너로 이동`}
+                  aria-current={index === safePlanningIndex}
+                  className={`h-[2px] flex-1 border-0 p-0 ${index === safePlanningIndex ? 'bg-white' : 'bg-white/50'}`}
+                  onClick={() => setPlanningActiveIndex(index)}
+                />
+              ))}
+            </div>
+          ) : null}
         </article>
 
         {/* Figma 2601:23257 CONTENTS02 — h matches left 524; inner row 419; justify-between → Control-Bar */}

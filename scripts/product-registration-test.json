@@ -1,0 +1,41 @@
+{
+  "steps": [
+    {
+      "step": "storage_upload_products",
+      "ok": false,
+      "error": "new row violates row-level security policy",
+      "objectPath": "shoes02/detail_1999_03_big.png"
+    },
+    {
+      "step": "storage_upload_main_images",
+      "ok": false,
+      "error": "new row violates row-level security policy",
+      "objectPath": "product_detail_1999_03.png"
+    },
+    {
+      "step": "storage_upload_products_final",
+      "ok": false,
+      "error": "new row violates row-level security policy",
+      "objectPath": "shoes02/detail_1999_03_big.png",
+      "imageUrl": "https://yuhjfbwmhjpcgpaikvju.supabase.co/storage/v1/object/public/products/shoes02/detail_1999_03_big.png"
+    },
+    {
+      "step": "insert_with_image_url",
+      "ok": false,
+      "error": "duplicate key value violates unique constraint \"products_pkey\"",
+      "code": "23505"
+    },
+    {
+      "step": "insert_null_image_url",
+      "ok": false,
+      "error": "null value in column \"image_url\" of relation \"products\" violates not-null constraint",
+      "code": "23502"
+    },
+    {
+      "step": "insert_empty_image_url",
+      "ok": false,
+      "error": "duplicate key value violates unique constraint \"products_pkey\"",
+      "code": "23505"
+    }
+  ]
+}

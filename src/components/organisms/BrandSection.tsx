@@ -1,5 +1,10 @@
-import type { CSSProperties, MouseEvent } from 'react'
+import type { MouseEvent } from 'react'
 import { useCallback, useMemo, useRef, useState } from 'react'
+import {
+  BrandIntroMobileSlide,
+  BrandIntroSubtractOverlay,
+} from '../molecules/BrandIntroMobileSlide'
+import { BRAND_SERIES_DIM_OVERLAY, BrandSeriesMobileSlide } from '../molecules/BrandSeriesMobileSlide'
 import { useAdminHomeMainConfig } from '../../hooks/useAdminHomeMainConfig'
 import { useHorizontalMouseDragScroll } from '../../hooks/useHorizontalMouseDragScroll'
 import {
@@ -10,49 +15,9 @@ import {
 import { isSpaPath, navigateSpa, type SpaPath } from '../../lib/spaNavigation'
 
 /** Product slides overlay (Figma node 2425:14942) */
-const BRAND_IMAGE_DIM_OVERLAY =
-  'linear-gradient(90deg, rgba(0, 0, 0, 0.1) 0%, rgba(0, 0, 0, 0.1) 100%), linear-gradient(rgba(0, 0, 0, 0) 47.5%, rgba(0, 0, 0, 0.2) 83%)'
+const BRAND_IMAGE_DIM_OVERLAY = BRAND_SERIES_DIM_OVERLAY
 /** public/assets/figma/icons/button_arrow.svg — underline + arrow (90×9) */
 const BUTTON_ARROW = '/assets/figma/icons/button_arrow.svg'
-
-/** Figma 2371:6664 Subtract — 315px circle @ top 18.5px on 345×431 card */
-const BRAND_INTRO_HOLE_DIAMETER_PX = 315
-const BRAND_INTRO_HOLE_RADIUS_PX = BRAND_INTRO_HOLE_DIAMETER_PX / 2
-const BRAND_INTRO_HOLE_TOP_OFFSET_PX = 18.5
-const BRAND_INTRO_HOLE_CENTER_Y_PX = BRAND_INTRO_HOLE_TOP_OFFSET_PX + BRAND_INTRO_HOLE_RADIUS_PX
-const BRAND_INTRO_DIM_OPACITY = 0.3
-
-function brandIntroSubtractStyle(): CSSProperties {
-  const r = BRAND_INTRO_HOLE_RADIUS_PX
-  const rInner = r - 1
-  const dim = `rgba(0,0,0,${BRAND_INTRO_DIM_OPACITY})`
-  return {
-    background: `radial-gradient(circle ${r}px at 50% ${BRAND_INTRO_HOLE_CENTER_Y_PX}px, transparent ${rInner}px, ${dim} ${r}px, ${dim} 100%)`,
-  }
-}
-
-/** Figma 2601:23100 desktop intro — 690×862 (2× mobile) */
-function brandIntroSubtractStyleDesktop(): CSSProperties {
-  const scale = 2
-  const r = BRAND_INTRO_HOLE_RADIUS_PX * scale
-  const rInner = r - 1
-  const centerY = BRAND_INTRO_HOLE_TOP_OFFSET_PX * scale + r
-  const dim = `rgba(0,0,0,${BRAND_INTRO_DIM_OPACITY})`
-  return {
-    background: `radial-gradient(circle ${r}px at 50% ${centerY}px, transparent ${rInner}px, ${dim} ${r}px, ${dim} 100%)`,
-  }
-}
-
-function BrandIntroSubtractOverlay({ layout = 'mobile' }: { layout?: 'mobile' | 'desktop' }) {
-  const style = layout === 'desktop' ? brandIntroSubtractStyleDesktop() : brandIntroSubtractStyle()
-  return (
-    <div
-      className="pointer-events-none absolute inset-0 z-[1] overflow-hidden"
-      style={style}
-      aria-hidden
-    />
-  )
-}
 
 type BrandIntroSlide = {
   id: string
@@ -229,42 +194,16 @@ export function BrandSection() {
                   data-brand-slide-index={index}
                   className="relative h-[431px] w-[345px] shrink-0 snap-start overflow-hidden"
                 >
-                  <img
-                    src={slide.image}
-                    alt={slide.variant === 'intro' ? 'OTZ' : (slide.title ?? 'OTZ')}
-                    className="h-full w-full object-cover"
-                    draggable={false}
-                  />
-
                   {slide.variant === 'intro' ? (
-                    <BrandIntroSubtractOverlay />
+                    <BrandIntroMobileSlide imageUrl={slide.image} body={slide.body} />
                   ) : (
-                    <div
-                      className="pointer-events-none absolute inset-0 z-[1]"
-                      style={{ backgroundImage: BRAND_IMAGE_DIM_OVERLAY }}
+                    <BrandSeriesMobileSlide
+                      imageUrl={slide.image}
+                      title={slide.title}
+                      body={slide.body}
+                      ctaLabel={slide.ctaLabel}
+                      ctaHref={slide.ctaHref}
                     />
-                  )}
-
-                  {slide.variant === 'intro' ? (
-                    <div className="absolute inset-x-0 bottom-0 z-10 flex flex-col justify-end px-5 pb-[25px] text-center text-[13px] font-normal leading-[1.4] tracking-[-0.02em] text-white">
-                      {slide.body.split('\n').map((line, lineIndex) => (
-                        <p key={lineIndex} className="mb-0 last:mb-0">
-                          {line}
-                        </p>
-                      ))}
-                    </div>
-                  ) : (
-                    <div className="absolute inset-y-0 left-0 z-10 flex w-[345px] flex-col justify-between px-5 pb-[30px] pt-[30px] text-white">
-                      <div className="flex flex-col items-center gap-2">
-                        <h3 className="text-center text-h3">{slide.title}</h3>
-                        <p className="w-full whitespace-pre-line px-0 pb-[10px] text-center text-[13px] font-normal leading-[1.4] tracking-[-0.02em]">
-                          {slide.body}
-                        </p>
-                      </div>
-                      <div className="mt-[14px] flex w-full justify-end">
-                        <BrandSeriesCta label={slide.ctaLabel} href={slide.ctaHref} />
-                      </div>
-                    </div>
                   )}
                 </article>
               ))}

@@ -1,8 +1,9 @@
-import type { HeroSlide } from '../design-system/types'
-import { heroSlides as defaultHeroSlides } from '../data/homeSections'
+import type { HeroSlide, PromotionalBanner } from '../design-system/types'
+import { heroSlides as defaultHeroSlides, planningBanner as defaultPlanningBanner } from '../data/homeSections'
 import type {
   AdminBrandBanner,
   AdminMainBannerSlide,
+  AdminPlanningBanner,
   AdminSeriesBanner,
 } from './adminHomeMainConfig'
 import { mainImageAsset } from './mainImagesAssetUrl'
@@ -20,6 +21,12 @@ const SERIES_FALLBACK_IMAGES = [
   mainImageAsset('brand_02.png'),
   mainImageAsset('brand_05.png'),
   mainImageAsset('brand_04.png'),
+] as const
+
+const PLANNING_FALLBACK_IMAGES = [
+  mainImageAsset('promo_03.png'),
+  mainImageAsset('promo_01.png'),
+  mainImageAsset('promo_02.png'),
 ] as const
 
 export interface ResolvedHeroSlide extends HeroSlide {
@@ -76,4 +83,21 @@ export function resolveBrandSeriesSlides(seriesBanners: AdminSeriesBanner[]): Re
     ctaLabel: series.ctaLabel.trim() || '상품 보러 가기',
     ctaHref: series.ctaHref.trim(),
   }))
+}
+
+export function resolvePlanningBanners(planningBanners: AdminPlanningBanner[] = []): PromotionalBanner[] {
+  if (!planningBanners.length) {
+    return [{ ...defaultPlanningBanner }]
+  }
+
+  return planningBanners.map((banner, index) => {
+    const imageUrl = banner.imageUrl?.trim()
+    return {
+      id: banner.id,
+      badge: (banner.badge ?? '').trim() || defaultPlanningBanner.badge,
+      title: (banner.title ?? '').trim() || defaultPlanningBanner.title,
+      subtitle: (banner.subtitle ?? '').trim() || defaultPlanningBanner.subtitle,
+      imageUrl: imageUrl || PLANNING_FALLBACK_IMAGES[index % PLANNING_FALLBACK_IMAGES.length],
+    }
+  })
 }

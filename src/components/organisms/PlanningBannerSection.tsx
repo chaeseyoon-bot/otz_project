@@ -1,64 +1,102 @@
-import type { CSSProperties } from 'react'
-import { planningBanner } from '../../data/homeSections'
-import { tokens } from '../../design-system/tokens'
-import { Tag } from '../atoms/Tag'
+import { useCallback, useMemo, useRef, useState } from 'react'
+import { PlanningBannerMobileSlide } from '../molecules/PlanningBannerMobileSlide'
+import { useAdminHomeMainConfig } from '../../hooks/useAdminHomeMainConfig'
+import { useHorizontalMouseDragScroll } from '../../hooks/useHorizontalMouseDragScroll'
+import { resolvePlanningBanners } from '../../lib/homeMainContentResolver'
 
 export function PlanningBannerSection() {
+  const { planningBanners, updatedAt } = useAdminHomeMainConfig()
+  const slides = useMemo(
+    () => resolvePlanningBanners(planningBanners ?? []),
+    [planningBanners, updatedAt],
+  )
+  const showIndicator = slides.length >= 2
+
+  const scrollerRef = useRef<HTMLDivElement>(null)
+  const [activeIndex, setActiveIndex] = useState(0)
+  useHorizontalMouseDragScroll(scrollerRef)
+
+  const syncIndexFromScroll = useCallback(() => {
+    const el = scrollerRef.current
+    if (!el) return
+
+    const slideElements = Array.from(el.querySelectorAll<HTMLElement>('[data-planning-slide-index]'))
+    if (!slideElements.length) return
+
+    const currentLeft = el.scrollLeft
+    let nearestIndex = 0
+    let minDistance = Number.POSITIVE_INFINITY
+
+    slideElements.forEach((slideEl, index) => {
+      const distance = Math.abs(slideEl.offsetLeft - currentLeft)
+      if (distance < minDistance) {
+        minDistance = distance
+        nearestIndex = index
+      }
+    })
+
+    setActiveIndex(nearestIndex)
+  }, [])
+
+  const scrollToSlide = useCallback((index: number) => {
+    const el = scrollerRef.current
+    if (!el) return
+
+    const targetSlide = el.querySelector<HTMLElement>(`[data-planning-slide-index="${index}"]`)
+    if (!targetSlide) return
+
+    el.scrollTo({
+      left: targetSlide.offsetLeft,
+      behavior: 'smooth',
+    })
+  }, [])
+
+  if (!slides.length) return null
+
   return (
-    <section style={styles.section} className="lg:hidden">
-      <article style={styles.card}>
-        <img src={planningBanner.imageUrl} alt={planningBanner.title} style={styles.image} />
-        <div style={styles.overlay} />
-        <div style={styles.content}>
-          <Tag>{planningBanner.badge}</Tag>
-          <h3 style={styles.title}>{planningBanner.title}</h3>
-          <p style={styles.subtitle}>{planningBanner.subtitle}</p>
+    <section key={updatedAt ?? 'planning-default'} className="w-full lg:hidden">
+      <div className="bg-white px-[15px] pt-4">
+        <div className="relative">
+          <div
+            ref={scrollerRef}
+            onScroll={syncIndexFromScroll}
+            className="cursor-grab overflow-x-auto scroll-smooth [scrollbar-width:none] [-ms-overflow-style:none] [&::-webkit-scrollbar]:hidden snap-x snap-mandatory active:cursor-grabbing"
+            style={{ WebkitOverflowScrolling: 'touch' }}
+          >
+            <div className="flex w-max gap-0 pr-[15px]">
+              {slides.map((slide, index) => (
+                <article
+                  key={slide.id}
+                  data-planning-slide-index={index}
+                  className="relative h-[431px] w-[345px] shrink-0 snap-start overflow-hidden"
+                >
+                  <PlanningBannerMobileSlide
+                    imageUrl={slide.imageUrl}
+                    badge={slide.badge}
+                    title={slide.title}
+                    subtitle={slide.subtitle}
+                  />
+                </article>
+              ))}
+            </div>
+          </div>
+
+          {showIndicator ? (
+            <div className="absolute bottom-[3px] left-1/2 z-20 flex w-[345px] max-w-full -translate-x-1/2 gap-[3px] px-[3px]">
+              {slides.map((slide, index) => (
+                <button
+                  key={slide.id}
+                  type="button"
+                  aria-label={`${index + 1}번 기획전 배너로 이동`}
+                  aria-current={index === activeIndex}
+                  className={`h-[2px] flex-1 border-0 p-0 ${index === activeIndex ? 'bg-white' : 'bg-white/50'}`}
+                  onClick={() => scrollToSlide(index)}
+                />
+              ))}
+            </div>
+          ) : null}
         </div>
-      </article>
+      </div>
     </section>
   )
-}
-
-const styles: Record<string, CSSProperties> = {
-  section: {
-    padding: `${tokens.spacing.x4} ${tokens.spacing.lg} 0`,
-  },
-  card: {
-    position: 'relative',
-    height: 431,
-    overflow: 'hidden',
-  },
-  image: {
-    width: '100%',
-    height: '100%',
-    objectFit: 'cover',
-  },
-  overlay: {
-    position: 'absolute',
-    inset: 0,
-    background: 'linear-gradient(180deg, rgba(0,0,0,0) 56.7%, rgba(0,0,0,0.2) 82.6%)',
-  },
-  content: {
-    position: 'absolute',
-    left: 20,
-    right: 20,
-    bottom: 28,
-    display: 'grid',
-    gap: 8,
-    justifyItems: 'center',
-    color: tokens.color.white,
-  },
-  title: {
-    margin: 0,
-    fontSize: tokens.typography.titleLarge.fontSize,
-    fontWeight: tokens.typography.titleLarge.fontWeight,
-    lineHeight: tokens.typography.titleLarge.lineHeight,
-    letterSpacing: tokens.typography.titleLarge.letterSpacing,
-  },
-  subtitle: {
-    margin: 0,
-    fontSize: tokens.typography.bodySmall.fontSize,
-    lineHeight: tokens.typography.bodySmall.lineHeight,
-    letterSpacing: tokens.typography.bodySmall.letterSpacing,
-  },
 }

@@ -1,10 +1,22 @@
 import { useEffect, useState } from 'react'
 import { QuickMenuSlotPreview } from '../../components/molecules/QuickMenuSlotPreview'
+import {
+  BRAND_INTRO_MOBILE_HEIGHT,
+  BRAND_INTRO_MOBILE_WIDTH,
+  BrandIntroMobileSlide,
+} from '../../components/molecules/BrandIntroMobileSlide'
+import { BrandSeriesMobileSlide } from '../../components/molecules/BrandSeriesMobileSlide'
+import {
+  PLANNING_BANNER_MOBILE_HEIGHT,
+  PLANNING_BANNER_MOBILE_WIDTH,
+  PlanningBannerMobileSlide,
+} from '../../components/molecules/PlanningBannerMobileSlide'
 import { useHomeMainConfigContext } from '../../contexts/HomeMainConfigContext'
 import { useLockBodyScroll } from '../../hooks/useLockBodyScroll'
 import { uploadAdminBannerImage } from '../../lib/adminBannerUpload'
 import {
   createDefaultHomeMainConfig,
+  createEmptyPlanningBanner,
   createEmptyQuickMenuSlot,
   loadAdminHomeMainConfig,
 } from '../../lib/adminHomeMainConfig'
@@ -15,7 +27,10 @@ const SECTION_TABS = [
   { id: 'quick', label: '2. 퀵메뉴' },
   { id: 'brand', label: '3. 브랜드 배너' },
   { id: 'series', label: '4. 시리즈 배너' },
+  { id: 'planning', label: '5. 기획전 배너' },
 ]
+
+const MAX_PLANNING_BANNERS = 5
 
 // ─────────────────────────────────────────────
 // ScaledMobilePreview
@@ -40,7 +55,7 @@ function ScaledMobilePreview({
   const previewHeight = Math.round(mobileHeight * scale)
 
   return (
-    <div className="flex flex-col gap-1">
+    <div className="flex w-fit flex-col gap-1">
       {label ? (
         <p className="m-0 text-[11px] text-subtleText">{label}</p>
       ) : null}
@@ -344,6 +359,7 @@ export function HomeMainManagement() {
         quickMenuSlots: config.quickMenuSlots,
         brandBanner: config.brandBanner,
         seriesBanners: config.seriesBanners,
+        planningBanners: config.planningBanners,
       })
       setConfig(saved)
       showMessage('홈메인 설정이 저장되었습니다. 홈 화면에 반영됩니다.')
@@ -417,6 +433,31 @@ export function HomeMainManagement() {
       seriesBanners: prev.seriesBanners.map((item, i) => (i === index ? { ...item, ...patch } : item)),
     }))
 
+  const updatePlanning = (index, patch) =>
+    setConfig((prev) => ({
+      ...prev,
+      planningBanners: prev.planningBanners.map((item, i) => (i === index ? { ...item, ...patch } : item)),
+    }))
+
+  const addPlanningBanner = () =>
+    setConfig((prev) => {
+      if (prev.planningBanners.length >= MAX_PLANNING_BANNERS) return prev
+      return {
+        ...prev,
+        planningBanners: [...prev.planningBanners, createEmptyPlanningBanner()],
+      }
+    })
+
+  const removePlanningBanner = (index) => {
+    setConfig((prev) => {
+      if (prev.planningBanners.length <= 1) return prev
+      return {
+        ...prev,
+        planningBanners: prev.planningBanners.filter((_, i) => i !== index),
+      }
+    })
+  }
+
   const quickSlotTypeLabel = (slotType) => {
     if (slotType === 'text') return '텍스트형'
     if (slotType === 'cutout') return '누끼컷'
@@ -424,71 +465,59 @@ export function HomeMainManagement() {
     return '이미지형'
   }
 
-  // ── 브랜드/시리즈 배너 미리보기 (690×862 = 4:5 → 195×244)
+  // ── 브랜드/시리즈 배너 미리보기 (345×431 → 195×244, Figma 102:3477)
   const BrandMobilePreview = ({ imageUrl, body }) => (
-    <ScaledMobilePreview mobileWidth={690} mobileHeight={862} previewWidth={195} label="모바일 미리보기">
-      <div className="relative size-full bg-light">
-        {imageUrl ? (
-          <>
-            <img src={imageUrl} alt="" className="absolute inset-0 size-full object-cover" />
-            {/* Dimmed 원형: 실제 CSS와 동일한 radial-gradient */}
-            <div
-              className="pointer-events-none absolute inset-0"
-              style={{
-                background:
-                  'radial-gradient(circle 210px at 50% 35%, transparent 208px, rgba(0,0,0,0.35) 210px, rgba(0,0,0,0.35) 100%)',
-              }}
-            />
-            <p
-              className="absolute inset-x-0 whitespace-pre-line text-center leading-relaxed text-white"
-              style={{ top: '37%', fontSize: 20, padding: '0 32px' }}
-            >
-              {body || '브랜드 카피'}
-            </p>
-          </>
-        ) : (
-          <div className="flex size-full items-center justify-center" style={{ fontSize: 18, color: '#999' }}>
-            이미지 없음
-          </div>
-        )}
-      </div>
+    <ScaledMobilePreview
+      mobileWidth={BRAND_INTRO_MOBILE_WIDTH}
+      mobileHeight={BRAND_INTRO_MOBILE_HEIGHT}
+      previewWidth={195}
+      label="모바일 미리보기"
+    >
+      <BrandIntroMobileSlide
+        imageUrl={imageUrl}
+        body={body}
+        showIndicator
+        indicatorCount={5}
+        activeIndicatorIndex={0}
+      />
     </ScaledMobilePreview>
   )
 
-  const SeriesMobilePreview = ({ series }) => (
-    <ScaledMobilePreview mobileWidth={690} mobileHeight={862} previewWidth={195} label="모바일 미리보기">
-      <div className="relative size-full bg-light">
-        {series.imageUrl ? (
-          <>
-            <img src={series.imageUrl} alt="" className="absolute inset-0 size-full object-cover" />
-            <div className="absolute inset-0 bg-gradient-to-t from-black/55 via-black/10 to-transparent" />
-            <div
-              className="absolute inset-x-0 bottom-0 text-center text-white"
-              style={{ padding: '0 24px 48px' }}
-            >
-              <p className="m-0 font-bold" style={{ fontSize: 26 }}>
-                {series.title || '시리즈명'}
-              </p>
-              <p
-                className="m-0 mt-2 whitespace-pre-line opacity-90"
-                style={{ fontSize: 14, lineHeight: 1.7 }}
-              >
-                {series.body || '시리즈 설명'}
-              </p>
-              <span
-                className="mt-4 inline-block underline"
-                style={{ fontSize: 13 }}
-              >
-                {series.ctaLabel || '상품 보러 가기'}
-              </span>
-            </div>
-          </>
-        ) : (
-          <div className="flex size-full items-center justify-center" style={{ fontSize: 18, color: '#999' }}>
-            이미지 없음
-          </div>
-        )}
-      </div>
+  const SeriesMobilePreview = ({ series, seriesIndex }) => (
+    <ScaledMobilePreview
+      mobileWidth={BRAND_INTRO_MOBILE_WIDTH}
+      mobileHeight={BRAND_INTRO_MOBILE_HEIGHT}
+      previewWidth={195}
+      label="모바일 미리보기"
+    >
+      <BrandSeriesMobileSlide
+        imageUrl={series.imageUrl}
+        title={series.title}
+        body={series.body}
+        ctaLabel={series.ctaLabel}
+        showIndicator
+        indicatorCount={5}
+        activeIndicatorIndex={seriesIndex + 1}
+      />
+    </ScaledMobilePreview>
+  )
+
+  const PlanningMobilePreview = ({ banner, bannerIndex, totalCount }) => (
+    <ScaledMobilePreview
+      mobileWidth={PLANNING_BANNER_MOBILE_WIDTH}
+      mobileHeight={PLANNING_BANNER_MOBILE_HEIGHT}
+      previewWidth={195}
+      label="모바일 미리보기"
+    >
+      <PlanningBannerMobileSlide
+        imageUrl={banner.imageUrl}
+        badge={banner.badge}
+        title={banner.title}
+        subtitle={banner.subtitle}
+        showIndicator={totalCount >= 2}
+        indicatorCount={totalCount}
+        activeIndicatorIndex={bannerIndex}
+      />
     </ScaledMobilePreview>
   )
 
@@ -503,7 +532,7 @@ export function HomeMainManagement() {
       <header className="mb-6 border-b border-lightGray pb-6">
         <h2 className="m-0 text-h3 text-dark">홈메인관리</h2>
         <p className="m-0 mt-2 text-bodyRegular2 text-textDefault">
-          홈 화면 8개 섹션 중 메인·퀵메뉴·브랜드·시리즈 배너를 관리합니다. (기획전·룩북은 추후 추가)
+          홈 화면 8개 섹션 중 메인·퀵메뉴·브랜드·시리즈·기획전 배너를 관리합니다. (룩북은 추후 추가)
         </p>
       </header>
 
@@ -523,7 +552,7 @@ export function HomeMainManagement() {
           </button>
         ))}
         <span className="flex items-center rounded-sm border border-dashed border-lightGray bg-light px-4 py-2 text-bodySmall text-subtleText">
-          5–8. 기획전·룩북 (준비중)
+          6–8. 룩북 (준비중)
         </span>
       </nav>
 
@@ -846,12 +875,12 @@ export function HomeMainManagement() {
               <article key={series.id} className="rounded-sm border border-lightGray bg-white p-5">
                 <h3 className="m-0 mb-4 text-bodyBold1 text-dark">시리즈 {index + 1}</h3>
 
-                <div className="flex flex-wrap gap-6">
+                <div className="flex flex-nowrap items-start justify-start gap-6">
                   <div className="w-fit shrink-0">
                     <ImageUploader
                       label="시리즈 이미지"
                       spec="4:5"
-                      aspectClass="aspect-[4/5]"
+                      aspectClass="aspect-[4/5] w-[200px]"
                       previewUrl={series.imageUrl}
                       fileName={series.imageFileName}
                       isUploading={uploadingKey === `series-${index}`}
@@ -864,10 +893,10 @@ export function HomeMainManagement() {
                     />
                   </div>
 
-                  <SeriesMobilePreview series={series} />
+                  <SeriesMobilePreview series={series} seriesIndex={index} />
                 </div>
 
-                <div className="mt-4 space-y-2">
+                <div className="mt-4 flex flex-col gap-2">
                   <TextInput
                     value={series.title}
                     onChange={(v) => updateSeries(index, { title: v })}
@@ -893,6 +922,97 @@ export function HomeMainManagement() {
               </article>
             ))}
           </div>
+        </section>
+      ) : null}
+
+      {/* ── 5. 기획전 배너 ────────────────────────── */}
+      {activeTab === 'planning' ? (
+        <section className="space-y-4">
+          <SpecNote>
+            제작 이미지 690×862 또는 1200×1500 (비율 4:5) · jpg/png · 모바일/PC 공통 사용 · Dimmed
+            영역은 CSS 처리 · 최소 1개, 최대 5개 등록 · 배너 2개 이상일 때만 인디케이터 노출
+          </SpecNote>
+
+          <div className="grid gap-6 lg:grid-cols-2">
+            {config.planningBanners.map((banner, index) => (
+              <article key={banner.id} className="rounded-sm border border-lightGray bg-white p-5">
+                <div className="mb-4 flex items-center justify-between gap-3">
+                  <h3 className="m-0 text-bodyBold1 text-dark">기획전 배너 {index + 1}</h3>
+                  {config.planningBanners.length > 1 ? (
+                    <button
+                      type="button"
+                      className="shrink-0 text-bodySmall text-subtleText hover:text-primaryText"
+                      onClick={() => removePlanningBanner(index)}
+                    >
+                      배너 삭제
+                    </button>
+                  ) : null}
+                </div>
+
+                <div className="flex flex-nowrap items-start justify-start gap-6">
+                  <div className="w-fit shrink-0">
+                    <ImageUploader
+                      label="기획전 이미지"
+                      spec="4:5"
+                      aspectClass="aspect-[4/5] w-[200px]"
+                      previewUrl={banner.imageUrl}
+                      fileName={banner.imageFileName}
+                      isUploading={uploadingKey === `planning-${index}`}
+                      onSelect={(e) =>
+                        handleImageUpload(e.target.files?.[0], `planning-${index}`, (url, name) =>
+                          updatePlanning(index, { imageUrl: url, imageFileName: name }),
+                        )
+                      }
+                      onClear={() => updatePlanning(index, { imageUrl: null, imageFileName: null })}
+                    />
+                  </div>
+
+                  <PlanningMobilePreview
+                    banner={banner}
+                    bannerIndex={index}
+                    totalCount={config.planningBanners.length}
+                  />
+                </div>
+
+                <div className="mt-4 flex flex-col gap-2">
+                  <div className="flex flex-col gap-1">
+                    <FieldLabel>라벨 (뱃지)</FieldLabel>
+                    <TextInput
+                      value={banner.badge}
+                      onChange={(v) => updatePlanning(index, { badge: v })}
+                      placeholder="26SS"
+                    />
+                  </div>
+                  <div className="flex flex-col gap-1">
+                    <FieldLabel>메인 타이틀</FieldLabel>
+                    <TextInput
+                      value={banner.title}
+                      onChange={(v) => updatePlanning(index, { title: v })}
+                      placeholder="코지 발레코어 슈즈"
+                    />
+                  </div>
+                  <div className="flex flex-col gap-1">
+                    <FieldLabel>서브 카피</FieldLabel>
+                    <TextInput
+                      value={banner.subtitle}
+                      onChange={(v) => updatePlanning(index, { subtitle: v })}
+                      placeholder="오찌x 론론 핑크와 그레이의 세련된 조합"
+                    />
+                  </div>
+                </div>
+              </article>
+            ))}
+          </div>
+
+          {config.planningBanners.length < MAX_PLANNING_BANNERS ? (
+            <button
+              type="button"
+              className="rounded-sm border border-lightGray bg-white px-4 py-3 text-bodyRegular2 text-dark hover:border-dark"
+              onClick={addPlanningBanner}
+            >
+              + 기획전 배너 추가 ({config.planningBanners.length}/{MAX_PLANNING_BANNERS})
+            </button>
+          ) : null}
         </section>
       ) : null}
 

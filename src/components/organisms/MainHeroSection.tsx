@@ -14,9 +14,9 @@ const LOOP_REPEAT = 3
 const HERO_SLIDE_GAP_LG_PX = 20
 
 function getHeroSlideRadiusClass(slidePosition: number): string {
-  if (slidePosition === 0) return 'rounded-t-[30px]'
-  if (slidePosition === 1) return 'rounded-b-[30px]'
-  if (slidePosition === 2) return 'rounded-tr-[30px]'
+  if (slidePosition === 0) return 'lg:rounded-t-[30px]'
+  if (slidePosition === 1) return 'lg:rounded-b-[30px]'
+  if (slidePosition === 2) return 'lg:rounded-tr-[30px]'
   return ''
 }
 

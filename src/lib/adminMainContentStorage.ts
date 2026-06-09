@@ -7,6 +7,7 @@ export {
   type AdminHomeMainConfig,
   type AdminMainBannerSlide,
   type AdminQuickMenuSlot,
+  type AdminPlanningBanner,
   type AdminSeriesBanner,
   type QuickMenuSlotType,
 } from './adminHomeMainConfig'

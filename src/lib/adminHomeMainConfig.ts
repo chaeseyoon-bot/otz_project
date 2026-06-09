@@ -40,12 +40,22 @@ export interface AdminSeriesBanner {
   ctaHref: string
 }
 
+export interface AdminPlanningBanner {
+  id: string
+  imageUrl: string | null
+  imageFileName: string | null
+  badge: string
+  title: string
+  subtitle: string
+}
+
 export interface AdminHomeMainConfig {
-  version: 2
+  version: 3
   mainBanners: AdminMainBannerSlide[]
   quickMenuSlots: AdminQuickMenuSlot[]
   brandBanner: AdminBrandBanner
   seriesBanners: AdminSeriesBanner[]
+  planningBanners: AdminPlanningBanner[]
   updatedAt: string | null
 }
 
@@ -117,6 +127,28 @@ export function createEmptyQuickMenuSlot(suffix = ''): AdminQuickMenuSlot {
   }
 }
 
+const DEFAULT_PLANNING: AdminPlanningBanner[] = [
+  {
+    id: 'planning-1',
+    imageUrl: null,
+    imageFileName: null,
+    badge: '26SS',
+    title: '코지 발레코어 슈즈',
+    subtitle: '오찌x 론론 핑크와 그레이의 세련된 조합',
+  },
+]
+
+export function createEmptyPlanningBanner(suffix = ''): AdminPlanningBanner {
+  return {
+    id: `planning-${Date.now()}${suffix}`,
+    imageUrl: null,
+    imageFileName: null,
+    badge: '',
+    title: '',
+    subtitle: '',
+  }
+}
+
 const DEFAULT_SERIES: AdminSeriesBanner[] = [
   {
     id: 'series-lomita',
@@ -158,7 +190,7 @@ const DEFAULT_SERIES: AdminSeriesBanner[] = [
 
 export function createDefaultHomeMainConfig(): AdminHomeMainConfig {
   return {
-    version: 2,
+    version: 3,
     mainBanners: [
       {
         id: 'main-1',
@@ -178,6 +210,7 @@ export function createDefaultHomeMainConfig(): AdminHomeMainConfig {
         '미국 캘리포니아주의 말리부에서 탄생한 오찌는\n캘리포니아의 온화한 기후에서 영감 받아\n일상을 여행처럼 향유하는 라이프스타일을 제안합니다',
     },
     seriesBanners: DEFAULT_SERIES.map((item) => ({ ...item })),
+    planningBanners: DEFAULT_PLANNING.map((item) => ({ ...item })),
     updatedAt: null,
   }
 }
@@ -198,17 +231,50 @@ function migrateLegacyConfig(raw: Record<string, unknown>): AdminHomeMainConfig 
   return defaults
 }
 
+function migrateV2Config(parsed: Partial<AdminHomeMainConfig>): AdminHomeMainConfig {
+  const defaults = createDefaultHomeMainConfig()
+  return {
+    version: 3,
+    mainBanners:
+      Array.isArray(parsed.mainBanners) && parsed.mainBanners.length > 0
+        ? parsed.mainBanners
+        : defaults.mainBanners,
+    quickMenuSlots:
+      Array.isArray(parsed.quickMenuSlots) && parsed.quickMenuSlots.length > 0
+        ? parsed.quickMenuSlots.map((slot, index) =>
+            normalizeQuickMenuSlot(
+              slot as Partial<AdminQuickMenuSlot>,
+              defaults.quickMenuSlots[index] ?? createEmptyQuickMenuSlot(`-${index}`),
+            ),
+          )
+        : defaults.quickMenuSlots,
+    brandBanner: { ...defaults.brandBanner, ...parsed.brandBanner },
+    seriesBanners:
+      Array.isArray(parsed.seriesBanners) && parsed.seriesBanners.length === 4
+        ? parsed.seriesBanners
+        : defaults.seriesBanners,
+    planningBanners: defaults.planningBanners,
+    updatedAt: parsed.updatedAt ?? null,
+  }
+}
+
 export function loadAdminHomeMainConfig(): AdminHomeMainConfig {
   try {
     const raw = localStorage.getItem(STORAGE_KEY)
     if (!raw) return createDefaultHomeMainConfig()
 
     const parsed = JSON.parse(raw) as Partial<AdminHomeMainConfig> & Record<string, unknown>
-    if (parsed.version !== 2) return migrateLegacyConfig(parsed)
+    if (parsed.version !== 2 && parsed.version !== 3) return migrateLegacyConfig(parsed)
+    if (parsed.version === 2) return migrateV2Config(parsed)
 
     const defaults = createDefaultHomeMainConfig()
+    const planningBanners =
+      Array.isArray(parsed.planningBanners) && parsed.planningBanners.length >= 1
+        ? parsed.planningBanners.slice(0, 5)
+        : defaults.planningBanners
+
     return {
-      version: 2,
+      version: 3,
       mainBanners:
         Array.isArray(parsed.mainBanners) && parsed.mainBanners.length > 0
           ? parsed.mainBanners
@@ -227,6 +293,7 @@ export function loadAdminHomeMainConfig(): AdminHomeMainConfig {
         Array.isArray(parsed.seriesBanners) && parsed.seriesBanners.length === 4
           ? parsed.seriesBanners
           : defaults.seriesBanners,
+      planningBanners,
       updatedAt: parsed.updatedAt ?? null,
     }
   } catch {
@@ -238,7 +305,7 @@ export function saveAdminHomeMainConfig(
   config: Omit<AdminHomeMainConfig, 'version' | 'updatedAt'>,
 ): AdminHomeMainConfig {
   const next: AdminHomeMainConfig = {
-    version: 2,
+    version: 3,
     ...config,
     updatedAt: new Date().toISOString(),
   }
