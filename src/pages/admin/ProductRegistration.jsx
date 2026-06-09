@@ -5,6 +5,7 @@ import {
   parseAdminProductEditId,
 } from '../../lib/adminRoutes'
 import { adminProductCutPublicUrl, uploadAdminProductCutImages } from '../../lib/adminProductImageUpload'
+import { mapFilesToProductCuts } from '../../lib/adminProductCutFileName'
 import {
   ADMIN_FREE_SIZE,
   ADMIN_STOCK_SIZES,
@@ -366,6 +367,39 @@ export function ProductRegistration({ pathname }) {
     })
   }
 
+  const handleBulkSelectCuts = (fileList) => {
+    const files = Array.from(fileList ?? [])
+    if (!files.length) return
+
+    const { mapped, skipped, duplicateCuts } = mapFilesToProductCuts(files)
+    const mappedCount = Object.keys(mapped).length
+
+    if (mappedCount === 0) {
+      showToast('파일명에서 컷 번호(01~08)를 찾지 못했습니다.')
+      return
+    }
+
+    setPendingFiles((prev) => ({ ...prev, ...mapped }))
+    setPreviewUrls((prev) => {
+      const next = { ...prev }
+      for (const [cut, file] of Object.entries(mapped)) {
+        const previous = next[cut]
+        if (previous?.startsWith('blob:')) URL.revokeObjectURL(previous)
+        next[cut] = URL.createObjectURL(file)
+      }
+      return next
+    })
+
+    const parts = [`${mappedCount}개 컷에 이미지를 배치했습니다.`]
+    if (duplicateCuts.length > 0) {
+      parts.push(`중복 컷(마지막 파일 적용): ${duplicateCuts.join(', ')}`)
+    }
+    if (skipped.length > 0) {
+      parts.push(`건너뜀 ${skipped.length}개`)
+    }
+    showToast(parts.join(' '))
+  }
+
   const validateForm = () => {
     if (!form.name.trim()) return '상품명을 입력해 주세요.'
     if (!form.subcategory.trim()) return '서브카테고리를 선택해 주세요.'
@@ -710,6 +744,36 @@ export function ProductRegistration({ pathname }) {
               : '상품 ID와 카테고리를 먼저 입력하면 업로드 경로가 결정됩니다.'
           }
         >
+          <div className="mb-5 flex flex-col gap-3 rounded-sm border border-dashed border-lightGray bg-light3 p-4">
+            <div className="flex flex-col gap-1">
+              <p className="m-0 text-bodyRegular2 text-dark">한꺼번에 업로드</p>
+              <p className="m-0 text-bodySmall text-subtleText">
+                여러 파일을 선택하면 파일명의 컷 번호(01~08)에 맞게 자동 배치됩니다.
+                예: <span className="font-mono">01.png</span>,{' '}
+                <span className="font-mono">detail_{numericId || '1043'}_03_big.png</span>
+              </p>
+            </div>
+            <label
+              htmlFor="product-cut-bulk"
+              className={`inline-flex h-10 w-fit items-center justify-center rounded-sm border border-dark bg-white px-4 text-bodySmall text-dark transition-opacity ${
+                !folder || isSaving ? 'cursor-not-allowed opacity-50' : 'cursor-pointer hover:bg-light'
+              }`}
+            >
+              이미지 여러 개 선택
+            </label>
+            <input
+              id="product-cut-bulk"
+              type="file"
+              accept="image/png,image/jpeg,image/webp,image/gif"
+              multiple
+              disabled={!folder || isSaving}
+              className="sr-only"
+              onChange={(e) => {
+                handleBulkSelectCuts(e.target.files)
+                e.target.value = ''
+              }}
+            />
+          </div>
           <div className="grid grid-cols-2 gap-4 md:grid-cols-4 xl:grid-cols-8">
             {PRODUCT_PDP_CUTS.map((cut) => (
               <ProductCutUploader
