@@ -4,7 +4,11 @@ import {
   ADMIN_PRODUCTS_PATH,
   parseAdminProductEditId,
 } from '../../lib/adminRoutes'
-import { adminProductCutPublicUrl, uploadAdminProductCutImages } from '../../lib/adminProductImageUpload'
+import {
+  adminProductCutPublicUrl,
+  resolvePrimaryProductImageUrl,
+  uploadAdminProductCutImagesStrict,
+} from '../../lib/adminProductImageUpload'
 import { mapFilesToProductCuts } from '../../lib/adminProductCutFileName'
 import {
   ADMIN_FREE_SIZE,
@@ -226,6 +230,7 @@ export function ProductRegistration({ pathname }) {
   const [toast, setToast] = useState(null)
   const [pendingFiles, setPendingFiles] = useState({})
   const [previewUrls, setPreviewUrls] = useState({})
+  const [existingImageUrl, setExistingImageUrl] = useState(null)
 
   const showToast = useCallback((message) => {
     setToast(message)
@@ -251,6 +256,11 @@ export function ProductRegistration({ pathname }) {
           }
           const nextForm = formFromProduct(product)
           setForm(nextForm)
+          setExistingImageUrl(
+            typeof product.image_url === 'string' && product.image_url.trim()
+              ? product.image_url.trim()
+              : null,
+          )
           const folder = storageFolderForProduct(nextForm.category, product.id)
           const existingPreviews = Object.fromEntries(
             PRODUCT_PDP_CUTS.map((cut) => [cut, adminProductCutPublicUrl(folder, product.id, cut)]),
@@ -416,6 +426,10 @@ export function ProductRegistration({ pathname }) {
     if (!Number.isFinite(numericDiscount) || numericDiscount < 0 || numericDiscount > 100) {
       return '할인율은 0~100 사이로 입력해 주세요.'
     }
+    if (!isEditMode && Object.keys(pendingFiles).length === 0) {
+      return '상품 이미지를 최소 1개 업로드해 주세요.'
+    }
+    if (!folder) return '상품 ID와 카테고리를 확인해 주세요.'
     return null
   }
 
@@ -429,7 +443,7 @@ export function ProductRegistration({ pathname }) {
     setSubmitError(null)
     setIsSaving(true)
 
-    const payload = {
+    const basePayload = {
       category: form.category,
       subcategory: resolveAdminSubcategoryForSave(
         form.subcategory,
@@ -446,14 +460,29 @@ export function ProductRegistration({ pathname }) {
     }
 
     try {
-      if (isEditMode && editId != null) {
-        await updateAdminProduct(editId, payload)
-      } else {
-        await insertAdminProduct({ id: numericId, ...payload })
+      let imageUrl = existingImageUrl
+
+      if (Object.keys(pendingFiles).length > 0) {
+        const uploadedUrls = await uploadAdminProductCutImagesStrict(
+          pendingFiles,
+          folder,
+          numericId,
+          { useExistingOnDuplicate: !isEditMode },
+        )
+        imageUrl = resolvePrimaryProductImageUrl(
+          uploadedUrls,
+          folder,
+          numericId,
+          existingImageUrl,
+        )
+      } else if (!imageUrl) {
+        imageUrl = resolvePrimaryProductImageUrl({}, folder, numericId, existingImageUrl)
       }
 
-      if (folder && Object.keys(pendingFiles).length > 0) {
-        await uploadAdminProductCutImages(pendingFiles, folder, numericId)
+      if (isEditMode && editId != null) {
+        await updateAdminProduct(editId, { ...basePayload, image_url: imageUrl })
+      } else {
+        await insertAdminProduct({ id: numericId, ...basePayload, image_url: imageUrl })
       }
 
       setAdminProductFlash(isEditMode ? '상품 정보가 수정되었습니다.' : '상품이 등록되었습니다.')

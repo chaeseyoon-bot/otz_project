@@ -1,12 +1,11 @@
 import { useEffect, useState } from 'react'
-import { QuickMenuSlotTile } from '../../components/molecules/QuickMenuSlotTile'
+import { QuickMenuSlotPreview } from '../../components/molecules/QuickMenuSlotPreview'
 import { useHomeMainConfigContext } from '../../contexts/HomeMainConfigContext'
 import { useLockBodyScroll } from '../../hooks/useLockBodyScroll'
 import { uploadAdminBannerImage } from '../../lib/adminBannerUpload'
 import {
   createDefaultHomeMainConfig,
   createEmptyQuickMenuSlot,
-  getQuickMenuCaptionBelow,
   loadAdminHomeMainConfig,
 } from '../../lib/adminHomeMainConfig'
 import { navigateSpa } from '../../lib/spaNavigation'
@@ -330,7 +329,8 @@ export function HomeMainManagement() {
       )
     } catch (error) {
       console.error('스토리지 에러 상세:', error)
-      showMessage('이미지 업로드에 실패했습니다.')
+      const detail = error instanceof Error ? error.message : '이미지 업로드에 실패했습니다.'
+      showMessage(detail)
     } finally {
       setUploadingKey(null)
     }
@@ -422,24 +422,6 @@ export function HomeMainManagement() {
     if (slotType === 'cutout') return '누끼컷'
     if (slotType === 'mixed') return '혼합형'
     return '이미지형'
-  }
-
-  // ── 퀵메뉴 슬롯 미리보기 (160×100 타일 + 하단 캡션)
-  const QuickSlotMobilePreview = ({ slot }) => {
-    const captionBelow = getQuickMenuCaptionBelow(slot)
-
-    return (
-      <ScaledMobilePreview mobileWidth={160} mobileHeight={captionBelow ? 130 : 100} previewWidth={128} label="슬롯 미리보기">
-        <div className="flex w-[160px] flex-col items-center gap-[10px]">
-          <QuickMenuSlotTile slot={slot} variant="adminPreview" />
-          {captionBelow ? (
-            <p className="m-0 w-full text-center text-[13px] font-normal leading-[1.4] tracking-[-0.26px] text-dark">
-              {captionBelow}
-            </p>
-          ) : null}
-        </div>
-      </ScaledMobilePreview>
-    )
   }
 
   // ── 브랜드/시리즈 배너 미리보기 (690×862 = 4:5 → 195×244)
@@ -678,9 +660,12 @@ export function HomeMainManagement() {
                   </button>
                 </div>
 
-                {/* 스케일 기반 미리보기 */}
                 <div className="mb-3 flex justify-center">
-                  <QuickSlotMobilePreview slot={slot} />
+                  <QuickMenuSlotPreview
+                    key={`${slot.id}-${slot.slotType}-${slot.imageUrl ?? 'default'}`}
+                    slot={slot}
+                    slotIndex={index}
+                  />
                 </div>
                 <div className="space-y-2">
                   <select

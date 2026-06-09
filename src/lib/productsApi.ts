@@ -39,6 +39,8 @@ export interface ProductRow {
   subcategory?: string | null
   /** Collection line (로미타, 로마리, 3300…) — auto-detected from product name. */
   collection?: string | null
+  /** Primary public image URL — Supabase Storage after admin upload. */
+  image_url?: string | null
   [key: string]: unknown
 }
 
@@ -164,7 +166,7 @@ export function mapProductRow(row: ProductRow): MappedProduct {
     id: String(row.id),
     title: rowTitle(row),
     ...resolvePricing(row),
-    image: slides[0].image,
+    image: row.image_url?.trim() || slides[0].image,
     multiCutSlides: slides,
     category: resolveProductCategory(row),
     sizeOptions: getStorefrontSizeOptions(dbCategory),
@@ -213,10 +215,16 @@ function csvRecordToRow(record: Record<string, string>): ProductRow {
     tags: record.tags ?? null,
     subcategory: record.subcategory?.trim() || null,
     collection: record.collection?.trim() || null,
+    image_url: record.image_url?.trim() || null,
   }
 }
 
 let productsCache: Promise<ProductRow[]> | null = null
+
+/** Clears the in-memory product list cache after admin writes. */
+export function invalidateProductsCache(): void {
+  productsCache = null
+}
 
 async function loadProductRowsFromSupabase(): Promise<ProductRow[]> {
   const { data, error } = await supabase
@@ -254,7 +262,7 @@ async function loadProductRows(): Promise<ProductRow[]> {
 }
 
 const PRODUCT_SELECT =
-  'id, category, name, price, discount_rate, is_new, is_foru, stock, subcategory, collection' as const
+  'id, category, name, price, discount_rate, is_new, is_foru, stock, subcategory, collection, image_url' as const
 
 const ADMIN_PRODUCT_SELECT = PRODUCT_SELECT
 
@@ -310,6 +318,7 @@ export interface AdminProductInput {
   stock?: Record<string, number>
   subcategory?: string | null
   collection?: string | null
+  image_url: string
 }
 
 export interface AdminProductUpdateInput {
@@ -322,6 +331,7 @@ export interface AdminProductUpdateInput {
   stock?: Record<string, number>
   subcategory?: string | null
   collection?: string | null
+  image_url?: string
 }
 
 /** Suggests the next available product id for a category bucket (first gap in range). */
@@ -366,7 +376,7 @@ export function isProductIdInCategoryRange(id: number, category: string): boolea
 }
 
 function buildAdminProductPayload(input: AdminProductUpdateInput) {
-  return {
+  const payload: Record<string, unknown> = {
     category: input.category.trim(),
     name: input.name.trim(),
     price: Math.max(0, Math.round(Number(input.price) || 0)),
@@ -380,6 +390,11 @@ function buildAdminProductPayload(input: AdminProductUpdateInput) {
       input.category,
     ),
   }
+
+  const imageUrl = input.image_url?.trim()
+  if (imageUrl) payload.image_url = imageUrl
+
+  return payload
 }
 
 /** Fetches a single product row for the admin edit form. */
@@ -396,13 +411,32 @@ export async function fetchAdminProductById(id: number): Promise<ProductRow | nu
 
 /** Inserts a new product into Supabase `products`. */
 export async function insertAdminProduct(input: AdminProductInput): Promise<void> {
+  const imageUrl = input.image_url?.trim()
+  if (!imageUrl) {
+    throw new Error('상품 대표 이미지 URL이 없습니다. 이미지를 업로드한 뒤 다시 시도해 주세요.')
+  }
+
   const payload = {
     id: input.id,
-    ...buildAdminProductPayload(input),
+    ...buildAdminProductPayload({ ...input, image_url: imageUrl }),
   }
 
   const { error } = await supabase.from('products').insert(payload)
-  if (error) throw new Error(error.message)
+  if (error) {
+    if (/row-level security/i.test(error.message)) {
+      throw new Error(
+        `${error.message} — Supabase SQL Editor에서 scripts/sql/products-rls-admin.sql 을 실행해 주세요.`,
+      )
+    }
+    if (/image_url/i.test(error.message) && /null/i.test(error.message)) {
+      throw new Error(
+        'image_url이 비어 있습니다. 이미지 파일을 선택한 뒤 다시 등록해 주세요. ' +
+          '(Storage 업로드가 먼저 성공해야 합니다.)',
+      )
+    }
+    throw new Error(error.message)
+  }
+  invalidateProductsCache()
 }
 
 /** Updates an existing product row (excluding primary key). */
@@ -410,6 +444,7 @@ export async function updateAdminProduct(id: number, input: AdminProductUpdateIn
   const payload = buildAdminProductPayload(input)
   const { error } = await supabase.from('products').update(payload).eq('id', id)
   if (error) throw new Error(error.message)
+  invalidateProductsCache()
 }
 
 /** Ordered thumbnail URL candidates — primary folder/cut first, then alternates. */

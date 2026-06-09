@@ -1,19 +1,10 @@
 import { useRef } from 'react'
-import { QuickMenuSlotTile } from '../molecules/QuickMenuSlotTile'
+import { QUICK_MENU_CAPTION_CLASS, QuickMenuSlotTile } from '../molecules/QuickMenuSlotTile'
+import { QUICK_MENU_SLOT_FALLBACK_IMAGES } from '../molecules/QuickMenuSlotPreview'
 import { useAdminHomeMainConfig } from '../../hooks/useAdminHomeMainConfig'
 import { getQuickMenuCaptionBelow } from '../../lib/adminHomeMainConfig'
 import { useHorizontalMouseDragScroll } from '../../hooks/useHorizontalMouseDragScroll'
-import { mainImageAsset } from '../../lib/mainImagesAssetUrl'
 import { isSpaPath, navigateSpa, type SpaPath } from '../../lib/spaNavigation'
-
-const FALLBACK_SLOT_IMAGES = [
-  mainImageAsset('category_01.png'),
-  mainImageAsset('category_02.png'),
-  mainImageAsset('category_03.png'),
-  mainImageAsset('category_04.png'),
-  mainImageAsset('category_05.png'),
-  mainImageAsset('category_06.png'),
-] as const
 
 function navigateQuickMenuHref(href: string) {
   const trimmed = href.trim()
@@ -31,7 +22,7 @@ export function CategorySection() {
   const scrollerRef = useRef<HTMLDivElement>(null)
   useHorizontalMouseDragScroll(scrollerRef)
 
-  const slots = quickMenuSlots.slice(0, FALLBACK_SLOT_IMAGES.length)
+  const slots = quickMenuSlots.slice(0, QUICK_MENU_SLOT_FALLBACK_IMAGES.length)
 
   return (
     <section className="ml-0 pb-[30px] pt-[20px] lg:mx-auto lg:max-w-[1400px]">
@@ -50,14 +41,12 @@ export function CategorySection() {
                   slot={slot}
                   fallbackImageUrl={
                     slot.slotType === 'image' || slot.slotType === 'cutout' || slot.slotType === 'mixed'
-                      ? (FALLBACK_SLOT_IMAGES[index] ?? null)
+                      ? (QUICK_MENU_SLOT_FALLBACK_IMAGES[index] ?? null)
                       : null
                   }
                 />
                 {captionBelow ? (
-                  <p className="m-0 text-center font-normal leading-[1.4] tracking-[-0.02em] whitespace-pre-line text-[13px] text-dark">
-                    {captionBelow}
-                  </p>
+                  <p className={`${QUICK_MENU_CAPTION_CLASS} whitespace-pre-line`}>{captionBelow}</p>
                 ) : null}
               </>
             )

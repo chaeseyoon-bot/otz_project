@@ -1,0 +1,36 @@
+{
+  "url": {
+    "present": true,
+    "rawLength": 40,
+    "cleanLength": 40,
+    "hadLeadingOrTrailingSpace": false,
+    "hadWrappingQuotes": false,
+    "hasInnerWhitespace": false,
+    "value": "https://yuhjfbwmhjpcgpaikvju.supabase.co"
+  },
+  "anonKey": {
+    "present": true,
+    "rawLength": 208,
+    "cleanLength": 208,
+    "hadLeadingOrTrailingSpace": false,
+    "hadWrappingQuotes": false,
+    "hasInnerWhitespace": false,
+    "segments": 3,
+    "decoded": {
+      "ref": "yuhjfbwmhjpcgpaikvju",
+      "role": "anon",
+      "iss": "supabase",
+      "expiresAt": "2036-05-13T17:08:37.000Z",
+      "expired": false
+    }
+  },
+  "checks": {
+    "urlFormatOk": true,
+    "jwtStructureOk": true,
+    "refMatches": true,
+    "connection": {
+      "ok": true,
+      "message": "Reached project and queried products."
+    }
+  }
+}
