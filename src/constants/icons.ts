@@ -83,6 +83,16 @@ export const ICONS = {
   alert: {
     nothing: iconAsset('alert-nothing.svg'),
   },
+  common: {
+    plus: iconAsset('icon_plus.svg'),
+  },
+  footer: {
+    chevronDown: iconAsset('icon_chevron.svg'),
+    socialInstagram: iconAsset('social_01.svg'),
+    socialKakao: iconAsset('social_02.svg'),
+    socialYoutube: iconAsset('social_03.svg'),
+    socialFacebook: iconAsset('social_04.svg'),
+  },
 } as const
 
 export type IconCategory = keyof typeof ICONS

@@ -1,12 +1,11 @@
-import { useEffect, useMemo, useRef, useState, type CSSProperties } from 'react'
+import { useEffect, useMemo, useRef, useState } from 'react'
 import {
-  FILTER_COLOR_OPTIONS,
   FILTER_PC_SHOE_SIZES,
   FILTER_PRODUCT_INFO_OPTIONS,
-  type FilterColorOption,
   type FilterPcShoeSize,
   type FilterProductInfoId,
 } from '../../data/categoryFilterOptions'
+import { DynamicColorSwatch } from '../atoms/DynamicColorSwatch'
 import type { CategoryFilterableProduct, CategoryPcFilters } from '../../lib/categoryProductFilter'
 import {
   clonePcFilters,
@@ -14,6 +13,7 @@ import {
   filterCategoryProducts,
   pcFilterSelectionCount,
 } from '../../lib/categoryProductFilter'
+import { buildDynamicColorFilterOptions } from '../../lib/productColor'
 import { figmaAsset } from '../../lib/figmaAssetUrl'
 
 const iconPlus = figmaAsset('icons/list_plus.svg')
@@ -27,31 +27,6 @@ const FILTER_CHIPS: { id: PcFilterId; label: string; countKey: keyof CategoryPcF
   { id: 'color', label: '색상', countKey: 'colors' },
   { id: 'productInfo', label: '상품정보', countKey: 'productInfo' },
 ]
-
-function ColorSwatch({ option, selected }: { option: FilterColorOption; selected: boolean }) {
-  let fillStyle: CSSProperties = { backgroundColor: option.fill }
-  if (option.variant === 'stripe') {
-    fillStyle = {
-      backgroundImage:
-        'repeating-linear-gradient(90deg, #1a1a1a 0, #1a1a1a 3px, #ffffff 3px, #ffffff 6px)',
-    }
-  } else if (option.variant === 'etc') {
-    fillStyle = {
-      backgroundColor: '#f0f0f0',
-      backgroundImage:
-        'repeating-linear-gradient(135deg, transparent, transparent 4px, #d8d8d8 4px, #d8d8d8 5px)',
-    }
-  }
-
-  const swatchStyle: CSSProperties = {
-    ...fillStyle,
-    boxSizing: 'border-box',
-    border: selected ? '4px solid #ffffff' : '1px solid rgba(0, 0, 0, 0.08)',
-    boxShadow: selected ? '0 0 0 1px #1a1a1a' : undefined,
-  }
-
-  return <div className="size-[30px] shrink-0 overflow-hidden rounded-full" style={swatchStyle} aria-hidden />
-}
 
 interface PcFilterChipProps {
   label: string
@@ -116,6 +91,8 @@ export function CategoryPcFilterBar<T extends CategoryFilterableProduct>({
     () => filterCategoryProducts(products, draftFilters).length,
     [products, draftFilters],
   )
+
+  const dynamicColorOptions = useMemo(() => buildDynamicColorFilterOptions(products), [products])
 
   const toggleFilter = (id: PcFilterId) => {
     setOpenFilter((prev) => (prev === id ? null : id))
@@ -228,25 +205,35 @@ export function CategoryPcFilterBar<T extends CategoryFilterableProduct>({
             ) : null}
 
             {openFilter === 'color' ? (
-              <div className="grid grid-cols-10 gap-x-2.5 gap-y-[15px]">
-                {FILTER_COLOR_OPTIONS.map((option) => {
-                  const isSelected = draftFilters.colors.has(option.id)
-                  return (
-                    <button
-                      key={option.id}
-                      type="button"
-                      className="flex w-full flex-col items-center gap-1 border-0 bg-transparent p-0"
-                      aria-pressed={isSelected}
-                      onClick={() => toggleColor(option.id)}
-                    >
-                      <ColorSwatch option={option} selected={isSelected} />
-                      <span className="whitespace-nowrap text-[11px] font-normal leading-[1.2] tracking-[-0.04em] text-dark">
-                        {option.label}
-                      </span>
-                    </button>
-                  )
-                })}
-              </div>
+              dynamicColorOptions.length > 0 ? (
+                <div className="grid grid-cols-10 gap-x-2.5 gap-y-[15px]">
+                  {dynamicColorOptions.map((option) => {
+                    const isSelected = draftFilters.colors.has(option.id)
+                    return (
+                      <button
+                        key={option.id}
+                        type="button"
+                        className="flex w-full flex-col items-center gap-1 border-0 bg-transparent p-0"
+                        aria-pressed={isSelected}
+                        onClick={() => toggleColor(option.id)}
+                      >
+                        <DynamicColorSwatch
+                          hex={option.hex}
+                          swatchUrl={option.swatchUrl}
+                          selected={isSelected}
+                        />
+                        <span className="whitespace-nowrap text-[11px] font-normal leading-[1.2] tracking-[-0.04em] text-dark">
+                          {option.label}
+                        </span>
+                      </button>
+                    )
+                  })}
+                </div>
+              ) : (
+                <p className="m-0 text-bodySmall text-subtleText">
+                  등록된 상품 색상이 없습니다. 어드민에서 컬러를 등록하면 여기에 표시됩니다.
+                </p>
+              )
             ) : null}
 
             {openFilter === 'productInfo' ? (

@@ -1,4 +1,5 @@
-import { SEARCH_RESULTS_CATALOG } from '../lib/searchResultsCatalog'
+import { PRODUCT_CARD_CUTS, productCutUrl } from '../lib/productImage'
+import { parseShoesProductNum } from '../lib/productRoutes'
 
 /** Figma g60Jix8lxQjYRzn3l7MNWf node 38:1632 — PDP color chip row. */
 export interface PdpColorVariant {
@@ -37,7 +38,10 @@ const PDP_COLOR_VARIANT_GROUP_SEEDS: PdpColorVariantGroupSeed[] = [
 ]
 
 function catalogThumbnail(productId: string): string | undefined {
-  return SEARCH_RESULTS_CATALOG.find((product) => product.id === productId)?.image
+  const num = parseShoesProductNum(productId)
+  if (!num) return undefined
+  const folder = num <= 1026 ? 'shoes01' : 'shoes02'
+  return productCutUrl(folder, num, PRODUCT_CARD_CUTS.square, 'png')
 }
 
 function buildGroup(seed: PdpColorVariantGroupSeed): PdpColorVariant[] {

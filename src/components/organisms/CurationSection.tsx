@@ -1,10 +1,13 @@
-import type { CSSProperties } from 'react'
-import { useState } from 'react'
-import { curationItems } from '../../data/homeSections'
-import { tokens } from '../../design-system/tokens'
+import { useMemo, useState } from 'react'
+import {
+  CURATION_MOBILE_TILE_COUNT,
+  CurationMobileSlide,
+} from '../molecules/CurationMobileSlide'
+import { ProductEditorialThumbnail } from '../molecules/ProductEditorialThumbnail'
+import { useAdminHomeMainConfig } from '../../hooks/useAdminHomeMainConfig'
+import { useCurationProductsContent } from '../../hooks/useCurationProductsContent'
+import { resolveCurationCopy } from '../../lib/homeMainContentResolver'
 import { getProductHeartIconDataUri } from '../../lib/productHeartIcon'
-
-const BUTTON_ARROW = '/assets/figma/icons/button_arrow.svg'
 
 /** Figma 2601:23363 — link chevron 6×12 */
 function CurationLinkChevron({ className }: { className?: string }) {
@@ -31,39 +34,46 @@ function CurationLinkChevron({ className }: { className?: string }) {
 }
 
 export function CurationSection() {
-  const [likedItems, setLikedItems] = useState<boolean[]>(() => curationItems.map(() => false))
+  const { curationProducts, updatedAt } = useAdminHomeMainConfig()
+  const { products } = useCurationProductsContent()
+  const copy = useMemo(
+    () => resolveCurationCopy(curationProducts),
+    [curationProducts, updatedAt],
+  )
+  const linkHref = copy.linkHref || '#'
+
+  const mobileTiles = useMemo(
+    () =>
+      Array.from({ length: CURATION_MOBILE_TILE_COUNT }, (_, index) => {
+        const item = products[index]
+        if (!item) return []
+        if (item.imageCandidates.length > 0) return item.imageCandidates
+        return item.imageUrl ? [item.imageUrl] : []
+      }),
+    [products],
+  )
+
+  const [likedItems, setLikedItems] = useState<boolean[]>(() => products.map(() => false))
 
   const toggleLike = (index: number) => {
-    setLikedItems((prev) => prev.map((v, i) => (i === index ? !v : v)))
+    setLikedItems((prev) => {
+      const next = products.map((_, i) => prev[i] ?? false)
+      next[index] = !next[index]
+      return next
+    })
   }
 
   return (
     <section className="w-full">
-      {/* Mobile — unchanged (no gray band / no 64px vertical padding) */}
+      {/* Mobile — Figma 2424:16202 */}
       <div className="px-[15px] pb-0 pt-10 lg:hidden">
-        <article className="relative h-[480px] overflow-hidden">
-          <div style={styles.grid}>
-            {curationItems.map((item) => (
-              <img key={item.id} src={item.imageUrl} alt="" style={styles.image} />
-            ))}
-          </div>
-          <div style={styles.overlay} />
-          <div style={styles.badge}>CURATION</div>
-          <div style={styles.titleWrapper}>
-            <h2 style={styles.title}>WINTER ACC{'\n'}STYLING</h2>
-          </div>
-          <a href="#" style={styles.cta}>
-            <span style={styles.ctaLabel}>상품 보러 가기</span>
-            <img
-              src={BUTTON_ARROW}
-              alt=""
-              aria-hidden
-              width={90}
-              height={9}
-              style={styles.ctaArrow}
-            />
-          </a>
-        </article>
+        <CurationMobileSlide
+          tiles={mobileTiles}
+          badge={copy.badge}
+          title={copy.title}
+          ctaLabel={copy.mobileCtaLabel}
+          ctaHref={linkHref}
+        />
       </div>
 
       {/* PC — Figma 2601:23305 band + 2601:23354 contents */}
@@ -73,18 +83,18 @@ export function CurationSection() {
             <div className="flex w-[300px] shrink-0 flex-col gap-5 pt-5">
               <div className="shrink-0">
                 <span className="inline-flex rounded-full bg-black px-[13px] py-[5px] text-[13px] font-normal leading-[1.4] tracking-[-0.02em] text-white">
-                  CURATION
+                  {copy.badge}
                 </span>
               </div>
               <div className="flex flex-col gap-[30px]">
                 <h2 className="m-0 whitespace-pre-line text-[34px] font-extrabold leading-[1.2] tracking-[-0.02em] text-dark">
-                  WINTER ACC{'\n'}STYLING
+                  {copy.title}
                 </h2>
                 <a
-                  href="#"
+                  href={linkHref}
                   className="inline-flex items-center gap-1.5 text-link2 leading-none text-textDefault underline decoration-solid underline-offset-2 hover:text-dark"
                 >
-                  <span className="shrink-0">상품 바로가기</span>
+                  <span className="shrink-0">{copy.pcLinkLabel}</span>
                   <span className="flex h-3 w-1.5 shrink-0 items-center justify-center" aria-hidden>
                     <CurationLinkChevron className="block h-3 w-1.5 shrink-0" />
                   </span>
@@ -93,16 +103,15 @@ export function CurationSection() {
             </div>
 
             <div className="flex min-h-0 min-w-0 flex-1 items-center gap-[10px]">
-              {curationItems.map((item, index) => (
+              {products.map((item, index) => (
                 <article key={item.id} className="flex min-w-0 flex-1 flex-col self-stretch">
                   <div className="relative w-full shrink-0 overflow-hidden">
                     <div className="relative flex w-full shrink-0 items-center gap-[10px] bg-light aspect-[4/5]">
                       <div className="relative aspect-[1200/1500] min-h-0 min-w-0 flex-1">
-                        <img
-                          src={item.imageUrl}
-                          alt=""
-                          className="pointer-events-none absolute inset-0 size-full max-w-none object-cover"
-                          draggable={false}
+                        <ProductEditorialThumbnail
+                          candidates={item.imageCandidates}
+                          className="pointer-events-none absolute inset-0 size-full"
+                          imageClassName="pointer-events-none absolute inset-0 size-full max-w-none object-cover"
                         />
                       </div>
                     </div>
@@ -140,77 +149,4 @@ export function CurationSection() {
       </div>
     </section>
   )
-}
-
-const styles: Record<string, CSSProperties> = {
-  grid: {
-    display: 'grid',
-    gridTemplateColumns: '1fr 1fr',
-    height: '100%',
-  },
-  image: {
-    width: '100%',
-    height: '100%',
-    objectFit: 'cover',
-  },
-  overlay: {
-    position: 'absolute',
-    inset: 0,
-    background: 'linear-gradient(180deg, rgba(0,0,0,0.1) 0%, rgba(0,0,0,0.3) 100%)',
-  },
-  badge: {
-    position: 'absolute',
-    top: 0,
-    left: 0,
-    backgroundColor: tokens.color.black,
-    color: tokens.color.white,
-    padding: '8px 10px',
-    fontSize: 10,
-    fontWeight: 600,
-    lineHeight: 1.1,
-  },
-  titleWrapper: {
-    position: 'absolute',
-    inset: 0,
-    display: 'grid',
-    placeItems: 'center',
-    textAlign: 'center',
-    whiteSpace: 'pre-line',
-  },
-  title: {
-    margin: 0,
-    color: tokens.color.white,
-    fontSize: 24,
-    lineHeight: 1.2,
-    letterSpacing: '-0.02em',
-    fontWeight: 800,
-    whiteSpace: 'pre-line',
-  },
-  cta: {
-    position: 'absolute',
-    right: 20,
-    bottom: 28,
-    display: 'inline-flex',
-    flexDirection: 'column',
-    alignItems: 'flex-end',
-    gap: 0,
-    color: 'rgba(255,255,255,0.8)',
-    fontSize: 12,
-    letterSpacing: '-0.02em',
-    textDecoration: 'none',
-  },
-  ctaLabel: {
-    display: 'flex',
-    lineHeight: 1,
-    paddingRight: '10px',
-    fontSize: 13,
-    width: 90,
-    fontFamily: 'var(--otz-font-family-base)',
-  },
-  ctaArrow: {
-    display: 'block',
-    width: 90,
-    height: 9,
-    flexShrink: 0,
-  },
 }

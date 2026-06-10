@@ -1,8 +1,11 @@
 import { useRef, useState } from 'react'
 import { Swiper, SwiperSlide } from 'swiper/react'
+import { ProductEditorialThumbnail } from '../molecules/ProductEditorialThumbnail'
 import { useHorizontalMouseDragScroll } from '../../hooks/useHorizontalMouseDragScroll'
-import { mainImageAsset } from '../../lib/mainImagesAssetUrl'
+import { useStyleBannerContent } from '../../hooks/useStyleBannerContent'
+import type { ResolvedStyleBannerCard, ResolvedStyleBannerProduct } from '../../lib/homeMainContentResolver'
 import { getProductHeartIconDataUri } from '../../lib/productHeartIcon'
+import { navigateSpa } from '../../lib/spaNavigation'
 
 import 'swiper/css'
 
@@ -11,114 +14,35 @@ const STYLING_PRODUCT_SLIDE_WIDTH_PX = 240
 const STYLING_PRODUCT_SLIDE_GAP_PX = 0
 const STYLING_PRODUCT_STRIP_LEADING_PX = 10
 
-interface StylingProduct {
-  thumb: string
-  name: string
-  discountRate: string
-  price: string
-}
-
-interface StylingCard {
-  id: string
-  image: string
-  /** Figma 2601:23377 — optional top-left flag on banner */
-  badge: string | null
-  products: StylingProduct[]
-}
-
-/** Figma 2601:23377 — PC shows 3 columns; mobile uses same cards in horizontal strip format */
-const STYLING_CARDS: StylingCard[] = [
-  {
-    id: 'styling-limited',
-    image: mainImageAsset('style_01.png'),
-    badge: 'LIMITED EDITION',
-    products: [
-      {
-        thumb: mainImageAsset('style_02.png'),
-        name: '스웨이드 숄더백 코코아모브 브라운 FLOTFA3B07',
-        discountRate: '10%',
-        price: '53,910',
-      },
-      {
-        thumb: mainImageAsset('style_03.png'),
-        name: '[오찌x우무] 벌루니 플랫폼 밴딩 슬라이드 FLOTFF4W21',
-        discountRate: '20%',
-        price: '53,910',
-      },
-    ],
-  },
-  {
-    id: 'styling-editorial',
-    image: mainImageAsset('style_04.png'),
-    badge: null,
-    products: [
-      {
-        thumb: mainImageAsset('style_05.png'),
-        name: '시스루 테일러드 자켓 MIWJKF1029B',
-        discountRate: '10%',
-        price: '53,910',
-      },
-      {
-        thumb: mainImageAsset('style_06.png'),
-        name: '시스루 테일러드 자켓 MIWJKF1029B',
-        discountRate: '10%',
-        price: '53,910',
-      },
-    ],
-  },
-  {
-    id: 'styling-ss26',
-    image: mainImageAsset('style_07.jpg'),
-    badge: '26SS COLLECTION',
-    products: [
-      {
-        thumb: mainImageAsset('style_08.jpg'),
-        name: '스웨이드 숄더백 코코아모브 브라운 FLOTFA3B07',
-        discountRate: '10%',
-        price: '53,910',
-      },
-      {
-        thumb: mainImageAsset('style_09.jpg'),
-        name: '스웨이드 숄더백 코코아모브 브라운 FLOTFA3B07',
-        discountRate: '10%',
-        price: '53,910',
-      },
-    ],
-  },
-]
-
-const STYLE_LOG_DESCRIPTION = [
-  '오찌가 전하는 편안함 위에 당신만의 색깔을 더해보세요.',
-  '매일의 걸음이 즐거워지는 감각적인 스타일링 가이드를',
-  '제안합니다.',
-] as const
-
-function buildInitialLikes(): Record<string, boolean[]> {
+function buildInitialLikes(cards: ResolvedStyleBannerCard[]): Record<string, boolean[]> {
   const initial: Record<string, boolean[]> = {}
-  for (const card of STYLING_CARDS) {
+  for (const card of cards) {
     initial[card.id] = card.products.map(() => false)
   }
   return initial
 }
 
 interface StylingCardProductSliderProps {
-  products: StylingProduct[]
+  products: ResolvedStyleBannerProduct[]
 }
 
 /** 60px column like mobile strip; inner frame 4:5 on #f6f6f6 (`bg-light`) with multiply blend */
-function StylingProductThumb({ src, rounded }: { src: string; rounded?: boolean }) {
+function StylingProductThumb({
+  product,
+  rounded,
+}: {
+  product: ResolvedStyleBannerProduct
+  rounded?: boolean
+}) {
   return (
     <div
       className={`flex h-[75px] w-[60px] shrink-0 items-center justify-center overflow-hidden bg-light ${rounded ? 'rounded-[5px]' : ''}`}
     >
-      <div className="relative h-[75px] aspect-[4/5] overflow-hidden bg-light">
-        <img
-          src={src}
-          alt=""
-          className="pointer-events-none absolute inset-0 size-full object-contain object-center mix-blend-multiply"
-          draggable={false}
-        />
-      </div>
+      <ProductEditorialThumbnail
+        candidates={product.thumbCandidates.length ? product.thumbCandidates : [product.thumb]}
+        className="relative h-[75px] aspect-[4/5] overflow-hidden bg-light"
+        imageClassName="pointer-events-none absolute inset-0 size-full object-contain object-center mix-blend-multiply"
+      />
     </div>
   )
 }
@@ -144,12 +68,12 @@ function StylingCardProductSlider({ products }: StylingCardProductSliderProps) {
       >
         {products.map((product, productIndex) => (
           <SwiperSlide
-            key={`${product.name}-${productIndex}`}
+            key={`${product.productId ?? product.name}-${productIndex}`}
             className="!box-border shrink-0"
             style={{ width: STYLING_PRODUCT_SLIDE_WIDTH_PX }}
           >
             <div className="box-border flex h-[75px] w-full gap-[10px] pr-[10px]">
-              <StylingProductThumb src={product.thumb} rounded />
+              <StylingProductThumb product={product} rounded />
               <div className="min-w-0 flex-1 pt-[8px] text-white">
                 <p className="line-clamp-2 w-full max-w-[172px] text-[13px] text-bodySmall">{product.name}</p>
                 <p className="pt-[2px] text-bodyBold2">
@@ -165,9 +89,43 @@ function StylingCardProductSlider({ products }: StylingCardProductSliderProps) {
   )
 }
 
+interface StylingBannerImageProps {
+  card: ResolvedStyleBannerCard
+  className?: string
+  imageClassName?: string
+}
+
+function StylingBannerImage({ card, className, imageClassName }: StylingBannerImageProps) {
+  const image = (
+    <img
+      src={card.imageUrl}
+      alt={card.products[0]?.name ?? ''}
+      className={imageClassName}
+      draggable={false}
+    />
+  )
+
+  if (!card.bannerHref) {
+    return <div className={className}>{image}</div>
+  }
+
+  return (
+    <a
+      href={card.bannerHref}
+      className={className}
+      onClick={(event) => {
+        event.preventDefault()
+        navigateSpa(card.bannerHref)
+      }}
+    >
+      {image}
+    </a>
+  )
+}
+
 interface StylingDesktopProductRowProps {
   cardId: string
-  product: StylingProduct
+  product: ResolvedStyleBannerProduct
   productIndex: number
   liked: boolean
   onToggleLike: (cardId: string, productIndex: number) => void
@@ -182,7 +140,7 @@ function StylingDesktopProductRow({
 }: StylingDesktopProductRowProps) {
   return (
     <div className="flex min-h-[75px] w-full items-center gap-2 pr-[5px]">
-      <StylingProductThumb src={product.thumb} />
+      <StylingProductThumb product={product} />
       <div className="flex min-w-0 flex-1 flex-col justify-center gap-[5px]">
         <p className="line-clamp-2 text-[13px] font-normal leading-[1.4] tracking-[-0.02em] text-textDefault">
           {product.name}
@@ -191,9 +149,7 @@ function StylingDesktopProductRow({
           <span className="text-[15px] font-bold leading-[1.4] tracking-[-0.02em] text-primary">
             {product.discountRate}
           </span>
-          <span className="text-[15px] font-bold leading-[1.4] tracking-[-0.02em] text-black">
-            {product.price}
-          </span>
+          <span className="text-[15px] font-bold leading-[1.4] tracking-[-0.02em] text-black">{product.price}</span>
         </div>
       </div>
       <button
@@ -212,7 +168,7 @@ function StylingDesktopProductRow({
 }
 
 interface StylingDesktopColumnProps {
-  card: StylingCard
+  card: ResolvedStyleBannerCard
   likedByProduct: boolean[]
   onToggleLike: (cardId: string, productIndex: number) => void
 }
@@ -222,14 +178,13 @@ function StylingDesktopColumn({ card, likedByProduct, onToggleLike }: StylingDes
     <div className="flex w-[335px] shrink-0 flex-col gap-1.5">
       <div className="relative w-full shrink-0 overflow-hidden">
         <div className="relative aspect-[320/400] w-full overflow-hidden">
-          <img
-            src={card.image}
-            alt=""
-            className="absolute inset-0 size-full object-cover"
-            draggable={false}
+          <StylingBannerImage
+            card={card}
+            className="absolute inset-0 block size-full"
+            imageClassName="size-full object-cover"
           />
           {card.badge ? (
-            <div className="absolute left-0 top-0 z-[1] box-border flex h-[28px] flex-col items-center justify-center bg-black px-[10px]">
+            <div className="pointer-events-none absolute left-0 top-0 z-[1] box-border flex h-fit w-fit flex-col items-center justify-center bg-black px-[10px] py-2">
               <span className="text-[10px] font-semibold leading-[1.1] text-white">{card.badge}</span>
             </div>
           ) : null}
@@ -252,8 +207,11 @@ function StylingDesktopColumn({ card, likedByProduct, onToggleLike }: StylingDes
 }
 
 export function StylingSection() {
+  const { section } = useStyleBannerContent()
   const scrollerRef = useRef<HTMLDivElement>(null)
-  const [likedByCard, setLikedByCard] = useState<Record<string, boolean[]>>(buildInitialLikes)
+  const [likedByCard, setLikedByCard] = useState<Record<string, boolean[]>>(() =>
+    buildInitialLikes(section.cards),
+  )
   useHorizontalMouseDragScroll(scrollerRef)
 
   const toggleDesktopLike = (cardId: string, productIndex: number) => {
@@ -265,7 +223,7 @@ export function StylingSection() {
 
   return (
     <section className="w-full bg-white">
-      {/* Mobile — horizontal cards + bottom product swiper (Figma mobile strip pattern) */}
+      {/* Mobile — horizontal cards + bottom product swiper */}
       <div className="pt-10 lg:hidden">
         <div
           ref={scrollerRef}
@@ -274,23 +232,22 @@ export function StylingSection() {
         >
           <div className="flex w-max snap-x snap-mandatory gap-1">
             <div className="block w-[11px] shrink-0" aria-hidden />
-            {STYLING_CARDS.map((card) => (
+            {section.cards.map((card) => (
               <article
                 key={card.id}
                 className="relative h-[480px] w-[335px] shrink-0 snap-start overflow-hidden"
               >
-                <img
-                  src={card.image}
-                  alt={card.products[0]?.name ?? ''}
-                  className="h-full w-full bg-[var(--otz-color-surface-subtle)] object-cover"
-                  draggable={false}
+                <StylingBannerImage
+                  card={card}
+                  className="block h-full w-full"
+                  imageClassName="h-full w-full bg-[var(--otz-color-surface-subtle)] object-cover"
                 />
                 <div
                   className="pointer-events-none absolute inset-0 bg-gradient-to-b from-[rgba(0,0,0,0)] from-[57.083%] to-[rgba(0,0,0,0.4)] to-[86.875%] mix-blend-darken"
                   aria-hidden
                 />
                 {card.badge ? (
-                  <div className="absolute left-0 top-0 z-[2] box-border flex h-[28px] flex-col items-center justify-center bg-black px-[10px]">
+                  <div className="pointer-events-none absolute left-0 top-0 z-[2] box-border flex h-fit w-fit flex-col items-center justify-center bg-black px-[10px] py-2">
                     <span className="text-[10px] font-semibold leading-[1.1] text-white">{card.badge}</span>
                   </div>
                 ) : null}
@@ -302,24 +259,27 @@ export function StylingSection() {
         </div>
       </div>
 
-      {/* Figma 2601:23377 — PC: CORDINATION + OTZ'S STYLE LOG + 3 columns */}
+      {/* PC — Figma 2601:23377 */}
       <div className="hidden w-full py-[64px] lg:block">
         <div className="mx-auto min-w-0 max-w-[1400px]">
           <div className="flex w-full min-w-0 items-start gap-[75px]">
             <div className="flex w-[300px] shrink-0 flex-col gap-5 pt-5">
               <div className="shrink-0">
                 <span className="inline-flex rounded-full bg-black px-3 py-1.5 text-[13px] font-normal leading-[1.4] tracking-[-0.02em] text-white">
-                  CORDINATION
+                  {section.badge}
                 </span>
               </div>
               <div className="flex flex-col gap-3">
                 <h2 className="m-0 text-[34px] font-extrabold leading-[1.2] tracking-[-0.02em] text-dark">
-                  <span className="block whitespace-pre">{`OTZ'S `}</span>
-                  <span className="block whitespace-pre">STYLE LOG</span>
+                  {section.titleLines.map((line, index) => (
+                    <span key={index} className="block whitespace-pre">
+                      {line}
+                    </span>
+                  ))}
                 </h2>
                 <div className="text-[13px] font-normal leading-[1.4] tracking-[-0.02em] text-textDefault">
-                  {STYLE_LOG_DESCRIPTION.map((line, i) => (
-                    <p key={i} className="m-0">
+                  {section.bodyLines.map((line, index) => (
+                    <p key={index} className="m-0">
                       {line}
                     </p>
                   ))}
@@ -328,7 +288,7 @@ export function StylingSection() {
             </div>
 
             <div className="flex min-h-0 min-w-0 flex-1 items-start justify-end gap-[10px]">
-              {STYLING_CARDS.map((card) => (
+              {section.cards.map((card) => (
                 <StylingDesktopColumn
                   key={card.id}
                   card={card}

@@ -1,7 +1,6 @@
 import { Fragment, useRef, useState } from 'react'
 import { useHorizontalMouseDragScroll } from '../../hooks/useHorizontalMouseDragScroll'
-import { figmaAsset } from '../../lib/figmaAssetUrl'
-import { mainImageAsset } from '../../lib/mainImagesAssetUrl'
+import { ICONS } from '../../constants/icons'
 
 const LINKS_TOP = ['브랜드스토리', '멤버십혜택', '공지사항', '대량주문문의']
 const LINKS_BOTTOM = ['개인정보처리방침', '이용약관', '자주 묻는 질문 FAQ']
@@ -9,14 +8,13 @@ const LINKS_BOTTOM = ['개인정보처리방침', '이용약관', '자주 묻는
 /** 공정거래위원회 사업자정보 조회 (등록번호 113-85-19030) */
 const FTC_BUSINESS_VERIFY_URL = 'https://www.ftc.go.kr/bizCommPopView.do?wrkr_no=1138501903'
 
-const CHEVRON_DOWN = mainImageAsset('icon_chevron.svg')
+const CHEVRON_DOWN = ICONS.footer.chevronDown
+const socialInstagram = ICONS.footer.socialInstagram
+const socialKakao = ICONS.footer.socialKakao
+const socialYoutube = ICONS.footer.socialYoutube
+const socialFacebook = ICONS.footer.socialFacebook
 
-const socialInstagram = mainImageAsset('social_01.svg')
-const socialKakao = mainImageAsset('social_02.svg')
-const socialYoutube = mainImageAsset('social_03.svg')
-const socialFacebook = mainImageAsset('social_04.svg')
-
-const logoOtz = figmaAsset('icons/OTZ_LOGO.svg')
+const logoOtz = ICONS.brand.otzLogo
 
 /** Figma footer (Light #F6F6F6, Body/Small #999 13px, Text Default #666 14px, divider #E6E6E6) */
 export function FooterSection() {
@@ -146,10 +144,10 @@ export function FooterSection() {
           </div>
 
           <div className="flex items-center justify-center gap-[16.667px] py-[20px]">
-            <img src={socialInstagram} alt="instagram" className="h-[18.75px] w-[18.75px]" />
-            <img src={socialKakao} alt="kakao" className="h-[19.792px] w-[21.591px]" />
-            <img src={socialYoutube} alt="youtube" className="h-[13.542px] w-[19.345px]" />
-            <img src={socialFacebook} alt="facebook" className="h-[18.75px] w-[18.797px]" />
+            <img src={socialInstagram} alt="instagram" className="h-[18.75px] w-[18.75px] shrink-0" draggable={false} />
+            <img src={socialKakao} alt="kakao" className="h-[19.792px] w-[21.591px] shrink-0" draggable={false} />
+            <img src={socialYoutube} alt="youtube" className="h-[13.542px] w-[19.345px] shrink-0" draggable={false} />
+            <img src={socialFacebook} alt="facebook" className="h-[18.75px] w-[18.797px] shrink-0" draggable={false} />
           </div>
 
           <p className="text-center text-[13px] font-medium leading-[1.2] tracking-[-0.02em] text-[#999999]">

@@ -3,23 +3,25 @@ import { MobileSearchSectionHeader } from '../components/molecules/MobileSearchS
 import { SearchHighlightText } from '../components/molecules/SearchHighlightText'
 import { MobileSearchHeader } from '../components/organisms/MobileSearchHeader'
 import {
-  AUTOCOMPLETE_SUGGESTIONS,
-  DEMO_RECENTLY_VIEWED_PRODUCTS,
   POPULAR_SEARCHES,
-  RECOMMENDED_SEARCH_PRODUCTS,
   SEASON_KEYWORDS,
   type SearchProductThumb,
 } from '../data/searchContent'
 import { figmaAsset } from '../lib/figmaAssetUrl'
+import { useSearchAutocomplete, useSearchCatalog } from '../hooks/useSearchCatalog'
+import { useProducts } from '../hooks/useProducts'
 import {
   addRecentSearch,
   clearRecentSearches,
   readRecentSearches,
   removeRecentSearch,
 } from '../lib/recentSearchStorage'
-import { readRecentlyViewedProducts, seedRecentlyViewedIfEmpty } from '../lib/recentlyViewedStorage'
+import { mappedProductsToThumbs } from '../lib/searchResultsCatalog'
+import { readRecentlyViewedProducts } from '../lib/recentlyViewedStorage'
+import { getProductDetailPath } from '../lib/productRoutes'
 import { buildSearchResultsPath } from '../lib/searchRoutes'
 import { navigateSpa, type SpaPath } from '../lib/spaNavigation'
+import { useSpaPathname } from '../hooks/useSpaPathname'
 
 const iconSearchClose = figmaAsset('icons/search_close.svg')
 
@@ -35,9 +37,12 @@ function HorizontalProductRow({
       className={`flex w-full gap-2 overflow-x-auto overscroll-x-contain pr-[15px] touch-pan-x [scrollbar-width:none] [-ms-overflow-style:none] [&::-webkit-scrollbar]:hidden${className ? ` ${className}` : ''}`}
     >
       {products.map((product) => (
-        <div
+        <button
           key={product.id}
-          className="flex h-[100px] w-[80px] shrink-0 items-center justify-center overflow-hidden bg-light2"
+          type="button"
+          className="flex h-[100px] w-[80px] shrink-0 items-center justify-center overflow-hidden border-0 bg-light2 p-0"
+          aria-label={product.title}
+          onClick={() => navigateSpa(getProductDetailPath(product.id))}
         >
           <img
             src={product.image}
@@ -45,7 +50,7 @@ function HorizontalProductRow({
             className="size-[80px] object-contain object-center mix-blend-multiply"
             draggable={false}
           />
-        </div>
+        </button>
       ))}
     </div>
   )
@@ -53,24 +58,37 @@ function HorizontalProductRow({
 
 /** Figma 2689:5739 — mobile search overlay (recent / season / popular / products / autocomplete). */
 export function SearchPage() {
+  const pathname = useSpaPathname()
   const inputRef = useRef<HTMLInputElement>(null)
   const [query, setQuery] = useState('')
   const [recentSearches, setRecentSearches] = useState<string[]>(() => readRecentSearches())
-  const [recentlyViewed, setRecentlyViewed] = useState<SearchProductThumb[]>(() => readRecentlyViewedProducts())
+  const [recentlyViewed, setRecentlyViewed] = useState<SearchProductThumb[]>(() =>
+    readRecentlyViewedProducts(),
+  )
+  const { rows } = useSearchCatalog()
+  const { products: forYouProducts } = useProducts({ flag: 'is_foru', limit: 6 })
+  const { products: catalogProducts } = useProducts({ limit: 6 })
+
+  const recommendedProducts = useMemo(() => {
+    const source =
+      forYouProducts.length > 0
+        ? forYouProducts
+        : catalogProducts
+    return mappedProductsToThumbs(source)
+  }, [catalogProducts, forYouProducts])
 
   useEffect(() => {
-    setRecentlyViewed(seedRecentlyViewedIfEmpty([...DEMO_RECENTLY_VIEWED_PRODUCTS]))
     inputRef.current?.focus()
   }, [])
+
+  useEffect(() => {
+    setRecentlyViewed(readRecentlyViewedProducts())
+  }, [pathname])
 
   const trimmedQuery = query.trim()
   const isTyping = trimmedQuery.length > 0
 
-  const autocompleteItems = useMemo(() => {
-    if (!isTyping) return []
-    const lower = trimmedQuery.toLowerCase()
-    return AUTOCOMPLETE_SUGGESTIONS.filter((item) => item.toLowerCase().includes(lower))
-  }, [isTyping, trimmedQuery])
+  const autocompleteItems = useSearchAutocomplete(trimmedQuery, rows)
 
   const commitSearch = useCallback((term: string) => {
     const value = term.trim()
@@ -101,17 +119,21 @@ export function SearchPage() {
 
       {isTyping ? (
         <ul className="m-0 list-none px-[15px] pt-6">
-          {autocompleteItems.map((item) => (
-            <li key={item} className="border-b border-light2 last:border-b-0">
-              <button
-                type="button"
-                className="flex w-full border-0 bg-transparent py-3 text-left text-bodyRegular2 text-dark"
-                onClick={() => commitSearch(item)}
-              >
-                <SearchHighlightText text={item} query={trimmedQuery} />
-              </button>
-            </li>
-          ))}
+          {autocompleteItems.length > 0 ? (
+            autocompleteItems.map((item) => (
+              <li key={item} className="border-b border-light2 last:border-b-0">
+                <button
+                  type="button"
+                  className="flex w-full border-0 bg-transparent py-3 text-left text-bodyRegular2 text-dark"
+                  onClick={() => commitSearch(item)}
+                >
+                  <SearchHighlightText text={item} query={trimmedQuery} />
+                </button>
+              </li>
+            ))
+          ) : (
+            <li className="py-3 text-bodySmall text-subtleText">일치하는 검색어가 없습니다.</li>
+          )}
         </ul>
       ) : (
         <div className="min-w-0 flex-1 w-full overflow-x-hidden pb-10">
@@ -223,18 +245,20 @@ export function SearchPage() {
           {recentlyViewed.length > 0 ? (
             <section className="pl-[15px] pt-8">
               <div className="flex w-full min-w-0 flex-col items-start justify-start gap-4">
-                <MobileSearchSectionHeader title="최근 본 상품" actionLabel="전체보기" className="w-full pr-[15px]" />
+                <MobileSearchSectionHeader title="최근 본 상품" className="w-full pr-[15px]" />
                 <HorizontalProductRow products={recentlyViewed} />
               </div>
             </section>
           ) : null}
 
-          <section className="pl-[15px] pt-8">
-            <div className="flex min-w-0 flex-col gap-4">
-              <MobileSearchSectionHeader title="추천 상품" actionLabel="전체보기" className="w-full pr-[15px]" />
-              <HorizontalProductRow products={RECOMMENDED_SEARCH_PRODUCTS} />
-            </div>
-          </section>
+          {recommendedProducts.length > 0 ? (
+            <section className="pl-[15px] pt-8">
+              <div className="flex min-w-0 flex-col gap-4">
+                <MobileSearchSectionHeader title="추천 상품" className="w-full pr-[15px]" />
+                <HorizontalProductRow products={recommendedProducts} />
+              </div>
+            </section>
+          ) : null}
         </div>
       )}
     </div>

@@ -1,5 +1,5 @@
 import { supabase } from './supabase'
-import { PRODUCT_PDP_CUTS } from './productImage'
+import { PRODUCT_PDP_CUTS, withProductImageCacheBust } from './productImage'
 
 export type ProductPdpCut = (typeof PRODUCT_PDP_CUTS)[number]
 
@@ -47,13 +47,14 @@ export function adminProductCutPublicUrl(
   productId: number,
   cut: string,
   ext: 'png' | 'webp' = 'png',
+  cacheVersion?: string | null,
 ): string {
   const objectPath = adminProductCutObjectPath(folder, productId, cut, ext)
   const base = storageBaseUrl()
   if (!base) return `/assets/figma/products/${objectPath}`
 
   const { data } = supabase.storage.from('products').getPublicUrl(objectPath)
-  return data.publicUrl
+  return withProductImageCacheBust(data.publicUrl, cacheVersion)
 }
 
 function isDuplicateStorageObjectError(message: string, statusCode?: string | number): boolean {
@@ -64,52 +65,49 @@ function isDuplicateStorageObjectError(message: string, statusCode?: string | nu
   )
 }
 
-function formatStorageUploadError(cut: string, message: string): Error {
-  if (/row-level security/i.test(message)) {
+function isStorageRlsError(message: string): boolean {
+  return /row-level security/i.test(message)
+}
+
+function formatStorageUploadError(cut: string, message: string, context?: string): Error {
+  if (isStorageRlsError(message)) {
     return new Error(
-      `이미지 업로드 권한이 없습니다 (컷 ${cut}). Supabase → SQL Editor에서 ` +
-        '`scripts/sql/admin-storage-policies.sql`을 실행해 주세요. ' +
-        '(INSERT 권한은 있어도 upsert/덮어쓰기는 추가 정책이 필요할 수 있습니다.)',
+      `이미지 업로드 권한이 없습니다 (컷 ${cut}${context ? ` · ${context}` : ''}). ` +
+        'Supabase Dashboard → SQL Editor에서 `scripts/sql/admin-storage-policies.sql` 전체를 다시 실행해 주세요. ' +
+        '특히 products 버킷에 UPDATE 정책(`products_storage_update_public`)이 생성됐는지 확인하세요. ' +
+        '확인 쿼리: SELECT policyname, cmd FROM pg_policies WHERE tablename = \'objects\' AND policyname LIKE \'%products_storage%\';',
     )
   }
   if (isDuplicateStorageObjectError(message)) {
     return new Error(
-      `같은 위치에 이미지가 이미 있습니다 (컷 ${cut}). ` +
-        `이전 등록 시도에서 이미지만 Storage에 올라간 경우입니다. ` +
-        `Supabase → Storage → products 버킷에서 해당 파일을 삭제하거나, ` +
-        `SQL Editor에서 admin-storage-policies.sql의 DELETE 정책까지 실행한 뒤 다시 시도해 주세요.`,
+      `같은 경로에 이미지가 이미 있습니다 (컷 ${cut}). Storage DELETE 정책이 없어 교체하지 못했습니다. ` +
+        '`scripts/sql/admin-storage-policies.sql`을 실행한 뒤 다시 시도해 주세요.',
     )
   }
   return new Error(`이미지 업로드 실패 (컷 ${cut}): ${message}`)
 }
 
-export interface UploadProductCutOptions {
-  /**
-   * When true (default for new registration), an existing object at the same path
-   * is treated as success so a retried save can continue after a partial upload.
-   */
-  useExistingOnDuplicate?: boolean
-}
-
-/** Upload without upsert — works with INSERT-only Storage policies. Overwrites via remove + retry. */
+/**
+ * Upload with upsert; if Storage RLS blocks UPDATE, fall back to remove + insert.
+ * Requires INSERT + UPDATE policies for upsert, and DELETE for the fallback path.
+ */
 async function uploadProductCutObject(
   objectPath: string,
   file: File,
   contentType: string,
   cut: string,
-  options: UploadProductCutOptions = {},
 ): Promise<void> {
   const bucket = supabase.storage.from('products')
-  const useExistingOnDuplicate = options.useExistingOnDuplicate ?? false
 
-  const uploadOnce = (upsert: boolean) =>
-    bucket.upload(objectPath, file, { upsert, contentType })
+  const upsertResult = await bucket.upload(objectPath, file, { upsert: true, contentType })
+  if (!upsertResult.error) return
 
-  const first = await uploadOnce(false)
-  if (!first.error) return
+  const shouldFallback =
+    isStorageRlsError(upsertResult.error.message) ||
+    isDuplicateStorageObjectError(upsertResult.error.message, upsertResult.error.statusCode)
 
-  if (!isDuplicateStorageObjectError(first.error.message, first.error.statusCode)) {
-    throw formatStorageUploadError(cut, first.error.message)
+  if (!shouldFallback) {
+    throw formatStorageUploadError(cut, upsertResult.error.message, 'upsert')
   }
 
   const siblingPath = objectPath.endsWith('.webp')
@@ -118,27 +116,16 @@ async function uploadProductCutObject(
 
   const { data: removed, error: removeError } = await bucket.remove([objectPath, siblingPath])
   if (removeError) {
-    throw new Error(
-      `기존 이미지를 교체할 수 없습니다 (컷 ${cut}). Supabase Storage DELETE 정책을 확인해 주세요.`,
-    )
+    throw formatStorageUploadError(cut, removeError.message, 'remove')
   }
 
   if ((removed?.length ?? 0) > 0) {
-    const retry = await uploadOnce(false)
+    const retry = await bucket.upload(objectPath, file, { upsert: false, contentType })
     if (!retry.error) return
-    if (!isDuplicateStorageObjectError(retry.error.message, retry.error.statusCode)) {
-      throw formatStorageUploadError(cut, retry.error.message)
-    }
+    throw formatStorageUploadError(cut, retry.error.message, 'retry-after-remove')
   }
 
-  const upsertAttempt = await uploadOnce(true)
-  if (!upsertAttempt.error) return
-
-  if (useExistingOnDuplicate) {
-    return
-  }
-
-  throw formatStorageUploadError(cut, first.error.message)
+  throw formatStorageUploadError(cut, upsertResult.error.message, 'upsert-blocked-no-delete')
 }
 
 /** Uploads a PDP cut image to Supabase Storage (`products/{folder}/detail_{id}_{cut}_big.{ext}`). */
@@ -159,7 +146,8 @@ export async function uploadAdminProductCutImage(
       file.type || (ext === 'webp' ? 'image/webp' : 'image/png'),
       cut,
     )
-    return { url: adminProductCutPublicUrl(folder, productId, cut, ext), usedLocalFallback: false }
+    const url = adminProductCutPublicUrl(folder, productId, cut, ext, String(Date.now()))
+    return { url, usedLocalFallback: false }
   } catch {
     // fall through to local preview data URL
   }
@@ -193,7 +181,6 @@ export async function uploadAdminProductCutImagesStrict(
   filesByCut: Partial<Record<ProductPdpCut, File>>,
   folder: string,
   productId: number,
-  options: UploadProductCutOptions = {},
 ): Promise<Partial<Record<ProductPdpCut, string>>> {
   const urls: Partial<Record<ProductPdpCut, string>> = {}
 
@@ -209,13 +196,53 @@ export async function uploadAdminProductCutImagesStrict(
       file,
       file.type || (ext === 'webp' ? 'image/webp' : 'image/png'),
       cut,
-      options,
     )
 
-    urls[cut] = adminProductCutPublicUrl(folder, productId, cut, ext)
+    urls[cut] = adminProductCutPublicUrl(folder, productId, cut, ext, String(Date.now()))
   }
 
   return urls
+}
+
+export function adminProductColorSwatchObjectPath(
+  folder: string,
+  productId: number,
+  ext: 'png' | 'webp' = 'png',
+): string {
+  return `${folder}/detail_${productId}_swatch.${ext}`
+}
+
+export function adminProductColorSwatchPublicUrl(
+  folder: string,
+  productId: number,
+  ext: 'png' | 'webp' = 'png',
+  cacheVersion?: string | null,
+): string {
+  const objectPath = adminProductColorSwatchObjectPath(folder, productId, ext)
+  const base = storageBaseUrl()
+  if (!base) return `/assets/figma/products/${objectPath}`
+
+  const { data } = supabase.storage.from('products').getPublicUrl(objectPath)
+  return withProductImageCacheBust(data.publicUrl, cacheVersion)
+}
+
+/** Uploads optional color texture swatch for PLP filter chips. */
+export async function uploadAdminProductColorSwatchStrict(
+  file: File,
+  folder: string,
+  productId: number,
+): Promise<string> {
+  const ext = resolveExtension(file)
+  const objectPath = adminProductColorSwatchObjectPath(folder, productId, ext)
+
+  await uploadProductCutObject(
+    objectPath,
+    file,
+    file.type || (ext === 'webp' ? 'image/webp' : 'image/png'),
+    'swatch',
+  )
+
+  return adminProductColorSwatchPublicUrl(folder, productId, ext, String(Date.now()))
 }
 
 /** Picks the canonical public URL to store in `products.image_url`. */

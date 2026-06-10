@@ -18,6 +18,8 @@ interface AdaptiveProductImageProps {
   orientation?: 'square' | 'portrait'
   loading?: 'eager' | 'lazy'
   draggable?: boolean
+  /** Fires when both png/webp extension fallbacks fail to load. */
+  onFinalError?: () => void
 }
 
 /** Portrait detection tolerance: only clearly-taller-than-wide images fill height. */
@@ -39,6 +41,7 @@ export function AdaptiveProductImage({
   orientation,
   loading,
   draggable = false,
+  onFinalError,
 }: AdaptiveProductImageProps) {
   const [measuredPortrait, setMeasuredPortrait] = useState(false)
   const imgRef = useRef<HTMLImageElement>(null)
@@ -65,9 +68,15 @@ export function AdaptiveProductImage({
 
   const handleError = (event: SyntheticEvent<HTMLImageElement>) => {
     const img = event.currentTarget
-    if (img.dataset.extFallbackTried === '1') return
+    if (img.dataset.extFallbackTried === '1') {
+      onFinalError?.()
+      return
+    }
     const swapped = swapImageExtension(img.src)
-    if (!swapped) return
+    if (!swapped) {
+      onFinalError?.()
+      return
+    }
     img.dataset.extFallbackTried = '1'
     img.src = swapped
   }

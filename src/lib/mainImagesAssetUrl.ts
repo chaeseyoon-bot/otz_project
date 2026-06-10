@@ -13,12 +13,20 @@ function mainImagesStorageBase(): string {
   return '/assets/figma/main_images'
 }
 
+const LOCAL_MAIN_IMAGES_BASE = '/assets/figma/main_images'
+
+function encodeStorageObjectPath(objectPath: string): string {
+  return objectPath.split('/').map(encodeURIComponent).join('/')
+}
+
 /** Home main static assets — Supabase Storage `main_images` bucket, local fallback under `public/assets/figma/main_images/`. */
 export function mainImageAsset(filename: string): string {
   const name = filename.replace(/^\//, '').replace(/^main_images\//, '')
+  const localPath = `${LOCAL_MAIN_IMAGES_BASE}/${name}`
+
   const base = mainImagesStorageBase()
   if (base.startsWith('http')) {
-    return `${base}/${encodeURIComponent(name)}`
+    return `${base}/${encodeStorageObjectPath(name)}`
   }
-  return `${base}/${name}`
+  return localPath
 }

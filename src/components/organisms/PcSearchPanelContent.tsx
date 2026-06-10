@@ -1,23 +1,21 @@
 import { useCallback, useEffect, useMemo, useRef, useState, type RefObject } from 'react'
 import { useHorizontalMouseDragScroll } from '../../hooks/useHorizontalMouseDragScroll'
 import { SearchHighlightText } from '../molecules/SearchHighlightText'
-import {
-  AUTOCOMPLETE_SUGGESTIONS,
-  DEMO_RECENTLY_VIEWED_PRODUCTS,
-  PC_POPULAR_SEARCHES,
-  PC_SEASON_KEYWORDS,
-  type SearchProductThumb,
-} from '../../data/searchContent'
+import { PC_POPULAR_SEARCHES, PC_SEASON_KEYWORDS, type SearchProductThumb } from '../../data/searchContent'
 import { figmaAsset } from '../../lib/figmaAssetUrl'
+import { useSearchAutocomplete, useSearchCatalog } from '../../hooks/useSearchCatalog'
 import {
   addRecentSearch,
   clearRecentSearches,
   readRecentSearches,
   removeRecentSearch,
 } from '../../lib/recentSearchStorage'
-import { readRecentlyViewedProducts, seedRecentlyViewedIfEmpty } from '../../lib/recentlyViewedStorage'
+import { mappedProductsToThumbs } from '../../lib/searchResultsCatalog'
+import { readRecentlyViewedProducts } from '../../lib/recentlyViewedStorage'
+import { getProductDetailPath } from '../../lib/productRoutes'
 import { buildSearchResultsPath } from '../../lib/searchRoutes'
 import { navigateSpa, type SpaPath } from '../../lib/spaNavigation'
+import { useSpaPathname } from '../../hooks/useSpaPathname'
 
 const iconSearch = figmaAsset('icons/gnb_search.svg')
 const iconSearchClose = figmaAsset('icons/search_close.svg')
@@ -36,7 +34,12 @@ function chunkProducts<T>(items: readonly T[], pageSize: number): T[][] {
 
 function PcSearchProductThumb({ product }: { product: SearchProductThumb }) {
   return (
-    <div className="aspect-[170/212] w-[calc((100%-1.5rem)/4)] shrink-0 overflow-hidden bg-light">
+    <button
+      type="button"
+      className="aspect-[170/212] w-[calc((100%-1.5rem)/4)] shrink-0 overflow-hidden border-0 bg-light p-0"
+      aria-label={product.title}
+      onClick={() => navigateSpa(getProductDetailPath(product.id))}
+    >
       <div className="flex h-full w-full items-center justify-center bg-light">
         <div className="aspect-square w-full max-h-full">
           <img
@@ -47,7 +50,7 @@ function PcSearchProductThumb({ product }: { product: SearchProductThumb }) {
           />
         </div>
       </div>
-    </div>
+    </button>
   )
 }
 
@@ -151,33 +154,19 @@ export interface PcSearchPanelContentProps {
 
 /** Figma 2685:20208 — PC GNB search dropdown (conditional sections). */
 export function PcSearchPanelContent({ query, onQueryChange, inputRef, onSearchCommit }: PcSearchPanelContentProps) {
+  const pathname = useSpaPathname()
   const [recentSearches, setRecentSearches] = useState<string[]>(() => readRecentSearches())
   const [recentlyViewed, setRecentlyViewed] = useState<SearchProductThumb[]>(() => readRecentlyViewedProducts())
+  const { rows } = useSearchCatalog()
 
   useEffect(() => {
-    const demo = [...DEMO_RECENTLY_VIEWED_PRODUCTS]
-    const stored = seedRecentlyViewedIfEmpty(demo)
-    if (stored.length >= PC_RECENTLY_VIEWED_LIMIT) {
-      setRecentlyViewed(stored.slice(0, PC_RECENTLY_VIEWED_LIMIT))
-      return
-    }
-
-    const merged = [...stored]
-    for (const item of demo) {
-      if (merged.length >= PC_RECENTLY_VIEWED_LIMIT) break
-      if (!merged.some((product) => product.id === item.id)) merged.push(item)
-    }
-    setRecentlyViewed(merged.slice(0, PC_RECENTLY_VIEWED_LIMIT))
-  }, [])
+    setRecentlyViewed(readRecentlyViewedProducts().slice(0, PC_RECENTLY_VIEWED_LIMIT))
+  }, [pathname])
 
   const trimmedQuery = query.trim()
   const isTyping = trimmedQuery.length > 0
 
-  const autocompleteItems = useMemo(() => {
-    if (!isTyping) return []
-    const lower = trimmedQuery.toLowerCase()
-    return AUTOCOMPLETE_SUGGESTIONS.filter((item) => item.toLowerCase().includes(lower))
-  }, [isTyping, trimmedQuery])
+  const autocompleteItems = useSearchAutocomplete(trimmedQuery, rows)
 
   const commitSearch = useCallback(
     (term: string) => {
@@ -232,17 +221,21 @@ export function PcSearchPanelContent({ query, onQueryChange, inputRef, onSearchC
 
         {isTyping ? (
           <ul className="m-0 list-none">
-            {autocompleteItems.map((item) => (
-              <li key={item} className="border-b border-lightGray last:border-b-0">
-                <button
-                  type="button"
-                  className="flex w-full border-0 bg-transparent py-3 text-left text-bodyRegular2 text-dark"
-                  onClick={() => commitSearch(item)}
-                >
-                  <SearchHighlightText text={item} query={trimmedQuery} />
-                </button>
-              </li>
-            ))}
+            {autocompleteItems.length > 0 ? (
+              autocompleteItems.map((item) => (
+                <li key={item} className="border-b border-lightGray last:border-b-0">
+                  <button
+                    type="button"
+                    className="flex w-full border-0 bg-transparent py-3 text-left text-bodyRegular2 text-dark"
+                    onClick={() => commitSearch(item)}
+                  >
+                    <SearchHighlightText text={item} query={trimmedQuery} />
+                  </button>
+                </li>
+              ))
+            ) : (
+              <li className="py-3 text-bodySmall text-subtleText">일치하는 검색어가 없습니다.</li>
+            )}
           </ul>
         ) : (
           <div className={`flex items-start ${hasLeftColumn ? 'gap-12' : 'justify-center'}`}>

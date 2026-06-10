@@ -1,10 +1,8 @@
-import {
-  CATEGORY_MOBILE_MAIN_ITEMS,
-  type CategoryMobileMainId,
-} from '../../data/categoryMobileMain'
+import { CATEGORY_MOBILE_MAIN_ITEMS, type CategoryMobileMainId } from '../../data/categoryMobileMain'
+import type { CategoryPlpMainId } from '../../lib/categoryRoutes'
 
 interface CategoryMobileMainDropdownProps {
-  activeMainId: CategoryMobileMainId
+  activeMainId: CategoryPlpMainId
   onSelect: (mainId: CategoryMobileMainId) => void
 }
 

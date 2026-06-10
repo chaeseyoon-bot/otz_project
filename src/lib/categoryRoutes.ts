@@ -1,5 +1,6 @@
 import { GNB_MEGA_MENU_GROUPS } from '../data/gnbMegaMenu'
 import {
+  getCategoryMobileMainLabel,
   getLnbSubItems,
   type CategoryMobileMainId,
 } from '../data/categoryMobileMain'
@@ -7,10 +8,18 @@ import { notifySpaNavigation } from './spaNavigation'
 
 export const CATEGORY_PLP_PATH = '/category/shoes'
 
-const VALID_MAIN_IDS = new Set<CategoryMobileMainId>(['shoes', 'bag-acc', 'collection'])
+/** PC LNB `ALL` plus mobile main tabs (shoes / bag-acc / collection). */
+export type CategoryPlpMainId = CategoryMobileMainId | 'all'
 
-function isCategoryMainId(value: string): value is CategoryMobileMainId {
-  return VALID_MAIN_IDS.has(value as CategoryMobileMainId)
+const VALID_MOBILE_MAIN_IDS = new Set<CategoryMobileMainId>(['shoes', 'bag-acc', 'collection'])
+
+function isCategoryMobileMainId(value: string): value is CategoryMobileMainId {
+  return VALID_MOBILE_MAIN_IDS.has(value as CategoryMobileMainId)
+}
+
+export function getCategoryPlpMainLabel(mainId: CategoryPlpMainId): string {
+  if (mainId === 'all') return 'ALL'
+  return getCategoryMobileMainLabel(mainId)
 }
 
 export function mainIdFromGnbGroupTitle(title: string): CategoryMobileMainId {
@@ -26,25 +35,30 @@ export function mainIdFromGnbTabIndex(tabIndex: number): CategoryMobileMainId {
 
 /** Builds `/category/shoes?main=…&sub=…` for PLP deep links from GNB / LNB. */
 export function buildCategoryPlpPath(
-  mainId: CategoryMobileMainId = 'shoes',
+  mainId: CategoryPlpMainId = 'shoes',
   subLabel?: string | null,
 ): string {
   const params = new URLSearchParams()
-  if (mainId !== 'shoes') params.set('main', mainId)
-  if (subLabel) params.set('sub', subLabel)
+  if (mainId === 'all') params.set('main', 'all')
+  else if (mainId !== 'shoes') params.set('main', mainId)
+  if (subLabel && mainId !== 'all') params.set('sub', subLabel)
   const query = params.toString()
   return query ? `${CATEGORY_PLP_PATH}?${query}` : CATEGORY_PLP_PATH
 }
 
 export function parseCategoryPlpSearch(search: string): {
-  mainId: CategoryMobileMainId
+  mainId: CategoryPlpMainId
   subIndex: number
 } {
   const params = new URLSearchParams(search.startsWith('?') ? search.slice(1) : search)
   const mainRaw = params.get('main') ?? 'shoes'
-  const mainId: CategoryMobileMainId = isCategoryMainId(mainRaw) ? mainRaw : 'shoes'
-  const subLabel = params.get('sub')?.trim()
+  let mainId: CategoryPlpMainId = 'shoes'
+  if (mainRaw === 'all') mainId = 'all'
+  else if (isCategoryMobileMainId(mainRaw)) mainId = mainRaw
 
+  if (mainId === 'all') return { mainId, subIndex: 0 }
+
+  const subLabel = params.get('sub')?.trim()
   if (!subLabel) return { mainId, subIndex: 0 }
 
   const subIndex = getLnbSubItems(mainId).indexOf(subLabel)
@@ -52,10 +66,10 @@ export function parseCategoryPlpSearch(search: string): {
 }
 
 export function subLabelFromPlpState(
-  mainId: CategoryMobileMainId,
+  mainId: CategoryPlpMainId,
   subIndex: number,
 ): string | null {
-  if (subIndex <= 0) return null
+  if (mainId === 'all' || subIndex <= 0) return null
   return getLnbSubItems(mainId)[subIndex - 1] ?? null
 }
 
@@ -69,7 +83,7 @@ export function resolveGnbDrawerNavigation(
 }
 
 export function navigateCategoryPlp(
-  mainId: CategoryMobileMainId,
+  mainId: CategoryPlpMainId,
   subLabel?: string | null,
   options?: { replace?: boolean },
 ): void {

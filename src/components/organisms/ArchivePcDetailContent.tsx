@@ -1,8 +1,8 @@
 import type { ArchiveLookbookDetail } from '../../data/archiveLookbookDetails'
-import { figmaAsset } from '../../lib/figmaAssetUrl'
+import { ICONS } from '../../constants/icons'
 import { navigateSpa } from '../../lib/spaNavigation'
 
-const iconPlus = figmaAsset('icon_plus.svg')
+const iconPlus = ICONS.common.plus
 
 export interface ArchivePcDetailContentProps {
   detail: ArchiveLookbookDetail

@@ -68,9 +68,8 @@ const { error: uploadError } = await supabase.storage.from('products').upload(ob
 })
 log('storage_upload_products_final', { ok: !uploadError, error: uploadError?.message ?? null, objectPath, imageUrl })
 
-const { data: existing } = await supabase.from('products').select('id').eq('id', testId).maybeSingle()
-if (existing) {
-  await supabase.from('products').delete().eq('id', testId)
+for (const probeId of [testId, testId - 1, testId - 2]) {
+  await supabase.from('products').delete().eq('id', probeId)
 }
 
 const payload = {
@@ -90,10 +89,6 @@ const payload = {
 const { error: insertError } = await supabase.from('products').insert(payload)
 log('insert_with_image_url', { ok: !insertError, error: insertError?.message ?? null, code: insertError?.code ?? null })
 
-if (!insertError) {
-  await supabase.from('products').delete().eq('id', testId)
-}
-
 const { error: insertNoImage } = await supabase.from('products').insert({
   ...payload,
   id: testId - 1,
@@ -108,8 +103,9 @@ const { error: insertEmptyImage } = await supabase.from('products').insert({
 })
 log('insert_empty_image_url', { ok: !insertEmptyImage, error: insertEmptyImage?.message ?? null, code: insertEmptyImage?.code ?? null })
 
-if (!insertNoImage) await supabase.from('products').delete().eq('id', testId - 1)
-if (!insertEmptyImage) await supabase.from('products').delete().eq('id', testId - 2)
+for (const probeId of [testId, testId - 1, testId - 2]) {
+  await supabase.from('products').delete().eq('id', probeId)
+}
 
 fs.writeFileSync(OUT, JSON.stringify(report, null, 2), 'utf8')
 process.stdout.write(`wrote ${OUT}\n`)

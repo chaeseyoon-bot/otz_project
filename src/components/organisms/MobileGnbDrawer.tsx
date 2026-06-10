@@ -4,6 +4,7 @@ import { GNB_MEGA_MENU_GROUPS } from '../../data/gnbMegaMenu'
 import { getMobileGnbDrawerItems } from '../../data/categoryMobileMain'
 import { mainImageAsset } from '../../lib/mainImagesAssetUrl'
 import { buildCategoryPlpPath, navigateCategoryPlp, resolveGnbDrawerNavigation } from '../../lib/categoryRoutes'
+import { navigateSpa } from '../../lib/spaNavigation'
 
 const imgMoHamburgerBrand = mainImageAsset('mo_hamburger_brandstory.png')
 const imgMembership = mainImageAsset('mo_hamburger_membership.png')
@@ -134,7 +135,7 @@ function DrawerBody({ activeTab, onNavigate }: { activeTab: number; onNavigate: 
           </p>
           <MoreTiles />
           <div className="mt-7 overflow-hidden rounded-[10px] border border-[#ECECEC] bg-white">
-            <EditorialLinks />
+            <EditorialLinks onNavigate={onNavigate} />
           </div>
         </div>
       </div>
@@ -171,21 +172,24 @@ function MoreTiles() {
   )
 }
 
-function EditorialLinks() {
+const editorialLinkClassName =
+  'flex h-14 w-full items-center justify-center border-0 bg-[var(--otz-color-surface-subtle)] p-0 text-[14px] font-normal uppercase leading-[1.4] tracking-[-0.02em] text-[rgba(102,102,102,1)]'
+
+function EditorialLinks({ onNavigate }: { onNavigate: () => void }) {
+  const goTo = (path: '/editorial' | '/archive') => {
+    onNavigate()
+    navigateSpa(path)
+    window.scrollTo(0, 0)
+  }
+
   return (
     <div className="grid grid-cols-2 divide-x divide-[#ECECEC] rounded-tl-[10px] rounded-tr-[10px] rounded-br-[10px]">
-      <a
-        href="#"
-        className="flex h-14 items-center justify-center bg-[var(--otz-color-surface-subtle)] text-[14px] font-normal uppercase leading-[1.4] tracking-[-0.02em] text-[rgba(102,102,102,1)] visited:text-[rgba(102,102,102,1)]"
-      >
+      <button type="button" className={editorialLinkClassName} onClick={() => goTo('/editorial')}>
         Editorial
-      </a>
-      <a
-        href="#"
-        className="flex h-14 items-center justify-center bg-[var(--otz-color-surface-subtle)] text-[14px] font-normal uppercase leading-[1.4] tracking-[-0.02em] text-[rgba(102,102,102,1)] visited:text-[rgba(102,102,102,1)]"
-      >
+      </button>
+      <button type="button" className={editorialLinkClassName} onClick={() => goTo('/archive')}>
         Archive
-      </a>
+      </button>
     </div>
   )
 }

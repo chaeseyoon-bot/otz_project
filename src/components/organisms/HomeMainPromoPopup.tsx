@@ -1,12 +1,11 @@
 import type { CSSProperties } from 'react'
-import { useCallback, useEffect, useState } from 'react'
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { createPortal } from 'react-dom'
 import { useMobileGnb } from '../../contexts/MobileGnbContext'
+import { useAdminHomeMainConfig } from '../../hooks/useAdminHomeMainConfig'
 import { useLockBodyScroll } from '../../hooks/useLockBodyScroll'
 import { tokens } from '../../design-system/tokens'
-import { mainImageAsset } from '../../lib/mainImagesAssetUrl'
-
-const BANNER_IMAGE = mainImageAsset('homemain_pop_banner01.jpg')
+import { resolveMarketingPopupSlides } from '../../lib/homeMainContentResolver'
 
 const STORAGE_HIDE_TODAY = 'otz_home_promo_hide_day'
 const STORAGE_SESSION_CLOSED = 'otz_home_promo_session_closed'
@@ -20,10 +19,6 @@ const FOOTER_HEIGHT = 52
 /** Desktop floating card (Figma 2994:32908) — no dim; elevation on full card. */
 const PC_PROMO_INSET = 24
 const PC_PROMO_CARD_SHADOW = '0 8px 40px rgba(0, 0, 0, 0.14)'
-
-/** Single banner for now; bump total when adding slides. */
-const PROMO_BANNER_INDEX = 1
-const PROMO_BANNER_TOTAL = 1
 
 function localYmd(d: Date): string {
   const y = d.getFullYear()
@@ -42,12 +37,26 @@ function readShouldShow(): boolean {
 
 export function HomeMainPromoPopup() {
   const { mobileScale } = useMobileGnb()
+  const { marketingPopupSlides, updatedAt } = useAdminHomeMainConfig()
+  const slides = useMemo(
+    () => resolveMarketingPopupSlides(marketingPopupSlides),
+    [marketingPopupSlides, updatedAt],
+  )
+  const slideCount = slides.length
   const [show, setShow] = useState(false)
   const [isDesktop, setIsDesktop] = useState(false)
   const [shellWidth, setShellWidth] = useState(MOBILE_SHELL_LAYOUT_WIDTH)
   const [shellLeft, setShellLeft] = useState(0)
+  const [activeSlideIndex, setActiveSlideIndex] = useState(0)
+  const bannerScrollerRef = useRef<HTMLDivElement>(null)
 
   useLockBodyScroll(show && !isDesktop)
+
+  useEffect(() => {
+    setActiveSlideIndex(0)
+    const el = bannerScrollerRef.current
+    if (el) el.scrollLeft = 0
+  }, [updatedAt, slideCount])
 
   useEffect(() => {
     const desktopQuery = window.matchMedia('(min-width: 1024px)')
@@ -99,6 +108,15 @@ export function HomeMainPromoPopup() {
     }
   }, [show, isDesktop, measureMobileShell])
 
+  const syncSlideFromScroll = useCallback(() => {
+    const el = bannerScrollerRef.current
+    if (!el || slideCount <= 1) return
+    const width = el.clientWidth
+    if (width <= 0) return
+    const next = Math.min(Math.max(Math.round(el.scrollLeft / width), 0), slideCount - 1)
+    setActiveSlideIndex(next)
+  }, [slideCount])
+
   const closeForSession = useCallback(() => {
     sessionStorage.setItem(STORAGE_SESSION_CLOSED, '1')
     setShow(false)
@@ -111,37 +129,58 @@ export function HomeMainPromoPopup() {
 
   if (!show) return null
 
+  const popupTitleId = 'home-promo-popup-title'
+
   const bannerStyle: CSSProperties = isDesktop
     ? { ...styles.banner, ...styles.bannerAsDesktopCardSlice }
     : styles.banner
 
   const footerStyle: CSSProperties = isDesktop ? styles.footerDesktop : styles.footer
 
+  const bannerTrackStyle: CSSProperties =
+    slideCount > 1
+      ? {
+          ...styles.bannerTrack,
+          overflowX: 'auto',
+          scrollSnapType: 'x mandatory',
+          WebkitOverflowScrolling: 'touch',
+          scrollbarWidth: 'none',
+          msOverflowStyle: 'none',
+        }
+      : styles.bannerTrack
+
   const inner = (
     <>
       <div style={bannerStyle}>
-        <img
-          src={BANNER_IMAGE}
-          alt=""
-          aria-hidden
-          style={styles.bannerImg}
-          decoding="async"
-        />
-        <div style={styles.bannerText} data-node-id="2786:7841">
-          <h2 id="home-promo-popup-title" style={styles.bannerTitle}>
-            코코아모브 에디션
-          </h2>
-          <div style={styles.bannerBody}>
-            <p style={styles.bannerBodyLine}>로마리 스웨이드 시즌 한정 </p>
-            <p style={styles.bannerBodyLine}>코코아모브 컬러 특별 에디션 소장하세요</p>
-          </div>
+        <div ref={bannerScrollerRef} style={bannerTrackStyle} onScroll={syncSlideFromScroll}>
+          {slides.map((slide) => (
+            <div key={slide.id} style={styles.bannerSlide}>
+              <img
+                src={slide.imageUrl}
+                alt=""
+                aria-hidden
+                style={styles.bannerImg}
+                decoding="async"
+              />
+              <div style={styles.bannerText}>
+                <h2 id={popupTitleId} style={styles.bannerTitle}>
+                  {slide.title}
+                </h2>
+                {slide.subtitle ? (
+                  <p style={styles.bannerBodyLine}>{slide.subtitle}</p>
+                ) : null}
+              </div>
+            </div>
+          ))}
         </div>
-        <div style={styles.counterRow} aria-hidden>
-          <div style={styles.counterPill}>
-            <span style={styles.counterCurrent}>{PROMO_BANNER_INDEX} </span>
-            <span style={styles.counterTotal}>/ {PROMO_BANNER_TOTAL}</span>
+        {slideCount >= 2 ? (
+          <div style={styles.counterRow} aria-hidden>
+            <div style={styles.counterPill}>
+              <span style={styles.counterCurrent}>{activeSlideIndex + 1} </span>
+              <span style={styles.counterTotal}>/ {slideCount}</span>
+            </div>
           </div>
-        </div>
+        ) : null}
       </div>
       <footer style={footerStyle}>
         <button type="button" style={styles.btnMuted} onClick={hideUntilTomorrow}>
@@ -160,7 +199,7 @@ export function HomeMainPromoPopup() {
         <div
           role="dialog"
           aria-modal={false}
-          aria-labelledby="home-promo-popup-title"
+          aria-labelledby={popupTitleId}
           style={styles.pcCard}
         >
           <div style={styles.sheetDesktopInner}>{inner}</div>
@@ -180,7 +219,7 @@ export function HomeMainPromoPopup() {
     <div
       role="dialog"
       aria-modal="true"
-      aria-labelledby="home-promo-popup-title"
+      aria-labelledby={popupTitleId}
       style={styles.backdrop}
     >
       <div style={mobileSheetWrapStyle}>
@@ -241,6 +280,18 @@ const styles: Record<string, CSSProperties> = {
     overflow: 'hidden',
     backgroundColor: tokens.color.black,
   },
+  bannerTrack: {
+    display: 'flex',
+    height: '100%',
+    width: '100%',
+  },
+  bannerSlide: {
+    position: 'relative',
+    flex: '0 0 100%',
+    height: '100%',
+    scrollSnapAlign: 'start',
+    backgroundColor: tokens.color.black,
+  },
   /** Banner sits inside rounded PC card; radii come from outer shell. */
   bannerAsDesktopCardSlice: {
     borderTopLeftRadius: 0,
@@ -296,19 +347,16 @@ const styles: Record<string, CSSProperties> = {
     fontWeight: 800,
     lineHeight: 1.2,
     letterSpacing: tokens.typography.headingH3.letterSpacing,
-  },
-  bannerBody: {
-    display: 'flex',
-    flexDirection: 'column',
-    alignItems: 'flex-start',
-    maxWidth: 200,
+    whiteSpace: 'pre-line',
   },
   bannerBodyLine: {
     margin: 0,
+    maxWidth: 200,
     fontSize: tokens.typography.bodySmall.fontSize,
     fontWeight: 400,
     lineHeight: tokens.typography.bodySmall.lineHeight,
     letterSpacing: tokens.typography.bodySmall.letterSpacing,
+    whiteSpace: 'pre-line',
   },
   bannerImg: {
     width: '100%',

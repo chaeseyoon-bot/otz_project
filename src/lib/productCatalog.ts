@@ -1,7 +1,9 @@
 import type { ProductCardItem } from '../components/molecules/ProductCardUnit'
-import { SEARCH_RESULTS_CATALOG } from './searchResultsCatalog'
+import { buildShoesCategoryProducts } from '../data/categoryShoesProducts'
 
-/** Resolve PLP / search catalog item by id (e.g. `shoes-3`). */
+const DEMO_PDP_CATALOG = buildShoesCategoryProducts()
+
+/** Resolve legacy demo PDP cards by id (e.g. `shoes-3`). Real ids use `useProductDetail`. */
 export function getProductById(productId: string): ProductCardItem | undefined {
-  return SEARCH_RESULTS_CATALOG.find((product) => product.id === productId)
+  return DEMO_PDP_CATALOG.find((product) => product.id === productId)
 }

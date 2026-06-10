@@ -9,10 +9,18 @@ export interface CategoryPcFilters {
   productInfo: Set<FilterProductInfoId>
 }
 
+import { resolveProductColorFilterKey } from './productColor'
+
 export interface CategoryFilterableProduct {
   id: string
+  /** Product display name — used to infer color when DB color fields are missing. */
+  productName?: string | null
   filterSizes: readonly FilterPcShoeSize[]
+  /** @deprecated Legacy preset ids — prefer productColorHex. */
   filterColors: readonly string[]
+  productColorHex?: string | null
+  productColorName?: string | null
+  productColorSwatchUrl?: string | null
   freeShipping: boolean
   soldOut: boolean
 }
@@ -50,8 +58,8 @@ export function filterCategoryProducts<T extends CategoryFilterableProduct>(
     }
 
     if (filters.colors.size > 0) {
-      const matchesColor = product.filterColors.some((color) => filters.colors.has(color))
-      if (!matchesColor) return false
+      const productHex = resolveProductColorFilterKey(product)
+      if (!productHex || !filters.colors.has(productHex)) return false
     }
 
     if (filters.productInfo.has('excludeSoldOut') && product.soldOut) {

@@ -4,11 +4,7 @@ import { CategoryMobileHeader } from '../components/organisms/CategoryMobileHead
 import { CategoryMobileMainDropdown } from '../components/organisms/CategoryMobileMainDropdown'
 import { CategoryLnb, CategoryLnbMobileSubChips } from '../components/organisms/CategoryLnb'
 import { CategoryPcFilterBar } from '../components/organisms/CategoryPcFilterBar'
-import {
-  getCategoryMobileMainLabel,
-  getLnbSubItems,
-  type CategoryMobileMainId,
-} from '../data/categoryMobileMain'
+import { getLnbSubItems } from '../data/categoryMobileMain'
 import { ProductCardUnit } from '../components/molecules/ProductCardUnit'
 import type { CategoryShoeProduct } from '../data/categoryShoesProducts'
 import {
@@ -18,7 +14,12 @@ import {
 } from '../lib/categoryProductFilter'
 import { useCategoryPlpRoute } from '../hooks/useCategoryPlpRoute'
 import { useProducts, type UiProduct } from '../hooks/useProducts'
-import { navigateCategoryPlp, subLabelFromPlpState } from '../lib/categoryRoutes'
+import {
+  getCategoryPlpMainLabel,
+  navigateCategoryPlp,
+  subLabelFromPlpState,
+  type CategoryPlpMainId,
+} from '../lib/categoryRoutes'
 import {
   matchesCollectionProduct,
   matchesSubcategoryProduct,
@@ -37,15 +38,20 @@ function toFilterableProduct(item: UiProduct): CategoryShoeProduct {
   const soldOut = Boolean(item.badges?.some((badge) => badge.id === 'sold-out'))
   return {
     ...item,
+    productName: item.title,
     filterSizes: [],
-    filterColors: [],
-    freeShipping: true,
+    filterColors: item.filterColors ?? [],
+    productColorHex: item.colorHex ?? null,
+    productColorName: item.colorName ?? null,
+    productColorSwatchUrl: item.colorSwatchUrl ?? null,
+    freeShipping: item.freeShipping ?? true,
     soldOut,
   }
 }
 
 /** Narrows the full catalog to the active main category. */
-function matchesMainCategory(item: UiProduct, mainId: CategoryMobileMainId): boolean {
+function matchesMainCategory(item: UiProduct, mainId: CategoryPlpMainId): boolean {
+  if (mainId === 'all') return true
   if (mainId === 'shoes') return item.category === 'shoes'
   if (mainId === 'bag-acc') return item.category === 'bagacc'
   return true // collection spans every category; filtered by name keyword instead
@@ -127,7 +133,7 @@ export function CategoryShoesPage() {
   const { products: rawProducts, isLoading, error } = useProducts()
   const [appliedPcFilters, setAppliedPcFilters] = useState(() => clonePcFilters(EMPTY_PC_FILTERS))
   const [likedIds, setLikedIds] = useState<Set<string>>(new Set())
-  const [activeMainId, setActiveMainId] = useState<CategoryMobileMainId>(route.mainId)
+  const [activeMainId, setActiveMainId] = useState<CategoryPlpMainId>(route.mainId)
   const [activeSubIndex, setActiveSubIndex] = useState(route.subIndex)
   const [mainMenuOpen, setMainMenuOpen] = useState(false)
   const [filterOpen, setFilterOpen] = useState(false)
@@ -190,7 +196,7 @@ export function CategoryShoesPage() {
     return () => document.removeEventListener('keydown', onKeyDown)
   }, [mainMenuOpen])
 
-  const handleSelectMainCategory = (mainId: CategoryMobileMainId) => {
+  const handleSelectMainCategory = (mainId: CategoryPlpMainId) => {
     setActiveMainId(mainId)
     setActiveSubIndex(0)
     setMainMenuOpen(false)
@@ -213,7 +219,7 @@ export function CategoryShoesPage() {
 
   // 2) Apply the sub-category tab (SHOES / BAG＆ACC subcategories, COLLECTION lines).
   const subProducts = useMemo(() => {
-    if (activeSubIndex <= 0) return mainProducts
+    if (activeMainId === 'all' || activeSubIndex <= 0) return mainProducts
     const keyword = getLnbSubItems(activeMainId)[activeSubIndex - 1]
     if (!keyword) return mainProducts
 
@@ -240,7 +246,7 @@ export function CategoryShoesPage() {
       <div className="relative lg:hidden">
         <div className="relative z-50 bg-white">
           <CategoryMobileHeader
-            title={getCategoryMobileMainLabel(activeMainId)}
+            title={getCategoryPlpMainLabel(activeMainId)}
             menuOpen={mainMenuOpen}
             onTitleToggle={() => {
               setMainMenuOpen((open) => !open)
@@ -263,11 +269,13 @@ export function CategoryShoesPage() {
         <div ref={sentinelRef} className="pointer-events-none h-px w-full shrink-0" aria-hidden />
         {pinned ? <div aria-hidden className="shrink-0" style={{ height: barHeight }} /> : null}
         <div ref={barRef} className="bg-white" style={mobileStickyBarStyle}>
-          <CategoryLnbMobileSubChips
-            activeMainId={activeMainId}
-            activeSubIndex={activeSubIndex}
-            onSubChange={handleSubChange}
-          />
+          {activeMainId !== 'all' ? (
+            <CategoryLnbMobileSubChips
+              activeMainId={activeMainId}
+              activeSubIndex={activeSubIndex}
+              onSubChange={handleSubChange}
+            />
+          ) : null}
           <div className="relative z-40 flex h-11 items-center justify-between border-b border-light2 bg-white px-4">
             <button
               type="button"
@@ -299,7 +307,14 @@ export function CategoryShoesPage() {
         </div>
       </div>
 
-      <CategoryMobileFilterSheet open={filterOpen} resultCount={3706} onClose={() => setFilterOpen(false)} />
+      <CategoryMobileFilterSheet
+        open={filterOpen}
+        products={categoryProducts}
+        appliedFilters={appliedPcFilters}
+        onApply={setAppliedPcFilters}
+        resultCount={filteredProducts.length}
+        onClose={() => setFilterOpen(false)}
+      />
 
       <section className="px-[15px] pb-[50px] pt-0 lg:mx-auto lg:max-w-[1400px] lg:px-0 lg:pb-20 lg:pt-10">
         <div className="flex gap-[60px] lg:items-start">

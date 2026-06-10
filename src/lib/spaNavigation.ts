@@ -37,6 +37,12 @@ export function getSpaPathname(): string {
   return window.location.pathname || '/'
 }
 
+export function getSpaHref(): string {
+  const pathname = getSpaPathname()
+  const search = window.location.search
+  return `${pathname}${search}`
+}
+
 function notifyPathnameListeners() {
   const pathname = getSpaPathname()
   pathnameListeners.forEach((listener) => listener(pathname))
@@ -82,7 +88,7 @@ export function isAlreadyOnSpaPath(path: SpaPath) {
 }
 
 export function navigateSpa(path: SpaPath) {
-  if (!isAlreadyOnSpaPath(path)) {
+  if (getSpaHref() !== path) {
     window.history.pushState({}, '', path)
   }
   notifySpaNavigation()

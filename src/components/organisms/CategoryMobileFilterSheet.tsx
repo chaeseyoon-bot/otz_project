@@ -1,15 +1,25 @@
-import { useEffect, useState, type CSSProperties } from 'react'
+import { useEffect, useMemo, useState } from 'react'
 import { createPortal } from 'react-dom'
+import { DynamicColorSwatch } from '../atoms/DynamicColorSwatch'
 import {
-  FILTER_COLOR_OPTIONS,
   FILTER_PRODUCT_INFO_OPTIONS,
   FILTER_SHOE_SIZES,
   type FilterProductInfoId,
   type FilterShoeSize,
 } from '../../data/categoryFilterOptions'
+import type { CategoryFilterableProduct, CategoryPcFilters } from '../../lib/categoryProductFilter'
+import {
+  clonePcFilters,
+  EMPTY_PC_FILTERS,
+  filterCategoryProducts,
+} from '../../lib/categoryProductFilter'
+import { buildDynamicColorFilterOptions } from '../../lib/productColor'
 
 interface CategoryMobileFilterSheetProps {
   open: boolean
+  products?: readonly CategoryFilterableProduct[]
+  appliedFilters?: CategoryPcFilters
+  onApply?: (filters: CategoryPcFilters) => void
   resultCount?: number
   onClose: () => void
 }
@@ -23,50 +33,27 @@ function CloseIcon() {
   )
 }
 
-function ColorSwatch({ option, selected }: { option: (typeof FILTER_COLOR_OPTIONS)[number]; selected: boolean }) {
-  let fillStyle: CSSProperties = { backgroundColor: option.fill }
-  if (option.variant === 'stripe') {
-    fillStyle = {
-      backgroundImage:
-        'repeating-linear-gradient(90deg, #1a1a1a 0, #1a1a1a 3px, #ffffff 3px, #ffffff 6px)',
-    }
-  } else if (option.variant === 'etc') {
-    fillStyle = {
-      backgroundColor: '#f0f0f0',
-      backgroundImage:
-        'repeating-linear-gradient(135deg, transparent, transparent 4px, #d8d8d8 4px, #d8d8d8 5px)',
-    }
-  }
-
-  const swatchStyle: CSSProperties = {
-    ...fillStyle,
-    boxSizing: 'border-box',
-    border: selected ? '4px solid #ffffff' : '1px solid rgba(0, 0, 0, 0.08)',
-    boxShadow: selected ? '0 0 0 1px #1a1a1a' : undefined,
-  }
-
-  return <div className="size-[30px] shrink-0 overflow-hidden rounded-full" style={swatchStyle} aria-hidden />
-}
-
 /** Mobile PLP — 상세필터 bottom sheet (dim + slide up, rounded-t-[16px]). */
 export function CategoryMobileFilterSheet({
   open,
-  resultCount = 3706,
+  products = [],
+  appliedFilters = EMPTY_PC_FILTERS,
+  onApply,
+  resultCount,
   onClose,
 }: CategoryMobileFilterSheetProps) {
   const [entered, setEntered] = useState(false)
-  const [selectedSizes, setSelectedSizes] = useState<Set<FilterShoeSize>>(() => new Set(['240', '245']))
-  const [selectedColors, setSelectedColors] = useState<Set<string>>(() => new Set(['beige']))
-  const [selectedProductInfo, setSelectedProductInfo] = useState<Set<FilterProductInfoId>>(() => new Set())
+  const [draftFilters, setDraftFilters] = useState<CategoryPcFilters>(() => clonePcFilters(appliedFilters))
 
   useEffect(() => {
     if (!open) {
       setEntered(false)
       return
     }
+    setDraftFilters(clonePcFilters(appliedFilters))
     const frame = requestAnimationFrame(() => setEntered(true))
     return () => cancelAnimationFrame(frame)
-  }, [open])
+  }, [open, appliedFilters])
 
   useEffect(() => {
     if (!open) return
@@ -77,42 +64,52 @@ export function CategoryMobileFilterSheet({
     return () => document.removeEventListener('keydown', onKeyDown)
   }, [open, onClose])
 
+  const dynamicColorOptions = useMemo(() => buildDynamicColorFilterOptions(products), [products])
+
+  const previewCount = useMemo(
+    () => filterCategoryProducts(products, draftFilters).length,
+    [products, draftFilters],
+  )
+
   const toggleSize = (size: FilterShoeSize) => {
-    setSelectedSizes((prev) => {
-      const next = new Set(prev)
-      if (next.has(size)) next.delete(size)
-      else next.add(size)
+    setDraftFilters((prev) => {
+      const next = clonePcFilters(prev)
+      if (next.sizes.has(size)) next.sizes.delete(size)
+      else next.sizes.add(size)
       return next
     })
   }
 
   const toggleColor = (id: string) => {
-    setSelectedColors((prev) => {
-      const next = new Set(prev)
-      if (next.has(id)) next.delete(id)
-      else next.add(id)
+    setDraftFilters((prev) => {
+      const next = clonePcFilters(prev)
+      if (next.colors.has(id)) next.colors.delete(id)
+      else next.colors.add(id)
       return next
     })
   }
 
   const toggleProductInfo = (id: FilterProductInfoId) => {
-    setSelectedProductInfo((prev) => {
-      const next = new Set(prev)
-      if (next.has(id)) next.delete(id)
-      else next.add(id)
+    setDraftFilters((prev) => {
+      const next = clonePcFilters(prev)
+      if (next.productInfo.has(id)) next.productInfo.delete(id)
+      else next.productInfo.add(id)
       return next
     })
   }
 
   const handleReset = () => {
-    setSelectedSizes(new Set())
-    setSelectedColors(new Set())
-    setSelectedProductInfo(new Set())
+    setDraftFilters(clonePcFilters(EMPTY_PC_FILTERS))
+  }
+
+  const handleApply = () => {
+    onApply?.(clonePcFilters(draftFilters))
+    onClose()
   }
 
   if (!open) return null
 
-  const formattedCount = resultCount.toLocaleString('ko-KR')
+  const formattedCount = (resultCount ?? previewCount).toLocaleString('ko-KR')
 
   return createPortal(
     <div
@@ -150,7 +147,7 @@ export function CategoryMobileFilterSheet({
             <h3 className="m-0 text-[14px] font-medium leading-[1.4] tracking-[-0.02em] text-dark">사이즈</h3>
             <div className="mt-4 grid grid-cols-5 gap-2.5 border-t border-solid border-light2 bg-whiteGray px-[15px] py-5">
               {FILTER_SHOE_SIZES.map((size) => {
-                const isSelected = selectedSizes.has(size)
+                const isSelected = draftFilters.sizes.has(size)
                 return (
                   <button
                     key={size}
@@ -171,23 +168,33 @@ export function CategoryMobileFilterSheet({
           <section className="p-[15px]">
             <h3 className="m-0 text-[14px] font-medium leading-[1.4] tracking-[-0.02em] text-dark">컬러</h3>
             <div className="mt-4 grid grid-cols-4 gap-x-[15px] gap-y-[15px] border-y border-light2 bg-[var(--otz-color-surface-subtle)] px-[15px] py-5">
-              {FILTER_COLOR_OPTIONS.map((option) => {
-                const isSelected = selectedColors.has(option.id)
-                return (
-                  <button
-                    key={option.id}
-                    type="button"
-                    className="flex flex-col items-center gap-1 border-0 bg-transparent p-0"
-                    aria-pressed={isSelected}
-                    onClick={() => toggleColor(option.id)}
-                  >
-                    <ColorSwatch option={option} selected={isSelected} />
-                    <span className="text-[11px] font-normal leading-[1.2] tracking-[-0.04em] text-dark">
-                      {option.label}
-                    </span>
-                  </button>
-                )
-              })}
+              {dynamicColorOptions.length > 0 ? (
+                dynamicColorOptions.map((option) => {
+                  const isSelected = draftFilters.colors.has(option.id)
+                  return (
+                    <button
+                      key={option.id}
+                      type="button"
+                      className="flex flex-col items-center gap-1 border-0 bg-transparent p-0"
+                      aria-pressed={isSelected}
+                      onClick={() => toggleColor(option.id)}
+                    >
+                      <DynamicColorSwatch
+                        hex={option.hex}
+                        swatchUrl={option.swatchUrl}
+                        selected={isSelected}
+                      />
+                      <span className="text-[11px] font-normal leading-[1.2] tracking-[-0.04em] text-dark">
+                        {option.label}
+                      </span>
+                    </button>
+                  )
+                })
+              ) : (
+                <p className="col-span-4 m-0 text-bodySmall text-subtleText">
+                  등록된 상품 색상이 없습니다.
+                </p>
+              )}
             </div>
           </section>
 
@@ -195,7 +202,7 @@ export function CategoryMobileFilterSheet({
             <h3 className="m-0 text-[14px] font-medium leading-[1.4] tracking-[-0.02em] text-dark">상품정보</h3>
             <div className="mt-4 grid grid-cols-2 gap-2.5 border-t border-b border-solid border-light2 bg-whiteGray px-[15px] py-5">
               {FILTER_PRODUCT_INFO_OPTIONS.map((option) => {
-                const isSelected = selectedProductInfo.has(option.id)
+                const isSelected = draftFilters.productInfo.has(option.id)
                 return (
                   <button
                     key={option.id}
@@ -225,7 +232,7 @@ export function CategoryMobileFilterSheet({
           <button
             type="button"
             className="h-12 min-w-0 flex-1 rounded-[8px] bg-dark px-4 text-[14px] font-medium leading-[1.2] tracking-[-0.02em] text-white"
-            onClick={onClose}
+            onClick={handleApply}
           >
             {formattedCount}개 상품 보기
           </button>

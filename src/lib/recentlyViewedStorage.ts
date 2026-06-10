@@ -31,3 +31,27 @@ export function seedRecentlyViewedIfEmpty(items: SearchProductThumb[]) {
   writeRecentlyViewedProducts(items)
   return items
 }
+
+export function productToRecentlyViewedThumb(product: {
+  id: string
+  title: string
+  image: string
+}): SearchProductThumb {
+  return {
+    id: product.id,
+    title: product.title,
+    image: product.image,
+  }
+}
+
+/** Prepends a PDP visit to local recently-viewed storage (deduped, max 12). */
+export function recordRecentlyViewedProduct(product: {
+  id: string
+  title: string
+  image: string
+}): void {
+  const thumb = productToRecentlyViewedThumb(product)
+  const current = readRecentlyViewedProducts()
+  const next = [thumb, ...current.filter((item) => item.id !== thumb.id)]
+  writeRecentlyViewedProducts(next)
+}

@@ -78,6 +78,32 @@ export const PRODUCT_PDP_CUTS = ['01', '02', '03', '04', '05', '06', '07', '08']
 /** Default extension to request first; the UI falls back to the other on error. */
 const PRIMARY_CUT_EXTENSION = 'png'
 
+/** Reads `?v=` from a stored `products.image_url` (set after admin image uploads). */
+export function imageUrlCacheVersion(imageUrl?: string | null): string | null {
+  if (!imageUrl?.trim()) return null
+  const trimmed = imageUrl.trim()
+  if (!trimmed.startsWith('http')) return null
+  try {
+    return new URL(trimmed).searchParams.get('v')
+  } catch {
+    const match = /[?&]v=([^&]+)/.exec(trimmed)
+    return match?.[1] ?? null
+  }
+}
+
+/** Appends or replaces `?v=` so browsers fetch a fresh object after Storage overwrite. */
+export function withProductImageCacheBust(url: string, version?: string | null): string {
+  if (!version || !url.startsWith('http')) return url
+  try {
+    const parsed = new URL(url)
+    parsed.searchParams.set('v', version)
+    return parsed.toString()
+  } catch {
+    const sep = url.includes('?') ? '&' : '?'
+    return `${url}${sep}v=${encodeURIComponent(version)}`
+  }
+}
+
 /**
  * Builds the public URL for a specific cut of a product. Files live in per-category
  * subfolders as `{folder}/detail_{id}_{cut}_big.{ext}` (e.g. `shoes01/detail_1001_03_big.png`).
@@ -87,6 +113,7 @@ export function productCutUrl(
   id: number | string,
   cut: string,
   ext: 'png' | 'webp' = PRIMARY_CUT_EXTENSION,
+  cacheVersion?: string | null,
 ): string {
   const base = storageBaseUrl()
   const fileName = `detail_${id}_${cut}_big.${ext}`
@@ -95,7 +122,10 @@ export function productCutUrl(
   const objectPath = `${encodeURIComponent(folder)}/${encodeURIComponent(fileName)}`
   const endpoint = USE_IMAGE_TRANSFORM ? 'render/image/public' : 'object/public'
   const suffix = USE_IMAGE_TRANSFORM ? '?format=webp&quality=80' : ''
-  return `${base}/storage/v1/${endpoint}/${PRODUCTS_BUCKET}/${objectPath}${suffix}`
+  return withProductImageCacheBust(
+    `${base}/storage/v1/${endpoint}/${PRODUCTS_BUCKET}/${objectPath}${suffix}`,
+    cacheVersion,
+  )
 }
 
 /**

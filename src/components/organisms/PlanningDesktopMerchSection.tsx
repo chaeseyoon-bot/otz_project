@@ -1,8 +1,8 @@
-import { useMemo, useState } from 'react'
+import { useEffect, useMemo, useState } from 'react'
 import { PLANNING_BANNER_DIM_OVERLAY } from '../molecules/PlanningBannerMobileSlide'
 import { useAdminHomeMainConfig } from '../../hooks/useAdminHomeMainConfig'
+import { usePlanningCollectionsContent } from '../../hooks/usePlanningCollectionsContent'
 import { resolvePlanningBanners } from '../../lib/homeMainContentResolver'
-import { mainImageAsset } from '../../lib/mainImagesAssetUrl'
 import { getProductHeartIconDataUri } from '../../lib/productHeartIcon'
 
 /** Link row chevron — 6×12px. */
@@ -54,112 +54,31 @@ function PagerChevron({ direction, className }: { direction: 'left' | 'right'; c
   )
 }
 
-interface PlanningDesktopProduct {
-  image: string
-  name: string
-  discount: string
-  price: string
-}
-
-interface PlanningDesktopCollection {
-  id: string
-  flagLabel: string
-  title: string
-  linkLabel: string
-  bannerImage: string
-  products: PlanningDesktopProduct[]
-}
-
-/** Figma 2601:23237 — right column cycles; LOFA card copy matches design. */
-const DESKTOP_COLLECTIONS: PlanningDesktopCollection[] = [
-  {
-    id: 'collection-1',
-    flagLabel: 'COLLECTION',
-    title: 'OTZ×UMU\nLove Winter Day',
-    linkLabel: '오찌x우무 바로가기',
-    bannerImage: mainImageAsset('coll_banner_01.png'),
-    products: [
-      {
-        image: mainImageAsset('coll_thumb_01.png'),
-        name: '[오찌x우무] 울 블렌드 머플러',
-        discount: '12%',
-        price: '42,900',
-      },
-      {
-        image: mainImageAsset('coll_thumb_02.png'),
-        name: '[오찌x우무] 케이블 비니',
-        discount: '10%',
-        price: '38,000',
-      },
-      {
-        image: mainImageAsset('coll_thumb_03.png'),
-        name: '[오찌x우무] 장갑 세트',
-        discount: '15%',
-        price: '29,900',
-      },
-      {
-        image: mainImageAsset('coll_thumb_04.png'),
-        name: '[오찌x우무] 양말 2PACK',
-        discount: '8%',
-        price: '19,900',
-      },
-    ],
-  },
-  {
-    id: 'collection-2',
-    flagLabel: 'LIMITED EDITION',
-    title: 'OTZ×LOFA Seoul',
-    linkLabel: '오찌x로파서울 바로가기',
-    bannerImage: mainImageAsset('coll_banner_02.png'),
-    products: [
-      {
-        image: mainImageAsset('coll_thumb_05.png'),
-        name: '[오찌x로파서울] 토피 스웨이드 클로그',
-        discount: '15%',
-        price: '67,990',
-      },
-      {
-        image: mainImageAsset('coll_thumb_06.png'),
-        name: '[오찌x로파서울] 스트라이프 머플러',
-        discount: '15%',
-        price: '35,900',
-      },
-      {
-        image: mainImageAsset('coll_thumb_07.png'),
-        name: '[오찌x로파서울] 투웨이 장갑 LOTFF4A09',
-        discount: '16%',
-        price: '25,900',
-      },
-      {
-        image: mainImageAsset('coll_thumb_08.png'),
-        name: '[오찌X로파서울] 노트북 가방 FLOTFA3B03',
-        discount: '20%',
-        price: '55,900',
-      },
-    ],
-  },
-]
-
-function buildInitialLikes(): Record<string, boolean[]> {
-  const initial: Record<string, boolean[]> = {}
-  for (const c of DESKTOP_COLLECTIONS) {
-    initial[c.id] = c.products.map(() => false)
-  }
-  return initial
-}
-
 /** Figma 2601:23237 — PC: planning banner + collection rail merged */
 export function PlanningDesktopMerchSection() {
   const { planningBanners, updatedAt } = useAdminHomeMainConfig()
+  const { collections } = usePlanningCollectionsContent()
   const planningSlides = useMemo(
     () => resolvePlanningBanners(planningBanners),
     [planningBanners, updatedAt],
   )
   const [planningActiveIndex, setPlanningActiveIndex] = useState(0)
   const [activeIndex, setActiveIndex] = useState(0)
-  const [likedByCollection, setLikedByCollection] = useState<Record<string, boolean[]>>(buildInitialLikes)
-  const total = DESKTOP_COLLECTIONS.length
-  const card = DESKTOP_COLLECTIONS[activeIndex]!
+  const [likedByCollection, setLikedByCollection] = useState<Record<string, boolean[]>>({})
+
+  useEffect(() => {
+    setLikedByCollection((prev) => {
+      const next: Record<string, boolean[]> = {}
+      for (const collection of collections) {
+        next[collection.id] = prev[collection.id] ?? collection.products.map(() => false)
+      }
+      return next
+    })
+    setActiveIndex((prev) => Math.min(prev, Math.max(0, collections.length - 1)))
+  }, [collections])
+
+  const total = collections.length
+  const card = collections[activeIndex]
   const isFirst = activeIndex <= 0
   const isLast = activeIndex >= total - 1
   const safePlanningIndex = Math.min(planningActiveIndex, Math.max(0, planningSlides.length - 1))
@@ -176,7 +95,9 @@ export function PlanningDesktopMerchSection() {
     }))
   }
 
-  if (!planningSlide) return null
+  if (!planningSlide || !card) return null
+
+  const collectionLikes = likedByCollection[card.id] ?? card.products.map(() => false)
 
   return (
     <section className="hidden lg:mx-auto lg:block lg:max-w-[1400px] lg:py-[64px]">
@@ -226,8 +147,8 @@ export function PlanningDesktopMerchSection() {
               <div className="relative aspect-[320/400] w-full overflow-hidden">
                 <img src={card.bannerImage} alt="" className="absolute inset-0 h-full w-full object-cover" />
                 <div className="absolute inset-0 bg-gradient-to-b from-transparent from-[47.5%] to-black/25 to-[83%]" aria-hidden />
-                <div className="absolute left-0 top-0 bg-black px-[10px] py-2">
-                  <span className="text-[10px] font-semibold leading-[1.1] text-white">{card.flagLabel}</span>
+                <div className="absolute left-0 top-0 h-fit w-fit bg-black px-[10px] py-2 leading-normal">
+                  <span className="h-fit w-fit text-[10px] font-semibold leading-[1.1] text-white">{card.tagLabel}</span>
                 </div>
               </div>
             </div>
@@ -237,7 +158,7 @@ export function PlanningDesktopMerchSection() {
                 <div className="flex flex-col gap-2.5">
                   <h3 className="m-0 whitespace-pre-line text-h3 text-black">{card.title}</h3>
                   <a
-                    href="#"
+                    href={card.linkHref || '#'}
                     className="inline-flex items-center gap-1.5 text-link2 leading-none text-textDefault underline decoration-solid underline-offset-2 hover:text-dark"
                   >
                     <span className="shrink-0">{card.linkLabel}</span>
@@ -248,13 +169,13 @@ export function PlanningDesktopMerchSection() {
                 </div>
               </div>
 
-              <div className="flex w-full shrink-0 items-start justify-start gap-1 pl-5">
+              <div className="grid w-full shrink-0 grid-cols-4 gap-1 pl-5">
                 {card.products.map((product, index) => {
-                  const liked = likedByCollection[card.id]![index]!
+                  const liked = collectionLikes[index] ?? false
                   return (
                     <article
-                      key={`${card.id}-${index}`}
-                      className="flex min-w-0 flex-1 flex-col self-stretch"
+                      key={`${card.id}-${product.productId ?? index}`}
+                      className="flex min-w-0 flex-col self-stretch"
                     >
                       {/* Same tile as ForYouSection (PC) — Figma 2601:22727 */}
                       <div className="relative w-full shrink-0 overflow-hidden">

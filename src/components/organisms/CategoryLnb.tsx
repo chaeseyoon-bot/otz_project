@@ -1,8 +1,10 @@
 import { useCenterHorizontalTabScroll } from '../../hooks/useCenterHorizontalTabScroll'
-import type { CategoryMobileMainId } from '../../data/categoryMobileMain'
-import { getLnbSubItems, getMobileSubChipLabels } from '../../data/categoryMobileMain'
-import { navigateSpa } from '../../lib/spaNavigation'
-
+import {
+  getLnbSubItems,
+  getMobileSubChipLabels,
+  type CategoryMobileMainId,
+} from '../../data/categoryMobileMain'
+import type { CategoryPlpMainId } from '../../lib/categoryRoutes'
 export const CATEGORY_LNB_MAIN_ITEMS = [
   { id: 'all', label: 'ALL', href: null },
   { id: 'shoes', label: 'SHOES', href: '/category/shoes' as const },
@@ -14,7 +16,7 @@ interface CategoryLnbProps {
   activeMainId: (typeof CATEGORY_LNB_MAIN_ITEMS)[number]['id']
   activeSubIndex: number
   onSubChange?: (index: number) => void
-  onMainSelect?: (id: CategoryMobileMainId) => void
+  onMainSelect?: (id: CategoryPlpMainId) => void
 }
 
 function MainRow({
@@ -34,6 +36,11 @@ function MainRow({
     isActive ? 'text-dark' : 'text-dark hover:opacity-70'
   }`
 
+  const handleClick = () => {
+    onSelect?.()
+    onNavigate?.()
+  }
+
   if (href) {
     return (
       <a
@@ -42,7 +49,7 @@ function MainRow({
         aria-current={isActive ? 'page' : undefined}
         onClick={(event) => {
           event.preventDefault()
-          onNavigate?.()
+          handleClick()
         }}
       >
         {label}
@@ -55,7 +62,7 @@ function MainRow({
       type="button"
       className={className}
       aria-current={isActive ? 'page' : undefined}
-      onClick={onSelect}
+      onClick={handleClick}
     >
       {label}
     </button>
@@ -87,18 +94,7 @@ export function CategoryLnb({ activeMainId, activeSubIndex, onSubChange, onMainS
                   label={item.label}
                   href={item.href}
                   isActive={isActive}
-                  onNavigate={
-                    item.href
-                      ? () => {
-                          navigateSpa(item.href!)
-                        }
-                      : undefined
-                  }
-                  onSelect={
-                    !item.href && (item.id === 'bag-acc' || item.id === 'collection')
-                      ? () => onMainSelect?.(item.id)
-                      : undefined
-                  }
+                  onSelect={() => onMainSelect?.(item.id)}
                 />
               </div>
 

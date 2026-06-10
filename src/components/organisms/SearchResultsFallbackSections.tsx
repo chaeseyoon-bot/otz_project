@@ -1,12 +1,13 @@
 import type { ProductCardItem } from '../molecules/ProductCardUnit'
 import { ProductCardUnit } from '../molecules/ProductCardUnit'
-import { SEARCH_RESULTS_CATALOG } from '../../lib/searchResultsCatalog'
+import { getProductDetailPath } from '../../lib/productRoutes'
+import { navigateSpa } from '../../lib/spaNavigation'
 
 interface SearchResultsFallbackSectionsProps {
   recentlyViewed: readonly ProductCardItem[]
   recommended: readonly ProductCardItem[]
-  likedItems: boolean[]
-  onToggleLike: (catalogIndex: number) => void
+  likedIds: ReadonlySet<string>
+  onToggleLike: (productId: string) => void
   variant: 'pc' | 'mobile'
 }
 
@@ -17,35 +18,69 @@ function productWithStaticThumbnail(product: ProductCardItem): ProductCardItem {
   return { ...rest, image }
 }
 
+function SearchResultProductCard({
+  product,
+  liked,
+  onToggleLike,
+  variant,
+}: {
+  product: ProductCardItem
+  liked: boolean
+  onToggleLike: () => void
+  variant: 'pc' | 'mobile'
+}) {
+  return (
+    <div
+      className="min-w-0 cursor-pointer"
+      role="link"
+      tabIndex={0}
+      onClick={() => navigateSpa(getProductDetailPath(product.id))}
+      onKeyDown={(event) => {
+        if (event.key === 'Enter' || event.key === ' ') {
+          event.preventDefault()
+          navigateSpa(getProductDetailPath(product.id))
+        }
+      }}
+    >
+      <ProductCardUnit
+        product={productWithStaticThumbnail(product)}
+        liked={liked}
+        onToggleLike={onToggleLike}
+        articleClassName={variant === 'pc' ? 'group flex w-full flex-col' : 'flex w-full flex-col'}
+        titleClassName={
+          variant === 'pc'
+            ? 'min-w-0 truncate pt-3 text-bodyRegular2 text-textDefault'
+            : 'line-clamp-2 pt-3 pr-2 text-bodySmall text-textDefault'
+        }
+        showSizeQuickSelect={variant === 'pc'}
+      />
+    </div>
+  )
+}
+
 function SearchResultsProductRow({
   products,
-  likedItems,
+  likedIds,
   onToggleLike,
   variant,
 }: {
   products: readonly ProductCardItem[]
-  likedItems: boolean[]
-  onToggleLike: (catalogIndex: number) => void
+  likedIds: ReadonlySet<string>
+  onToggleLike: (productId: string) => void
   variant: 'pc' | 'mobile'
 }) {
   if (variant === 'pc') {
     return (
       <div className="grid grid-cols-5 gap-[10px]">
-        {products.map((product) => {
-          const index = SEARCH_RESULTS_CATALOG.findIndex((item) => item.id === product.id)
-          return (
-            <div key={product.id} className="min-w-0">
-              <ProductCardUnit
-                product={productWithStaticThumbnail(product)}
-                liked={likedItems[index]}
-                onToggleLike={() => onToggleLike(index)}
-                articleClassName="group flex w-full flex-col"
-                titleClassName="min-w-0 truncate pt-3 text-bodyRegular2 text-textDefault"
-                showSizeQuickSelect
-              />
-            </div>
-          )
-        })}
+        {products.map((product) => (
+          <SearchResultProductCard
+            key={product.id}
+            product={product}
+            liked={likedIds.has(product.id)}
+            onToggleLike={() => onToggleLike(product.id)}
+            variant={variant}
+          />
+        ))}
       </div>
     )
   }
@@ -53,20 +88,16 @@ function SearchResultsProductRow({
   return (
     <div className="overflow-x-auto overscroll-x-contain pr-[15px] [scrollbar-width:none] [-ms-overflow-style:none] [&::-webkit-scrollbar]:hidden">
       <div className="flex w-max gap-2">
-        {products.map((product) => {
-          const index = SEARCH_RESULTS_CATALOG.findIndex((item) => item.id === product.id)
-          return (
-            <div key={product.id} className="w-[152px] shrink-0">
-              <ProductCardUnit
-                product={productWithStaticThumbnail(product)}
-                liked={likedItems[index]}
-                onToggleLike={() => onToggleLike(index)}
-                articleClassName="flex w-full flex-col"
-                titleClassName="line-clamp-2 pt-3 pr-2 text-bodySmall text-textDefault"
-              />
-            </div>
-          )
-        })}
+        {products.map((product) => (
+          <div key={product.id} className="w-[152px] shrink-0">
+            <SearchResultProductCard
+              product={product}
+              liked={likedIds.has(product.id)}
+              onToggleLike={() => onToggleLike(product.id)}
+              variant={variant}
+            />
+          </div>
+        ))}
       </div>
     </div>
   )
@@ -76,7 +107,7 @@ function SearchResultsProductRow({
 export function SearchResultsFallbackSections({
   recentlyViewed,
   recommended,
-  likedItems,
+  likedIds,
   onToggleLike,
   variant,
 }: SearchResultsFallbackSectionsProps) {
@@ -87,7 +118,7 @@ export function SearchResultsFallbackSections({
           <h2 className="m-0 text-titleMedium text-dark">최근 본 상품</h2>
           <SearchResultsProductRow
             products={recentlyViewed}
-            likedItems={likedItems}
+            likedIds={likedIds}
             onToggleLike={onToggleLike}
             variant={variant}
           />
@@ -97,7 +128,7 @@ export function SearchResultsFallbackSections({
           <h2 className="m-0 text-titleMedium text-dark">추천 상품</h2>
           <SearchResultsProductRow
             products={recommended}
-            likedItems={likedItems}
+            likedIds={likedIds}
             onToggleLike={onToggleLike}
             variant={variant}
           />
@@ -112,7 +143,7 @@ export function SearchResultsFallbackSections({
         <h2 className="m-0 text-bodyBold2 text-dark">최근 본 상품</h2>
         <SearchResultsProductRow
           products={recentlyViewed}
-          likedItems={likedItems}
+          likedIds={likedIds}
           onToggleLike={onToggleLike}
           variant={variant}
         />
@@ -122,7 +153,7 @@ export function SearchResultsFallbackSections({
         <h2 className="m-0 text-bodyBold2 text-dark">추천 상품</h2>
         <SearchResultsProductRow
           products={recommended}
-          likedItems={likedItems}
+          likedIds={likedIds}
           onToggleLike={onToggleLike}
           variant={variant}
         />

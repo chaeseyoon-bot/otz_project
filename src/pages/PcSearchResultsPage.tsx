@@ -11,13 +11,12 @@ import {
   filterCategoryProducts,
 } from '../lib/categoryProductFilter'
 import { addRecentSearch } from '../lib/recentSearchStorage'
-import {
-  filterSearchResultsByQuery,
-  getSearchResultsFallbackProducts,
-  resolveSearchResultCount,
-  SEARCH_RESULTS_CATALOG,
-} from '../lib/searchResultsCatalog'
-import { buildSearchResultsPath, readSearchQueryFromLocation } from '../lib/searchRoutes'
+import { getSearchResultsFallbackProducts, resolveSearchResultCount } from '../lib/searchResultsCatalog'
+import { buildSearchResultsPath } from '../lib/searchRoutes'
+import { sortSearchProducts, toSearchFilterableProduct } from '../lib/storefrontSearch'
+import { getProductDetailPath } from '../lib/productRoutes'
+import { useSearchProducts } from '../hooks/useSearchProducts'
+import { useSearchResultsQuery } from '../hooks/useSearchResultsQuery'
 import { useSpaPathname } from '../hooks/useSpaPathname'
 import { navigateSpa, type SpaPath } from '../lib/spaNavigation'
 
@@ -90,15 +89,26 @@ function PcSortDropdown({
 /** Figma 2978:14413 — PC search results PLP. */
 export function PcSearchResultsPage() {
   const pathname = useSpaPathname()
-  const [query, setQuery] = useState(() => readSearchQueryFromLocation())
+  const [query, setQuery] = useSearchResultsQuery()
   const sortRef = useRef<HTMLDivElement>(null)
   const [appliedPcFilters, setAppliedPcFilters] = useState(() => clonePcFilters(EMPTY_PC_FILTERS))
-  const [likedItems, setLikedItems] = useState<boolean[]>(() => SEARCH_RESULTS_CATALOG.map(() => false))
+  const [likedIds, setLikedIds] = useState<Set<string>>(() => new Set())
   const [sortOpen, setSortOpen] = useState(false)
   const [sortIndex, setSortIndex] = useState(0)
+  const [fallbackProducts, setFallbackProducts] = useState({
+    recentlyViewed: [] as ReturnType<typeof toSearchFilterableProduct>[],
+    recommended: [] as ReturnType<typeof toSearchFilterableProduct>[],
+  })
+
+  const { products: matchedProducts, isLoading, error } = useSearchProducts(query)
 
   useEffect(() => {
-    setQuery(readSearchQueryFromLocation())
+    getSearchResultsFallbackProducts().then((result) => {
+      setFallbackProducts({
+        recentlyViewed: result.recentlyViewed.map(toSearchFilterableProduct),
+        recommended: result.recommended.map(toSearchFilterableProduct),
+      })
+    })
   }, [pathname])
 
   useEffect(() => {
@@ -122,7 +132,10 @@ export function PcSearchResultsPage() {
     window.scrollTo(0, 0)
   }, [])
 
-  const queryMatchedProducts = useMemo(() => filterSearchResultsByQuery(query), [query])
+  const queryMatchedProducts = useMemo(
+    () => sortSearchProducts(matchedProducts, sortIndex).map(toSearchFilterableProduct),
+    [matchedProducts, sortIndex],
+  )
 
   const filteredProducts = useMemo(
     () => filterCategoryProducts(queryMatchedProducts, appliedPcFilters),
@@ -133,10 +146,13 @@ export function PcSearchResultsPage() {
   const displayCount = resolveSearchResultCount(query, filteredProducts.length)
   const displayCountLabel = displayCount.toLocaleString('ko-KR')
 
-  const fallbackProducts = useMemo(() => getSearchResultsFallbackProducts(), [])
-
-  const handleToggleLike = (targetIndex: number) => {
-    setLikedItems((prev) => prev.map((liked, index) => (index === targetIndex ? !liked : liked)))
+  const handleToggleLike = (productId: string) => {
+    setLikedIds((prev) => {
+      const next = new Set(prev)
+      if (next.has(productId)) next.delete(productId)
+      else next.add(productId)
+      return next
+    })
   }
 
   return (
@@ -165,7 +181,11 @@ export function PcSearchResultsPage() {
           </div>
         </div>
 
-        {hasResults ? (
+        {isLoading ? (
+          <p className="py-20 text-center text-bodyRegular2 text-light4">상품을 검색하는 중입니다…</p>
+        ) : error ? (
+          <p className="py-20 text-center text-bodyRegular2 text-light4">검색에 실패했습니다. ({error})</p>
+        ) : hasResults ? (
           <>
             <CategoryPcFilterBar
               products={queryMatchedProducts}
@@ -191,21 +211,30 @@ export function PcSearchResultsPage() {
             </div>
 
             <div className="grid grid-cols-4 gap-x-[10px] gap-y-14">
-              {filteredProducts.map((product) => {
-                const index = SEARCH_RESULTS_CATALOG.findIndex((item) => item.id === product.id)
-                return (
-                  <div key={product.id} className="min-w-0">
-                    <ProductCardUnit
-                      product={product}
-                      liked={likedItems[index]}
-                      onToggleLike={() => handleToggleLike(index)}
-                      articleClassName="group flex w-full flex-col"
-                      titleClassName="min-w-0 truncate pt-3 text-bodyRegular2 text-textDefault"
-                      showSizeQuickSelect
-                    />
-                  </div>
-                )
-              })}
+              {filteredProducts.map((product) => (
+                <div
+                  key={product.id}
+                  className="min-w-0 cursor-pointer"
+                  role="link"
+                  tabIndex={0}
+                  onClick={() => navigateSpa(getProductDetailPath(product.id))}
+                  onKeyDown={(event) => {
+                    if (event.key === 'Enter' || event.key === ' ') {
+                      event.preventDefault()
+                      navigateSpa(getProductDetailPath(product.id))
+                    }
+                  }}
+                >
+                  <ProductCardUnit
+                    product={product}
+                    liked={likedIds.has(product.id)}
+                    onToggleLike={() => handleToggleLike(product.id)}
+                    articleClassName="group flex w-full flex-col"
+                    titleClassName="min-w-0 truncate pt-3 text-bodyRegular2 text-textDefault"
+                    showSizeQuickSelect
+                  />
+                </div>
+              ))}
             </div>
           </>
         ) : (
@@ -214,7 +243,7 @@ export function PcSearchResultsPage() {
             <SearchResultsFallbackSections
               recentlyViewed={fallbackProducts.recentlyViewed}
               recommended={fallbackProducts.recommended}
-              likedItems={likedItems}
+              likedIds={likedIds}
               onToggleLike={handleToggleLike}
               variant="pc"
             />

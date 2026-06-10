@@ -7,11 +7,18 @@ import { consumeAdminProductFlash } from './ProductRegistration'
 import {
   adminProductTitle,
   coerceProductFlag,
+  canRegisterMoreForYouProducts,
+  compareProductsByForuSortAsc,
+  deleteAdminProduct,
   fetchAllProductsFromSupabase,
   formatAdminDiscountRate,
   formatAdminPrice,
+  FOR_YOU_MAX_PRODUCTS,
+  forYouRegistrationBlockedMessage,
   getAdminProductThumbnailCandidates,
   resolveProductCategory,
+  suggestNextForuSortOrder,
+  updateAdminForuSortOrders,
   updateAdminProductExposure,
 } from '../../lib/productsApi'
 import {
@@ -36,6 +43,10 @@ const CATEGORY_OPTIONS = [
 
 function stopRowToggle(event) {
   event.stopPropagation()
+}
+
+function isAdminFreeShipping(product) {
+  return product.free_shipping == null ? true : coerceProductFlag(product.free_shipping)
 }
 
 function AdminProductThumbnail({ product }) {
@@ -72,6 +83,77 @@ function AdminProductThumbnail({ product }) {
         <span className="text-[10px] text-subtleText">No img</span>
       )}
     </div>
+  )
+}
+
+function buildContiguousForuSortOrders(products) {
+  return products.map((product, index) => ({
+    id: product.id,
+    foru_sort_order: index + 1,
+  }))
+}
+
+function AdminForYouOrderPanel({ products, isSaving, onMove }) {
+  if (products.length === 0) return null
+
+  return (
+    <section className="mb-5 rounded-sm border border-lightGray bg-light3 px-4 py-4">
+      <div className="mb-3">
+        <div className="flex flex-wrap items-center gap-2">
+          <h3 className="m-0 text-bodyBold2 text-dark">For You 메인 노출 순서</h3>
+          <span className="rounded-sm border border-lightGray bg-white px-2 py-0.5 text-[11px] text-subtleText">
+            {products.length}/{FOR_YOU_MAX_PRODUCTS}
+          </span>
+        </div>
+        <p className="m-0 mt-1 text-bodySmall text-subtleText">
+          왼쪽부터 메인 For You 섹션에 먼저 노출됩니다. 화살표로 순서를 변경하세요.
+          {products.length >= FOR_YOU_MAX_PRODUCTS ? (
+            <span className="mt-1 block text-primaryText">
+              {forYouRegistrationBlockedMessage()}
+            </span>
+          ) : null}
+        </p>
+      </div>
+      <div className="flex gap-3 overflow-x-auto pb-1">
+        {products.map((product, index) => (
+          <article
+            key={product.id}
+            className="flex w-[168px] shrink-0 flex-col gap-2 rounded-sm border border-lightGray bg-white p-3"
+          >
+            <div className="flex items-center justify-between gap-2">
+              <span className="inline-flex size-6 items-center justify-center rounded-full bg-dark text-[11px] font-medium text-white">
+                {index + 1}
+              </span>
+              <div className="flex items-center gap-1">
+                <button
+                  type="button"
+                  disabled={isSaving || index === 0}
+                  onClick={() => onMove(product.id, -1)}
+                  className="rounded-sm border border-lightGray bg-white px-1.5 py-0.5 text-[10px] text-subtleText disabled:opacity-30"
+                  aria-label={`${index + 1}번째 상품을 앞으로`}
+                >
+                  ←
+                </button>
+                <button
+                  type="button"
+                  disabled={isSaving || index === products.length - 1}
+                  onClick={() => onMove(product.id, 1)}
+                  className="rounded-sm border border-lightGray bg-white px-1.5 py-0.5 text-[10px] text-subtleText disabled:opacity-30"
+                  aria-label={`${index + 1}번째 상품을 뒤로`}
+                >
+                  →
+                </button>
+              </div>
+            </div>
+            <AdminProductThumbnail product={product} />
+            <p className="m-0 line-clamp-2 text-[11px] leading-snug text-dark">
+              {adminProductTitle(product)}
+            </p>
+            <p className="m-0 text-[10px] text-subtleText">ID {product.id}</p>
+          </article>
+        ))}
+      </div>
+    </section>
   )
 }
 
@@ -245,32 +327,139 @@ export function ProductManagement() {
     })
   }, [products, categoryFilter, searchQuery])
 
+  const forYouProducts = useMemo(
+    () =>
+      products
+        .filter((product) => coerceProductFlag(product.is_foru))
+        .sort(compareProductsByForuSortAsc),
+    [products],
+  )
+
   const toggleStockRow = useCallback((id) => {
     setExpandedStockId((prev) => (prev === id ? null : id))
   }, [])
+
+  const applyForuSortOrders = useCallback(
+    async (orderedProducts) => {
+      const entries = buildContiguousForuSortOrders(orderedProducts)
+      await updateAdminForuSortOrders(entries)
+      setProducts((prev) => {
+        const orderById = new Map(entries.map((entry) => [entry.id, entry.foru_sort_order]))
+        return prev.map((row) =>
+          orderById.has(row.id)
+            ? { ...row, foru_sort_order: orderById.get(row.id) ?? null }
+            : row,
+        )
+      })
+    },
+    [],
+  )
 
   const patchExposure = useCallback(
     async (id, field, nextChecked) => {
       const saveKey = `${field}-${id}`
       setSavingKey(saveKey)
       try {
+        if (field === 'is_foru') {
+          if (nextChecked) {
+            if (!canRegisterMoreForYouProducts(products, id)) {
+              showToast(forYouRegistrationBlockedMessage())
+              return
+            }
+            const nextOrder = suggestNextForuSortOrder(products.filter((row) => row.id !== id))
+            await updateAdminProductExposure(id, {
+              is_foru: true,
+              foru_sort_order: nextOrder,
+            })
+            setProducts((prev) =>
+              prev.map((row) =>
+                row.id === id ? { ...row, is_foru: true, foru_sort_order: nextOrder } : row,
+              ),
+            )
+            showToast('For You 메인 노출이 등록되었습니다.')
+          } else {
+            await updateAdminProductExposure(id, { is_foru: false, foru_sort_order: null })
+            const remaining = products
+              .filter((row) => row.id !== id && coerceProductFlag(row.is_foru))
+              .sort(compareProductsByForuSortAsc)
+            if (remaining.length > 0) {
+              await applyForuSortOrders(remaining)
+            }
+            setProducts((prev) =>
+              prev
+                .map((row) =>
+                  row.id === id ? { ...row, is_foru: false, foru_sort_order: null } : row,
+                )
+                .map((row) => {
+                  if (!coerceProductFlag(row.is_foru)) return row
+                  const index = remaining.findIndex((item) => item.id === row.id)
+                  return index >= 0 ? { ...row, foru_sort_order: index + 1 } : row
+                }),
+            )
+            showToast('For You 메인 노출이 해제되었습니다.')
+          }
+          return
+        }
+
         await updateAdminProductExposure(id, { [field]: nextChecked })
         setProducts((prev) =>
           prev.map((row) => (row.id === id ? { ...row, [field]: nextChecked } : row)),
         )
-        if (field === 'is_new') {
-          showToast(
-            nextChecked ? 'New 상품으로 등록되었습니다.' : 'New 노출이 해제되었습니다.',
-          )
-        } else {
-          showToast(
-            nextChecked
-              ? 'For You 메인 노출이 등록되었습니다.'
-              : 'For You 메인 노출이 해제되었습니다.',
-          )
-        }
+        showToast(
+          nextChecked ? 'New 상품으로 등록되었습니다.' : 'New 노출이 해제되었습니다.',
+        )
       } catch (err) {
         showToast(err instanceof Error ? err.message : '노출 설정 저장에 실패했습니다.')
+      } finally {
+        setSavingKey(null)
+      }
+    },
+    [applyForuSortOrders, products, showToast],
+  )
+
+  const moveForYouProduct = useCallback(
+    async (id, direction) => {
+      const list = [...forYouProducts]
+      const index = list.findIndex((product) => product.id === id)
+      if (index < 0) return
+
+      const targetIndex = index + direction
+      if (targetIndex < 0 || targetIndex >= list.length) return
+
+      const next = [...list]
+      ;[next[index], next[targetIndex]] = [next[targetIndex], next[index]]
+
+      const saveKey = `foru-order-${id}`
+      setSavingKey(saveKey)
+      try {
+        await applyForuSortOrders(next)
+        showToast('For You 노출 순서가 변경되었습니다.')
+      } catch (err) {
+        showToast(err instanceof Error ? err.message : '순서 저장에 실패했습니다.')
+      } finally {
+        setSavingKey(null)
+      }
+    },
+    [applyForuSortOrders, forYouProducts, showToast],
+  )
+
+  const removeProduct = useCallback(
+    async (product) => {
+      const title = adminProductTitle(product)
+      const confirmed = window.confirm(
+        `상품 "${title}" (ID ${product.id})을(를) 삭제할까요?\n삭제 후에는 복구할 수 없습니다.`,
+      )
+      if (!confirmed) return
+
+      const saveKey = `delete-${product.id}`
+      setSavingKey(saveKey)
+      try {
+        await deleteAdminProduct(product.id)
+        setProducts((prev) => prev.filter((row) => row.id !== product.id))
+        setExpandedStockId((prev) => (prev === product.id ? null : prev))
+        showToast('상품이 삭제되었습니다.')
+      } catch (err) {
+        showToast(err instanceof Error ? err.message : '상품 삭제에 실패했습니다.')
       } finally {
         setSavingKey(null)
       }
@@ -384,6 +573,12 @@ export function ProductManagement() {
       ) : filteredProducts.length === 0 ? (
         <p className="m-0 text-bodyRegular2 text-textDefault">검색 조건에 맞는 상품이 없습니다.</p>
       ) : (
+        <>
+          <AdminForYouOrderPanel
+            products={forYouProducts}
+            isSaving={savingKey?.startsWith('foru-order-') || savingKey?.startsWith('is_foru-')}
+            onMove={moveForYouProduct}
+          />
         <div className="overflow-hidden rounded-sm border border-lightGray">
           <table className="w-full border-collapse text-left">
             <thead className="bg-light">
@@ -415,9 +610,13 @@ export function ProductManagement() {
                 const isForYou = coerceProductFlag(product.is_foru)
                 const isMainExposed = isNew || isForYou
                 const isExpanded = expandedStockId === product.id
+                const isDeleting = savingKey === `delete-${product.id}`
                 const isSavingNew = savingKey === `is_new-${product.id}`
                 const isSavingForYou = savingKey === `is_foru-${product.id}`
                 const isSavingStock = savingKey === `stock-${product.id}`
+                const forYouLimitReached = forYouProducts.length >= FOR_YOU_MAX_PRODUCTS
+                const forYouCheckboxDisabled =
+                  isSavingForYou || (!isForYou && forYouLimitReached)
 
                 return (
                   <Fragment key={product.id}>
@@ -465,7 +664,14 @@ export function ProductManagement() {
                         <AdminProductThumbnail product={product} />
                       </td>
                       <td className="max-w-[300px] px-4 py-4">
-                        <p className="m-0 text-bodyRegular2 text-dark">{adminProductTitle(product)}</p>
+                        <p className="m-0 flex flex-wrap items-center gap-1.5 text-bodyRegular2 text-dark">
+                          <span>{adminProductTitle(product)}</span>
+                          {isAdminFreeShipping(product) ? (
+                            <span className="inline-flex shrink-0 rounded-sm border border-lightGray bg-light3 px-1.5 py-0.5 text-[10px] font-normal leading-none text-subtleText">
+                              무료배송
+                            </span>
+                          ) : null}
+                        </p>
                         <p className="m-0 mt-1 text-bodySmall text-subtleText">
                           {resolveProductCategory(product) === 'shoes' ? 'Shoes' : 'Bag&Acc'}
                         </p>
@@ -488,9 +694,20 @@ export function ProductManagement() {
                         <AdminFlagCheckbox
                           label="FOR YOU"
                           checked={isForYou}
-                          disabled={isSavingForYou}
+                          disabled={forYouCheckboxDisabled}
                           onChange={(next) => patchExposure(product.id, 'is_foru', next)}
                         />
+                        {!isForYou && forYouLimitReached ? (
+                          <p className="m-0 mt-1 max-w-[72px] text-[9px] leading-tight text-subtleText">
+                            최대 {FOR_YOU_MAX_PRODUCTS}개
+                          </p>
+                        ) : null}
+                        {isForYou ? (
+                          <p className="m-0 mt-1 text-[10px] text-subtleText">
+                            순서{' '}
+                            {forYouProducts.findIndex((item) => item.id === product.id) + 1 || '-'}
+                          </p>
+                        ) : null}
                       </td>
                       <td className="px-4 py-4">
                         <p className="m-0 text-bodyBold2 text-dark">
@@ -518,9 +735,11 @@ export function ProductManagement() {
                           </button>
                           <button
                             type="button"
-                            className="rounded-sm border border-lightGray bg-white px-3 py-2 text-bodySmall text-subtleText hover:text-dark"
+                            disabled={isDeleting}
+                            className="rounded-sm border border-lightGray bg-white px-3 py-2 text-bodySmall text-subtleText hover:text-dark disabled:cursor-not-allowed disabled:opacity-50"
+                            onClick={() => removeProduct(product)}
                           >
-                            삭제
+                            {isDeleting ? '삭제 중…' : '삭제'}
                           </button>
                         </div>
                       </td>
@@ -551,6 +770,7 @@ export function ProductManagement() {
             </tbody>
           </table>
         </div>
+        </>
       )}
     </div>
   )

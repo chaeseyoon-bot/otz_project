@@ -14,17 +14,13 @@ import { figmaAsset } from '../lib/figmaAssetUrl'
 import { useLockBodyScroll } from '../hooks/useLockBodyScroll'
 import { useMobileShellFixedPin } from '../hooks/useMobileShellFixedPin'
 import { addRecentSearch } from '../lib/recentSearchStorage'
-import {
-  buildSearchResultsPath,
-  readSearchQueryFromLocation,
-} from '../lib/searchRoutes'
+import { buildSearchResultsPath } from '../lib/searchRoutes'
+import { getSearchResultsFallbackProducts, resolveSearchResultCount } from '../lib/searchResultsCatalog'
+import { sortSearchProducts, toSearchFilterableProduct } from '../lib/storefrontSearch'
+import { getProductDetailPath } from '../lib/productRoutes'
+import { useSearchProducts } from '../hooks/useSearchProducts'
+import { useSearchResultsQuery } from '../hooks/useSearchResultsQuery'
 import { useSpaPathname } from '../hooks/useSpaPathname'
-import {
-  filterSearchResultsByQuery,
-  getSearchResultsFallbackProducts,
-  resolveSearchResultCount,
-  SEARCH_RESULTS_CATALOG,
-} from '../lib/searchResultsCatalog'
 import { navigateSpa, type SpaPath } from '../lib/spaNavigation'
 
 const SORT_OPTIONS = ['인기상품순', '낮은가격순', '높은가격순', '신상품순'] as const
@@ -97,19 +93,30 @@ function MobilePlpSortDropdown({
 /** Figma 2978:14848 — mobile search results PLP. */
 export function MobileSearchResultsPage() {
   const pathname = useSpaPathname()
-  const [query, setQuery] = useState(() => readSearchQueryFromLocation())
+  const [query, setQuery] = useSearchResultsQuery()
   const sortRef = useRef<HTMLDivElement>(null)
   const [appliedPcFilters] = useState(() => clonePcFilters(EMPTY_PC_FILTERS))
-  const [likedItems, setLikedItems] = useState<boolean[]>(() => SEARCH_RESULTS_CATALOG.map(() => false))
+  const [likedIds, setLikedIds] = useState<Set<string>>(() => new Set())
   const [filterOpen, setFilterOpen] = useState(false)
   const [sortOpen, setSortOpen] = useState(false)
   const [sortIndex, setSortIndex] = useState(0)
+  const [fallbackProducts, setFallbackProducts] = useState({
+    recentlyViewed: [] as ReturnType<typeof toSearchFilterableProduct>[],
+    recommended: [] as ReturnType<typeof toSearchFilterableProduct>[],
+  })
   const { sentinelRef, barRef, pinned, shellLeft, shellWidth, barHeight } = useMobileShellFixedPin()
+
+  const { products: matchedProducts, isLoading, error } = useSearchProducts(query)
 
   useLockBodyScroll(filterOpen)
 
   useEffect(() => {
-    setQuery(readSearchQueryFromLocation())
+    getSearchResultsFallbackProducts().then((result) => {
+      setFallbackProducts({
+        recentlyViewed: result.recentlyViewed.map(toSearchFilterableProduct),
+        recommended: result.recommended.map(toSearchFilterableProduct),
+      })
+    })
   }, [pathname])
 
   useEffect(() => {
@@ -134,7 +141,10 @@ export function MobileSearchResultsPage() {
     window.scrollTo(0, 0)
   }, [])
 
-  const queryMatchedProducts = useMemo(() => filterSearchResultsByQuery(query), [query])
+  const queryMatchedProducts = useMemo(
+    () => sortSearchProducts(matchedProducts, sortIndex).map(toSearchFilterableProduct),
+    [matchedProducts, sortIndex],
+  )
 
   const filteredProducts = useMemo(
     () => filterCategoryProducts(queryMatchedProducts, appliedPcFilters),
@@ -144,8 +154,6 @@ export function MobileSearchResultsPage() {
   const hasResults = filteredProducts.length > 0
   const displayCount = resolveSearchResultCount(query, filteredProducts.length)
   const displayCountLabel = displayCount.toLocaleString('ko-KR')
-
-  const fallbackProducts = useMemo(() => getSearchResultsFallbackProducts(), [])
 
   const mobileStickyBarStyle: CSSProperties | undefined = pinned
     ? {
@@ -157,8 +165,13 @@ export function MobileSearchResultsPage() {
       }
     : undefined
 
-  const handleToggleLike = (targetIndex: number) => {
-    setLikedItems((prev) => prev.map((liked, index) => (index === targetIndex ? !liked : liked)))
+  const handleToggleLike = (productId: string) => {
+    setLikedIds((prev) => {
+      const next = new Set(prev)
+      if (next.has(productId)) next.delete(productId)
+      else next.add(productId)
+      return next
+    })
   }
 
   const handleBack = () => {
@@ -192,67 +205,80 @@ export function MobileSearchResultsPage() {
         </div>
       </section>
 
-      {hasResults ? (
+      {isLoading ? (
+        <p className="py-20 text-center text-bodySmall text-light4">상품을 검색하는 중입니다…</p>
+      ) : error ? (
+        <p className="py-20 text-center text-bodySmall text-light4">검색에 실패했습니다. ({error})</p>
+      ) : hasResults ? (
         <>
-      <div ref={sentinelRef} className="pointer-events-none h-px w-full shrink-0" aria-hidden />
-      {pinned ? <div aria-hidden className="shrink-0" style={{ height: barHeight }} /> : null}
-      <div ref={barRef} className="bg-white" style={mobileStickyBarStyle}>
-        <div className="flex h-11 items-center justify-between border-y border-light2 px-[15px] py-3.5">
-          <button
-            type="button"
-            className="flex items-center gap-1 border-0 bg-transparent p-0 text-bodyMedium2 text-textDefault"
-            aria-label="필터"
-            aria-expanded={filterOpen}
-            onClick={() => {
-              setFilterOpen(true)
-              setSortOpen(false)
-            }}
-          >
-            <span>필터</span>
-            <img src={iconListFilter} alt="" aria-hidden className="size-3.5 object-contain" draggable={false} />
-          </button>
-          <MobilePlpSortDropdown
-            sortOpen={sortOpen}
-            sortIndex={sortIndex}
-            sortRef={sortRef}
-            onToggle={() => setSortOpen((open) => !open)}
-            onSelect={(index) => {
-              setSortIndex(index)
-              setSortOpen(false)
-            }}
+          <div ref={sentinelRef} className="pointer-events-none h-px w-full shrink-0" aria-hidden />
+          {pinned ? <div aria-hidden className="shrink-0" style={{ height: barHeight }} /> : null}
+          <div ref={barRef} className="bg-white" style={mobileStickyBarStyle}>
+            <div className="flex h-11 items-center justify-between border-y border-light2 px-[15px] py-3.5">
+              <button
+                type="button"
+                className="flex items-center gap-1 border-0 bg-transparent p-0 text-bodyMedium2 text-textDefault"
+                aria-label="필터"
+                aria-expanded={filterOpen}
+                onClick={() => {
+                  setFilterOpen(true)
+                  setSortOpen(false)
+                }}
+              >
+                <span>필터</span>
+                <img src={iconListFilter} alt="" aria-hidden className="size-3.5 object-contain" draggable={false} />
+              </button>
+              <MobilePlpSortDropdown
+                sortOpen={sortOpen}
+                sortIndex={sortIndex}
+                sortRef={sortRef}
+                onToggle={() => setSortOpen((open) => !open)}
+                onSelect={(index) => {
+                  setSortIndex(index)
+                  setSortOpen(false)
+                }}
+              />
+            </div>
+          </div>
+
+          <CategoryMobileFilterSheet
+            open={filterOpen}
+            resultCount={displayCount}
+            onClose={() => setFilterOpen(false)}
           />
-        </div>
-      </div>
 
-      <CategoryMobileFilterSheet
-        open={filterOpen}
-        resultCount={displayCount}
-        onClose={() => setFilterOpen(false)}
-      />
+          <p className="m-0 px-[15px] py-[15px] text-bodySmall text-textDefault">
+            <span className="font-semibold text-dark">{displayCountLabel}</span>개의 상품이 있습니다.
+          </p>
 
-      <p className="m-0 px-[15px] py-[15px] text-bodySmall text-textDefault">
-        <span className="font-semibold text-dark">{displayCountLabel}</span>개의 상품이 있습니다.
-      </p>
-
-      <section className="px-[15px] pb-[50px]">
-        <div className="grid grid-cols-2 gap-x-2 gap-y-12">
-          {filteredProducts.map((product) => {
-            const index = SEARCH_RESULTS_CATALOG.findIndex((item) => item.id === product.id)
-            return (
-              <div key={product.id} className="min-w-0">
-                <ProductCardUnit
-                  product={product}
-                  liked={likedItems[index]}
-                  onToggleLike={() => handleToggleLike(index)}
-                  articleClassName="group flex w-full flex-col"
-                  titleClassName="line-clamp-2 pt-3 text-bodySmall text-textDefault"
-                  showSizeQuickSelect
-                />
-              </div>
-            )
-          })}
-        </div>
-      </section>
+          <section className="px-[15px] pb-[50px]">
+            <div className="grid grid-cols-2 gap-x-2 gap-y-12">
+              {filteredProducts.map((product) => (
+                <div
+                  key={product.id}
+                  className="min-w-0 cursor-pointer"
+                  role="link"
+                  tabIndex={0}
+                  onClick={() => navigateSpa(getProductDetailPath(product.id))}
+                  onKeyDown={(event) => {
+                    if (event.key === 'Enter' || event.key === ' ') {
+                      event.preventDefault()
+                      navigateSpa(getProductDetailPath(product.id))
+                    }
+                  }}
+                >
+                  <ProductCardUnit
+                    product={product}
+                    liked={likedIds.has(product.id)}
+                    onToggleLike={() => handleToggleLike(product.id)}
+                    articleClassName="group flex w-full flex-col"
+                    titleClassName="line-clamp-2 pt-3 text-bodySmall text-textDefault"
+                    showSizeQuickSelect
+                  />
+                </div>
+              ))}
+            </div>
+          </section>
         </>
       ) : (
         <>
@@ -260,7 +286,7 @@ export function MobileSearchResultsPage() {
           <SearchResultsFallbackSections
             recentlyViewed={fallbackProducts.recentlyViewed}
             recommended={fallbackProducts.recommended}
-            likedItems={likedItems}
+            likedIds={likedIds}
             onToggleLike={handleToggleLike}
             variant="mobile"
           />

@@ -22,3 +22,9 @@ ON public.products FOR UPDATE
 TO anon, authenticated
 USING (true)
 WITH CHECK (true);
+
+DROP POLICY IF EXISTS "products_delete_anon" ON public.products;
+CREATE POLICY "products_delete_anon"
+ON public.products FOR DELETE
+TO anon, authenticated
+USING (true);

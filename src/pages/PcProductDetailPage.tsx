@@ -14,6 +14,7 @@ import { DEMO_PRODUCT_REVIEW_SUMMARY } from '../data/productReviews'
 import { getPdpColorVariantsForProduct } from '../data/productColorVariants'
 import { PRODUCT_DETAIL_TABS, type ProductDetailTabId } from '../data/productDetailTabs'
 import { useAvailableProductSlides } from '../hooks/useAvailableProductSlides'
+import { ICONS } from '../constants/icons'
 import { figmaAsset } from '../lib/figmaAssetUrl'
 import { getProductById } from '../lib/productCatalog'
 import { useProductDetail } from '../hooks/useProductDetail'
@@ -24,7 +25,7 @@ import { shoesProductPdpGallerySlides } from '../lib/shoesAssetUrl'
 
 const iconChevronDown = figmaAsset('icons/list_chevron.svg')
 const iconDetailShare = figmaAsset('icons/detail_share.svg')
-const iconPlus = figmaAsset('icon_plus.svg')
+const iconPlus = ICONS.common.plus
 
 interface PcProductDetailPageProps {
   productId: string

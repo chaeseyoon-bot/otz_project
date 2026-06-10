@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react'
 import type { ProductMultiCutSlide } from '../components/molecules/ProductCardUnit'
 import { fetchProductDetailById } from '../lib/productsApi'
+import { recordRecentlyViewedProduct } from '../lib/recentlyViewedStorage'
 import type { UiProduct } from './useProducts'
 import { PRODUCT_PDP_CUTS, productCutUrl } from '../lib/productImage'
 import { probeImageSize } from '../lib/probeImageUrl'
@@ -17,12 +18,13 @@ async function resolveCutSlide(
   folder: string,
   id: number,
   cut: string,
+  cacheVersion?: string | null,
 ): Promise<ProductMultiCutSlide | null> {
-  const png = productCutUrl(folder, id, cut, 'png')
+  const png = productCutUrl(folder, id, cut, 'png', cacheVersion)
   let size = await probeImageSize(png)
   let image = png
   if (!size) {
-    const webp = productCutUrl(folder, id, cut, 'webp')
+    const webp = productCutUrl(folder, id, cut, 'webp', cacheVersion)
     size = await probeImageSize(webp)
     image = webp
   }
@@ -68,10 +70,13 @@ export function useProductDetail(id: string): UseProductDetailState {
           return
         }
 
+        recordRecentlyViewedProduct(detail.product)
         setState({ product: detail.product, slides: [], isLoading: false, isResolving: true, error: null })
 
         const resolved = await Promise.all(
-          PRODUCT_PDP_CUTS.map((cut) => resolveCutSlide(detail.folder, detail.numericId, cut)),
+          PRODUCT_PDP_CUTS.map((cut) =>
+            resolveCutSlide(detail.folder, detail.numericId, cut, detail.imageCacheVersion),
+          ),
         )
         if (cancelled) return
 

@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useMemo, useState } from 'react'
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import {
   ADMIN_PRODUCT_NEW_PATH,
   ADMIN_PRODUCTS_PATH,
@@ -7,6 +7,7 @@ import {
 import {
   adminProductCutPublicUrl,
   resolvePrimaryProductImageUrl,
+  uploadAdminProductColorSwatchStrict,
   uploadAdminProductCutImagesStrict,
 } from '../../lib/adminProductImageUpload'
 import { mapFilesToProductCuts } from '../../lib/adminProductCutFileName'
@@ -27,12 +28,27 @@ import {
   formatAdminPrice,
   insertAdminProduct,
   isProductIdInCategoryRange,
+  canRegisterMoreForYouProducts,
+  FOR_YOU_MAX_PRODUCTS,
+  forYouRegistrationBlockedMessage,
+  parseForuSortOrder,
   storageFolderForProduct,
+  suggestNextForuSortOrder,
   suggestNextProductId,
   suggestRegistrationCategoryAndId,
   updateAdminProduct,
+  withFreshImageCacheBust,
 } from '../../lib/productsApi'
+import { imageUrlCacheVersion } from '../../lib/productImage'
 import { navigateSpa } from '../../lib/spaNavigation'
+import {
+  extractColorNameFromProductName,
+  guessColorHexFromName,
+  normalizeAdminColorHexInput,
+  normalizeColorHex,
+  resolveColorHexFromPalette,
+} from '../../lib/productColor'
+import { DynamicColorSwatch } from '../../components/atoms/DynamicColorSwatch'
 import { AdaptiveProductImage } from '../../components/molecules/AdaptiveProductImage'
 import {
   ADMIN_SUBCATEGORY_AUTO,
@@ -85,6 +101,7 @@ function FieldLabel({ children, hint, required = false }) {
 function TextField({
   value,
   onChange,
+  onBlur,
   placeholder,
   type = 'text',
   disabled = false,
@@ -100,19 +117,195 @@ function TextField({
       disabled={disabled}
       placeholder={placeholder}
       onChange={(e) => onChange(e.target.value)}
-      className="h-11 rounded-sm border border-lightGray bg-white px-3 text-bodyRegular2 text-dark outline-none transition-colors placeholder:text-subtleText focus:border-dark disabled:cursor-not-allowed disabled:bg-light3 disabled:text-subtleText"
+      onBlur={onBlur}
+      className="h-11 w-full rounded-sm border border-lightGray bg-white px-3 text-bodyRegular2 text-dark outline-none transition-colors placeholder:text-subtleText focus:border-dark disabled:cursor-not-allowed disabled:bg-light3 disabled:text-subtleText"
     />
   )
 }
 
-function ToggleField({ checked, onChange, label, description }) {
+function sampleHexFromImageAtPoint(img, clientX, clientY, clickRect) {
+  const canvas = document.createElement('canvas')
+  canvas.width = img.naturalWidth
+  canvas.height = img.naturalHeight
+  const ctx = canvas.getContext('2d')
+  if (!ctx) throw new Error('canvas unavailable')
+
+  ctx.drawImage(img, 0, 0)
+  const x = Math.min(
+    canvas.width - 1,
+    Math.max(0, Math.floor(((clientX - clickRect.left) / clickRect.width) * canvas.width)),
+  )
+  const y = Math.min(
+    canvas.height - 1,
+    Math.max(0, Math.floor(((clientY - clickRect.top) / clickRect.height) * canvas.height)),
+  )
+  const [r, g, b] = ctx.getImageData(x, y, 1, 1).data
+  return `#${[r, g, b].map((channel) => channel.toString(16).padStart(2, '0')).join('')}`
+}
+
+function AdminColorPickerRow({ colorHex, cut03PreviewUrl, onChangeHex }) {
+  const normalizedHex = normalizeAdminColorHexInput(colorHex)
+  const imageHostRef = useRef(null)
+  const colorInputRef = useRef(null)
+  const [eyeDropperError, setEyeDropperError] = useState(null)
+  const [imageUnavailable, setImageUnavailable] = useState(false)
+
+  useEffect(() => {
+    setImageUnavailable(false)
+  }, [cut03PreviewUrl])
+
+  const canPickFromImage = Boolean(cut03PreviewUrl) && !imageUnavailable
+
+  const handlePickFromImage = async (event) => {
+    const displayImg = imageHostRef.current?.querySelector('img')
+    if (!displayImg || !cut03PreviewUrl || imageUnavailable) return
+    if (!displayImg.complete || !displayImg.naturalWidth) return
+
+    const clickRect = displayImg.getBoundingClientRect()
+
+    try {
+      const hex = sampleHexFromImageAtPoint(
+        displayImg,
+        event.clientX,
+        event.clientY,
+        clickRect,
+      )
+      onChangeHex(hex)
+      setEyeDropperError(null)
+      return
+    } catch {
+      // fall through to blob fetch for cross-origin storage URLs
+    }
+
+    if (cut03PreviewUrl.startsWith('blob:') || cut03PreviewUrl.startsWith('data:')) {
+      setEyeDropperError('이미지에서 색상을 읽지 못했습니다. 파일을 다시 업로드해 주세요.')
+      return
+    }
+
+    try {
+      const response = await fetch(cut03PreviewUrl)
+      if (!response.ok) throw new Error('fetch failed')
+      const blob = await response.blob()
+      const blobUrl = URL.createObjectURL(blob)
+      const tempImg = new Image()
+      await new Promise((resolve, reject) => {
+        tempImg.onload = resolve
+        tempImg.onerror = reject
+        tempImg.src = blobUrl
+      })
+      const hex = sampleHexFromImageAtPoint(
+        tempImg,
+        event.clientX,
+        event.clientY,
+        clickRect,
+      )
+      URL.revokeObjectURL(blobUrl)
+      onChangeHex(hex)
+      setEyeDropperError(null)
+    } catch {
+      setEyeDropperError('이미지에서 색상을 읽지 못했습니다. 파일을 다시 업로드해 주세요.')
+    }
+  }
+
+  const handleEyeDropper = async () => {
+    setEyeDropperError(null)
+    if (typeof window.EyeDropper !== 'function') {
+      setEyeDropperError('스포이트를 사용할 수 없습니다. 썸네일을 클릭해 주세요.')
+      return
+    }
+    try {
+      const dropper = new window.EyeDropper()
+      const result = await dropper.open()
+      onChangeHex(result.sRGBHex)
+    } catch {
+      // user cancelled
+    }
+  }
+
   return (
-    <label className="flex cursor-pointer items-start gap-3 rounded-sm border border-lightGray bg-light3 px-4 py-4 transition-colors hover:border-dark/20">
+    <div className="grid w-full gap-4 lg:grid-cols-[180px_minmax(0,1fr)] lg:gap-6">
+      <div
+        ref={imageHostRef}
+        role="button"
+        tabIndex={canPickFromImage ? 0 : -1}
+        onClick={canPickFromImage ? handlePickFromImage : undefined}
+        className={`flex aspect-square w-full max-w-[180px] items-center justify-center overflow-hidden rounded-sm border border-lightGray bg-white p-2 lg:max-w-none ${
+          canPickFromImage ? 'cursor-crosshair hover:border-dark' : 'opacity-50'
+        }`}
+        aria-label="컷 03에서 색상 추출"
+      >
+        {cut03PreviewUrl && !imageUnavailable ? (
+          <AdaptiveProductImage
+            src={cut03PreviewUrl}
+            alt=""
+            orientation="square"
+            containClassName="pointer-events-none max-h-full max-w-full object-contain mix-blend-multiply"
+            portraitClassName="pointer-events-none max-h-full max-w-full object-contain mix-blend-multiply"
+            draggable={false}
+            onFinalError={() => setImageUnavailable(true)}
+          />
+        ) : (
+          <span className="px-2 text-center text-[11px] text-subtleText">
+            {cut03PreviewUrl ? '컷 03 이미지 없음' : '컷 03'}
+          </span>
+        )}
+      </div>
+
+      <div className="flex min-h-[180px] flex-col justify-between gap-4 rounded-sm border border-lightGray bg-light3 px-5 py-4">
+        <div className="flex flex-wrap items-center gap-4">
+          <DynamicColorSwatch hex={normalizedHex} sizeClassName="size-12" />
+          <span className="font-mono text-bodyRegular2 uppercase text-dark">{normalizedHex}</span>
+        </div>
+
+        <div className="flex flex-wrap items-center gap-2">
+          <button
+            type="button"
+            onClick={handleEyeDropper}
+            className="h-10 rounded-sm border border-dark bg-white px-4 text-bodySmall text-dark hover:bg-white/80"
+          >
+            스포이트
+          </button>
+          <button
+            type="button"
+            onClick={() => colorInputRef.current?.click()}
+            className="h-10 rounded-sm border border-lightGray bg-white px-4 text-bodySmall text-dark hover:border-dark"
+          >
+            색상표
+          </button>
+          <input
+            ref={colorInputRef}
+            type="color"
+            value={normalizedHex}
+            onChange={(event) => onChangeHex(event.target.value)}
+            className="sr-only"
+            aria-label="컬러 선택"
+            tabIndex={-1}
+          />
+        </div>
+
+        {eyeDropperError ? (
+          <p className="m-0 text-[11px] text-primaryText">{eyeDropperError}</p>
+        ) : null}
+      </div>
+    </div>
+  )
+}
+
+function ToggleField({ checked, onChange, label, description, disabled = false }) {
+  return (
+    <label
+      className={`flex items-start gap-3 rounded-sm border border-lightGray bg-light3 px-4 py-4 transition-colors ${
+        disabled ? 'cursor-not-allowed opacity-50' : 'cursor-pointer hover:border-dark/20'
+      }`}
+    >
       <input
         type="checkbox"
         className="mt-0.5 size-4 shrink-0 accent-dark"
         checked={checked}
-        onChange={(e) => onChange(e.target.checked)}
+        disabled={disabled}
+        onChange={(e) => {
+          if (!disabled) onChange(e.target.checked)
+        }}
       />
       <span className="min-w-0">
         <span className="block text-bodyRegular2 text-dark">{label}</span>
@@ -131,11 +324,16 @@ function createEmptyForm(existingIds = []) {
     category,
     subcategory: ADMIN_SUBCATEGORY_AUTO,
     collection: '',
+    keywords: '',
     name: '',
     price: '',
     discountRate: '0',
     isNew: false,
     isForYou: false,
+    foruSortOrder: null,
+    freeShipping: true,
+    colorName: '',
+    colorHex: '#000000',
     stock: buildDefaultProductStockForCategory(category),
   }
 }
@@ -143,6 +341,10 @@ function createEmptyForm(existingIds = []) {
 function formFromProduct(product) {
   const category = String(product.category ?? 'shoes01')
   const name = String(product.name ?? '')
+  const savedColorName = String(product.color_name ?? '').trim()
+  const autoColorName = savedColorName || extractColorNameFromProductName(name)
+  const savedHex = normalizeColorHex(product.color_hex)
+  const autoHex = savedHex ?? guessColorHexFromName(autoColorName) ?? '#000000'
   return {
     id: String(product.id),
     category,
@@ -150,11 +352,17 @@ function formFromProduct(product) {
       ? String(normalizeSubcategoryLabel(product.subcategory) ?? product.subcategory)
       : ADMIN_SUBCATEGORY_AUTO,
     collection: String(product.collection ?? detectCollectionFromProductName(name) ?? ''),
+    keywords: String(product.tags ?? ''),
     name,
     price: String(product.price ?? 0),
     discountRate: String(product.discount_rate ?? 0),
     isNew: coerceProductFlag(product.is_new),
     isForYou: coerceProductFlag(product.is_foru),
+    foruSortOrder: parseForuSortOrder(product.foru_sort_order),
+    freeShipping:
+      product.free_shipping == null ? true : coerceProductFlag(product.free_shipping),
+    colorName: autoColorName,
+    colorHex: normalizeAdminColorHexInput(autoHex, '#000000'),
     stock: normalizeProductStockForCategory(product.stock, category),
   }
 }
@@ -223,6 +431,7 @@ export function ProductRegistration({ pathname }) {
 
   const [form, setForm] = useState(() => createEmptyForm())
   const [existingIds, setExistingIds] = useState([])
+  const [catalogRows, setCatalogRows] = useState([])
   const [isLoading, setIsLoading] = useState(isEditMode)
   const [loadError, setLoadError] = useState(null)
   const [isSaving, setIsSaving] = useState(false)
@@ -231,6 +440,11 @@ export function ProductRegistration({ pathname }) {
   const [pendingFiles, setPendingFiles] = useState({})
   const [previewUrls, setPreviewUrls] = useState({})
   const [existingImageUrl, setExistingImageUrl] = useState(null)
+  const [existingColorSwatchUrl, setExistingColorSwatchUrl] = useState(null)
+  const [pendingColorSwatchFile, setPendingColorSwatchFile] = useState(null)
+  const [colorSwatchPreviewUrl, setColorSwatchPreviewUrl] = useState(null)
+  const colorNameManualRef = useRef(false)
+  const colorHexManualRef = useRef(false)
 
   const showToast = useCallback((message) => {
     setToast(message)
@@ -247,6 +461,7 @@ export function ProductRegistration({ pathname }) {
         const rows = await fetchAllProductsFromSupabase()
         if (cancelled) return
         setExistingIds(rows.map((row) => row.id))
+        setCatalogRows(rows)
 
         if (isEditMode && editId != null) {
           const product = rows.find((row) => row.id === editId) ?? (await fetchAdminProductById(editId))
@@ -256,14 +471,26 @@ export function ProductRegistration({ pathname }) {
           }
           const nextForm = formFromProduct(product)
           setForm(nextForm)
-          setExistingImageUrl(
+          const storedImageUrl =
             typeof product.image_url === 'string' && product.image_url.trim()
               ? product.image_url.trim()
-              : null,
-          )
+              : null
+          setExistingImageUrl(storedImageUrl)
+          const storedSwatchUrl =
+            typeof product.color_swatch_url === 'string' && product.color_swatch_url.trim()
+              ? product.color_swatch_url.trim()
+              : null
+          setExistingColorSwatchUrl(storedSwatchUrl)
+          setColorSwatchPreviewUrl(storedSwatchUrl)
+          colorNameManualRef.current = Boolean(String(product.color_name ?? '').trim())
+          colorHexManualRef.current = Boolean(normalizeColorHex(product.color_hex))
           const folder = storageFolderForProduct(nextForm.category, product.id)
+          const cacheVersion = imageUrlCacheVersion(storedImageUrl)
           const existingPreviews = Object.fromEntries(
-            PRODUCT_PDP_CUTS.map((cut) => [cut, adminProductCutPublicUrl(folder, product.id, cut)]),
+            PRODUCT_PDP_CUTS.map((cut) => [
+              cut,
+              adminProductCutPublicUrl(folder, product.id, cut, 'png', cacheVersion),
+            ]),
           )
           setPreviewUrls(existingPreviews)
         } else {
@@ -313,17 +540,68 @@ export function ProductRegistration({ pathname }) {
     [form.category, form.name],
   )
 
+  const forYouLimitBlocksToggle = useMemo(() => {
+    if (form.isForYou) return false
+    if (!Number.isFinite(numericId) || numericId <= 0) {
+      return catalogRows.filter((row) => coerceProductFlag(row.is_foru)).length >= FOR_YOU_MAX_PRODUCTS
+    }
+    return !canRegisterMoreForYouProducts(catalogRows, numericId)
+  }, [catalogRows, form.isForYou, numericId])
+
   const updateField = (key, value) => {
     setForm((prev) => ({ ...prev, [key]: value }))
   }
 
   const handleNameChange = (value) => {
     const collection = detectCollectionFromProductName(value) ?? ''
+    if (!value.trim()) {
+      colorNameManualRef.current = false
+      colorHexManualRef.current = false
+      setForm((prev) => ({
+        ...prev,
+        name: value,
+        collection,
+        colorName: '',
+        colorHex: '#000000',
+      }))
+      return
+    }
+
+    setForm((prev) => {
+      const next = { ...prev, name: value, collection }
+      if (!colorNameManualRef.current) {
+        const extracted = extractColorNameFromProductName(value)
+        next.colorName = extracted
+        if (!colorHexManualRef.current) {
+          const guessedHex = guessColorHexFromName(extracted)
+          if (guessedHex) next.colorHex = guessedHex
+        }
+      }
+      return next
+    })
+  }
+
+  const handleColorNameChange = (value) => {
+    colorNameManualRef.current = true
+    const guessedHex = resolveColorHexFromPalette(value)
     setForm((prev) => ({
       ...prev,
-      name: value,
-      collection,
+      colorName: value,
+      ...(guessedHex && !colorHexManualRef.current ? { colorHex: guessedHex } : {}),
     }))
+  }
+
+  const cut03PreviewUrl = useMemo(() => {
+    if (previewUrls['03']) return previewUrls['03']
+    if (existingImageUrl && /_03_big\./i.test(existingImageUrl)) {
+      return existingImageUrl
+    }
+    return null
+  }, [existingImageUrl, previewUrls])
+
+  const handleColorHexChange = (value) => {
+    colorHexManualRef.current = true
+    updateField('colorHex', value)
   }
 
   const handleCategoryChange = (category) => {
@@ -338,6 +616,23 @@ export function ProductRegistration({ pathname }) {
           ? prev.stock
           : buildDefaultProductStockForCategory(category),
     }))
+  }
+
+  const handleSelectColorSwatch = (file) => {
+    if (colorSwatchPreviewUrl?.startsWith('blob:')) {
+      URL.revokeObjectURL(colorSwatchPreviewUrl)
+    }
+    setPendingColorSwatchFile(file)
+    setColorSwatchPreviewUrl(URL.createObjectURL(file))
+  }
+
+  const handleClearColorSwatch = () => {
+    if (colorSwatchPreviewUrl?.startsWith('blob:')) {
+      URL.revokeObjectURL(colorSwatchPreviewUrl)
+    }
+    setPendingColorSwatchFile(null)
+    setColorSwatchPreviewUrl(null)
+    setExistingColorSwatchUrl(null)
   }
 
   const handleStockChange = (size, rawValue) => {
@@ -369,7 +664,13 @@ export function ProductRegistration({ pathname }) {
       const previous = next[cut]
       if (previous?.startsWith('blob:')) URL.revokeObjectURL(previous)
       if (isEditMode && folder && Number.isFinite(numericId)) {
-        next[cut] = adminProductCutPublicUrl(folder, numericId, cut)
+        next[cut] = adminProductCutPublicUrl(
+          folder,
+          numericId,
+          cut,
+          'png',
+          imageUrlCacheVersion(existingImageUrl),
+        )
       } else {
         delete next[cut]
       }
@@ -430,6 +731,13 @@ export function ProductRegistration({ pathname }) {
       return '상품 이미지를 최소 1개 업로드해 주세요.'
     }
     if (!folder) return '상품 ID와 카테고리를 확인해 주세요.'
+    if (
+      form.isForYou &&
+      Number.isFinite(numericId) &&
+      !canRegisterMoreForYouProducts(catalogRows, numericId)
+    ) {
+      return forYouRegistrationBlockedMessage()
+    }
     return null
   }
 
@@ -443,6 +751,11 @@ export function ProductRegistration({ pathname }) {
     setSubmitError(null)
     setIsSaving(true)
 
+    const foruSortOrder = form.isForYou
+      ? (parseForuSortOrder(form.foruSortOrder) ??
+        suggestNextForuSortOrder(catalogRows.filter((row) => row.id !== numericId)))
+      : null
+
     const basePayload = {
       category: form.category,
       subcategory: resolveAdminSubcategoryForSave(
@@ -451,11 +764,16 @@ export function ProductRegistration({ pathname }) {
         form.category,
       ),
       collection: form.collection.trim() || detectCollectionFromProductName(form.name.trim()) || null,
+      tags: form.keywords.trim() || null,
       name: form.name.trim(),
       price: numericPrice,
       discount_rate: numericDiscount,
       is_new: form.isNew,
       is_foru: form.isForYou,
+      foru_sort_order: foruSortOrder,
+      free_shipping: form.freeShipping,
+      color_name: form.colorName.trim() || null,
+      color_hex: normalizeColorHex(form.colorHex),
       stock: form.stock,
     }
 
@@ -463,26 +781,39 @@ export function ProductRegistration({ pathname }) {
       let imageUrl = existingImageUrl
 
       if (Object.keys(pendingFiles).length > 0) {
-        const uploadedUrls = await uploadAdminProductCutImagesStrict(
-          pendingFiles,
-          folder,
-          numericId,
-          { useExistingOnDuplicate: !isEditMode },
-        )
+        const uploadedUrls = await uploadAdminProductCutImagesStrict(pendingFiles, folder, numericId)
         imageUrl = resolvePrimaryProductImageUrl(
           uploadedUrls,
           folder,
           numericId,
           existingImageUrl,
         )
+        imageUrl = withFreshImageCacheBust(imageUrl)
       } else if (!imageUrl) {
         imageUrl = resolvePrimaryProductImageUrl({}, folder, numericId, existingImageUrl)
       }
 
+      let colorSwatchUrl = existingColorSwatchUrl
+      if (pendingColorSwatchFile) {
+        colorSwatchUrl = await uploadAdminProductColorSwatchStrict(
+          pendingColorSwatchFile,
+          folder,
+          numericId,
+        )
+      } else if (!colorSwatchPreviewUrl) {
+        colorSwatchUrl = null
+      }
+
+      const savePayload = {
+        ...basePayload,
+        image_url: imageUrl,
+        color_swatch_url: colorSwatchUrl,
+      }
+
       if (isEditMode && editId != null) {
-        await updateAdminProduct(editId, { ...basePayload, image_url: imageUrl })
+        await updateAdminProduct(editId, savePayload)
       } else {
-        await insertAdminProduct({ id: numericId, ...basePayload, image_url: imageUrl })
+        await insertAdminProduct({ id: numericId, ...savePayload })
       }
 
       setAdminProductFlash(isEditMode ? '상품 정보가 수정되었습니다.' : '상품이 등록되었습니다.')
@@ -595,24 +926,35 @@ export function ProductRegistration({ pathname }) {
               <FieldLabel hint={isEditMode ? '등록 후 ID는 변경할 수 없습니다.' : '자동 추천 ID를 확인해 주세요.'} required>
                 상품 ID
               </FieldLabel>
-              <div className="mt-1.5">
-                <TextField
-                  value={form.id}
-                  disabled={isEditMode}
-                  type="number"
-                  min={1}
-                  onChange={(value) => updateField('id', value)}
-                  placeholder="예: 1043"
-                />
-                {!isEditMode && !form.id ? (
-                  <p className="m-0 mt-2 text-bodySmall text-primaryText">
-                    {(() => {
-                      const option = CATEGORY_OPTIONS.find((item) => item.value === form.category)
-                      return `${option?.label ?? form.category} ID 범위(${option?.hint ?? ''})가 모두 사용 중입니다. 다른 카테고리를 선택하거나 사용 가능한 ID를 직접 입력해 주세요.`
-                    })()}
-                  </p>
-                ) : null}
+              <div className="mt-1.5 flex flex-wrap items-center gap-4">
+                <div className="min-w-[140px] flex-1">
+                  <TextField
+                    value={form.id}
+                    disabled={isEditMode}
+                    type="number"
+                    min={1}
+                    onChange={(value) => updateField('id', value)}
+                    placeholder="예: 1043"
+                  />
+                </div>
+                <label className="flex h-11 shrink-0 cursor-pointer items-center gap-2 rounded-sm border border-lightGray bg-white px-4 text-bodyRegular2 text-dark">
+                  <input
+                    type="checkbox"
+                    className="size-4 shrink-0 accent-dark"
+                    checked={form.freeShipping}
+                    onChange={(e) => updateField('freeShipping', e.target.checked)}
+                  />
+                  무료배송
+                </label>
               </div>
+              {!isEditMode && !form.id ? (
+                <p className="m-0 mt-2 text-bodySmall text-primaryText">
+                  {(() => {
+                    const option = CATEGORY_OPTIONS.find((item) => item.value === form.category)
+                    return `${option?.label ?? form.category} ID 범위(${option?.hint ?? ''})가 모두 사용 중입니다. 다른 카테고리를 선택하거나 사용 가능한 ID를 직접 입력해 주세요.`
+                  })()}
+                </p>
+              ) : null}
             </div>
 
             {subcategoryOptions.length > 0 ? (
@@ -651,11 +993,89 @@ export function ProductRegistration({ pathname }) {
 
             <div className="lg:col-span-2">
               <FieldLabel required>상품명</FieldLabel>
-              <TextField
-                value={form.name}
-                onChange={handleNameChange}
-                placeholder="예: [오찌x우무] 비들 레인부츠 크림 FLOTGS2W21"
+              <div className="mt-1.5 w-full">
+                <TextField
+                  value={form.name}
+                  onChange={handleNameChange}
+                  placeholder="예: [오찌x우무] 비들 레인부츠 크림 FLOTGS2W21"
+                />
+              </div>
+            </div>
+
+            <div className="lg:col-span-2">
+              <FieldLabel hint="쉼표(,)로 구분. 스토어 검색 시 상품명과 함께 매칭됩니다.">
+                검색 키워드
+              </FieldLabel>
+              <textarea
+                value={form.keywords}
+                rows={2}
+                placeholder="예: 메리제인, 레인부츠, 오찌x우무"
+                onChange={(e) => updateField('keywords', e.target.value)}
+                className="mt-1.5 min-h-[72px] w-full resize-y rounded-sm border border-lightGray bg-white px-3 py-2.5 text-bodyRegular2 text-dark outline-none transition-colors placeholder:text-subtleText focus:border-dark"
               />
+            </div>
+          </div>
+        </SectionCard>
+
+        <SectionCard title="컬러 필터">
+          <div className="flex flex-col gap-6">
+            <div className="grid gap-6 lg:grid-cols-2 lg:gap-x-10">
+              <div>
+                <FieldLabel>컬러 이름</FieldLabel>
+                <div className="mt-1.5">
+                  <TextField
+                    value={form.colorName}
+                    onChange={handleColorNameChange}
+                    placeholder="예: 크림, 블랙"
+                  />
+                </div>
+              </div>
+            </div>
+
+            <div>
+              <FieldLabel>컬러 선택</FieldLabel>
+              <div className="mt-1.5">
+                <AdminColorPickerRow
+                  colorHex={form.colorHex}
+                  cut03PreviewUrl={cut03PreviewUrl}
+                  onChangeHex={handleColorHexChange}
+                />
+              </div>
+            </div>
+
+            <div className="border-t border-lightGray pt-5">
+              <FieldLabel>질감 이미지 (선택)</FieldLabel>
+              <div className="mt-1.5 flex flex-wrap items-center gap-3">
+                <div className="flex size-16 items-center justify-center overflow-hidden rounded-sm border border-lightGray bg-white">
+                  {colorSwatchPreviewUrl ? (
+                    <img src={colorSwatchPreviewUrl} alt="" className="size-full object-cover" />
+                  ) : (
+                    <DynamicColorSwatch hex={form.colorHex} sizeClassName="size-10" />
+                  )}
+                </div>
+                <label className="inline-flex h-10 cursor-pointer items-center justify-center rounded-sm border border-dark bg-white px-4 text-bodySmall text-dark hover:bg-light3">
+                  파일 선택
+                  <input
+                    type="file"
+                    accept="image/png,image/jpeg,image/webp"
+                    className="sr-only"
+                    onChange={(event) => {
+                      const file = event.target.files?.[0]
+                      if (file) handleSelectColorSwatch(file)
+                      event.target.value = ''
+                    }}
+                  />
+                </label>
+                {colorSwatchPreviewUrl ? (
+                  <button
+                    type="button"
+                    className="h-10 border-0 bg-transparent px-2 text-bodySmall text-subtleText underline-offset-2 hover:text-dark hover:underline"
+                    onClick={handleClearColorSwatch}
+                  >
+                    제거
+                  </button>
+                ) : null}
+              </div>
             </div>
           </div>
         </SectionCard>
@@ -709,9 +1129,20 @@ export function ProductRegistration({ pathname }) {
             />
             <ToggleField
               checked={form.isForYou}
-              onChange={(value) => updateField('isForYou', value)}
+              disabled={forYouLimitBlocksToggle}
+              onChange={(value) => {
+                setForm((prev) => ({
+                  ...prev,
+                  isForYou: value,
+                  foruSortOrder: value ? prev.foruSortOrder : null,
+                }))
+              }}
               label="For You 메인 노출"
-              description="홈 For You 섹션 노출 후보로 등록합니다."
+              description={
+                forYouLimitBlocksToggle
+                  ? forYouRegistrationBlockedMessage()
+                  : `홈 For You 섹션에 노출합니다. 최대 ${FOR_YOU_MAX_PRODUCTS}개 · 순서는 상품 관리에서 조정합니다.`
+              }
             />
           </div>
         </SectionCard>
