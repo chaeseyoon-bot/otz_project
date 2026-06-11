@@ -61,6 +61,7 @@ export function HeaderSection() {
   const pathname = useSpaPathname()
   const [activeIndex, setActiveIndex] = useState(() => getMobileTabIndexByPath(pathname))
   const isCategoryShoes = pathname.startsWith('/category/shoes')
+  const isBrandStory = pathname.startsWith('/brand-story')
   const isSearch = pathname.startsWith('/search')
   const isArchiveDetail = isArchiveDetailPath(pathname)
   const isProductDetail = isProductDetailPath(pathname)
@@ -71,6 +72,7 @@ export function HeaderSection() {
   const isOrderDetail = isOrderDetailPath(pathname)
   const hideMobileHomeHeader =
     isCategoryShoes ||
+    isBrandStory ||
     isArchiveDetail ||
     isSearch ||
     isProductDetail ||

@@ -1,3 +1,4 @@
+import type { MouseEvent } from 'react'
 import { createPortal } from 'react-dom'
 import { useMobileGnb } from '../../contexts/MobileGnbContext'
 import { GNB_MEGA_MENU_GROUPS } from '../../data/gnbMegaMenu'
@@ -133,7 +134,7 @@ function DrawerBody({ activeTab, onNavigate }: { activeTab: number; onNavigate: 
           <p className="mb-4 text-[14px] font-medium uppercase leading-[1.4] tracking-[-0.02em] text-[#1A1A1A]">
             MORE
           </p>
-          <MoreTiles />
+          <MoreTiles onNavigate={onNavigate} />
           <div className="mt-7 overflow-hidden rounded-[10px] border border-[#ECECEC] bg-white">
             <EditorialLinks onNavigate={onNavigate} />
           </div>
@@ -143,10 +144,17 @@ function DrawerBody({ activeTab, onNavigate }: { activeTab: number; onNavigate: 
   )
 }
 
-function MoreTiles() {
+function MoreTiles({ onNavigate }: { onNavigate: () => void }) {
+  const goToBrandStory = (event: MouseEvent<HTMLAnchorElement>) => {
+    event.preventDefault()
+    onNavigate()
+    navigateSpa('/brand-story')
+    window.scrollTo(0, 0)
+  }
+
   return (
     <div className="grid grid-cols-2 gap-[10px]">
-      <a href="#" className="block overflow-hidden bg-white">
+      <a href="/brand-story" className="block overflow-hidden bg-white" onClick={goToBrandStory}>
         <img
           src={imgMoHamburgerBrand}
           alt="브랜드"

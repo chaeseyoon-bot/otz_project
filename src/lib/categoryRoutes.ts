@@ -82,6 +82,32 @@ export function resolveGnbDrawerNavigation(
   return { mainId, subLabel: label }
 }
 
+const BRAND_SERIES_COLLECTION_ALIASES: Record<string, string> = {
+  LOMITA: '로미타',
+  ROMARI: '로마리',
+  '3300': '3300',
+  TOPI: '토피',
+}
+
+/** Maps home brand series title (e.g. LOMITA) to COLLECTION PLP deep link. */
+export function resolveBrandSeriesCategoryPath(seriesTitle: string): string | null {
+  const trimmed = seriesTitle.trim()
+  if (!trimmed) return null
+
+  const collectionItems = getLnbSubItems('collection')
+  const fromAlias = BRAND_SERIES_COLLECTION_ALIASES[trimmed.toUpperCase()]
+  if (fromAlias && collectionItems.includes(fromAlias)) {
+    return buildCategoryPlpPath('collection', fromAlias)
+  }
+
+  const directMatch = collectionItems.find(
+    (item) => item.toUpperCase() === trimmed.toUpperCase() || item === trimmed,
+  )
+  if (directMatch) return buildCategoryPlpPath('collection', directMatch)
+
+  return null
+}
+
 export function navigateCategoryPlp(
   mainId: CategoryPlpMainId,
   subLabel?: string | null,
@@ -92,6 +118,7 @@ export function navigateCategoryPlp(
 
   if (currentPath === nextPath) {
     notifySpaNavigation()
+    window.scrollTo(0, 0)
     return
   }
 
@@ -105,4 +132,26 @@ export function navigateCategoryPlp(
   if (!options?.replace) {
     window.scrollTo(0, 0)
   }
+}
+
+/** Navigates brand series CTA / card links — category PLP deep links scroll to top. */
+export function navigateBrandSeriesHref(href: string): void {
+  const trimmed = href.trim()
+  if (!trimmed || trimmed === '#') return
+
+  if (trimmed.startsWith('/category/shoes')) {
+    const query = trimmed.includes('?') ? trimmed.slice(trimmed.indexOf('?')) : ''
+    const { mainId, subIndex } = parseCategoryPlpSearch(query)
+    navigateCategoryPlp(mainId, subLabelFromPlpState(mainId, subIndex))
+    return
+  }
+
+  if (trimmed.startsWith('/') && !trimmed.startsWith('//')) {
+    window.history.pushState({}, '', trimmed)
+    notifySpaNavigation()
+    window.scrollTo(0, 0)
+    return
+  }
+
+  window.location.assign(trimmed)
 }

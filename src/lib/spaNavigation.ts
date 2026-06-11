@@ -13,6 +13,7 @@ export type SpaPath =
   | '/best'
   | '/archive'
   | '/editorial'
+  | '/brand-story'
   | '/category/shoes'
   | '/mypage'
   | '/cart'
@@ -67,6 +68,7 @@ export function isSpaPath(path: string): path is SpaPath {
   if (path === '/archive') return true
   if (isArchiveDetailPath(path)) return true
   if (path.startsWith('/editorial')) return true
+  if (path.startsWith('/brand-story')) return true
   if (path.startsWith('/category/shoes')) return true
   if (isMyPagePath(path)) return true
   if (isCartPath(path)) return true
@@ -92,7 +94,7 @@ export function navigateSpa(path: SpaPath) {
     window.history.pushState({}, '', path)
   }
   notifySpaNavigation()
-  if (path === '/') {
+  if (path === '/' || path === '/brand-story') {
     window.scrollTo(0, 0)
   }
 }

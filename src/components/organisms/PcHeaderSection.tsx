@@ -29,7 +29,7 @@ const PC_NAV_ITEMS = [
   { id: 'new', label: 'NEW', variant: 'link' as const },
   { id: 'archive', label: 'ARCHIVE', variant: 'link' as const },
   { id: 'editorial', label: 'EDITORIAL', variant: 'link' as const },
-  { id: 'event', label: 'EVENT', variant: 'link' as const },
+  { id: 'event', label: 'BRAND STORY', variant: 'link' as const },
 ] as const
 
 /** Figma 2601:23626 — PC utility user menu (horizontal strip under icons) */
@@ -51,6 +51,7 @@ function getSpaPathForPcNavItem(id: string): SpaPath | null {
   if (id === 'archive') return '/archive'
   if (id === 'new') return '/new'
   if (id === 'editorial') return '/editorial'
+  if (id === 'event') return '/brand-story'
   return null
 }
 

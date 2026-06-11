@@ -2,7 +2,7 @@ import {
   BRAND_INTRO_MOBILE_HEIGHT,
   BRAND_INTRO_MOBILE_WIDTH,
 } from './BrandIntroMobileSlide'
-import { isSpaPath, navigateSpa, type SpaPath } from '../../lib/spaNavigation'
+import { navigateBrandSeriesHref } from '../../lib/categoryRoutes'
 
 /** Figma 2425:14942 / 102:3498 — product slide dim overlay */
 export const BRAND_SERIES_DIM_OVERLAY =
@@ -37,13 +37,9 @@ function BrandSeriesCtaPreview({ label, href }: { label: string; href?: string }
         href={trimmedHref}
         className={`pointer-events-auto ${className}`}
         onClick={(event) => {
-          if (!trimmedHref || trimmedHref === '#') return
           event.preventDefault()
-          if (isSpaPath(trimmedHref)) {
-            navigateSpa(trimmedHref as SpaPath)
-            return
-          }
-          window.location.assign(trimmedHref)
+          event.stopPropagation()
+          navigateBrandSeriesHref(trimmedHref)
         }}
       >
         {content}

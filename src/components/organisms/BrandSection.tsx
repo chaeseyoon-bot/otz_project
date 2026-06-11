@@ -1,4 +1,4 @@
-import type { MouseEvent } from 'react'
+import type { KeyboardEvent, MouseEvent } from 'react'
 import { useCallback, useMemo, useRef, useState } from 'react'
 import {
   BrandIntroMobileSlide,
@@ -12,7 +12,7 @@ import {
   resolveBrandSeriesSlides,
   type ResolvedBrandSeriesSlide,
 } from '../../lib/homeMainContentResolver'
-import { isSpaPath, navigateSpa, type SpaPath } from '../../lib/spaNavigation'
+import { navigateBrandSeriesHref } from '../../lib/categoryRoutes'
 
 /** Product slides overlay (Figma node 2425:14942) */
 const BRAND_IMAGE_DIM_OVERLAY = BRAND_SERIES_DIM_OVERLAY
@@ -38,16 +38,19 @@ type BrandProductSlide = {
 
 type BrandSlide = BrandIntroSlide | BrandProductSlide
 
-function navigateBrandHref(href: string, event?: MouseEvent<HTMLAnchorElement>) {
-  const trimmed = href.trim()
-  if (!trimmed || trimmed === '#') return
-
+function navigateBrandHref(href: string, event?: MouseEvent<HTMLElement>) {
   event?.preventDefault()
-  if (isSpaPath(trimmed)) {
-    navigateSpa(trimmed as SpaPath)
-    return
-  }
-  window.location.assign(trimmed)
+  event?.stopPropagation()
+  navigateBrandSeriesHref(href)
+}
+
+function handleBrandSeriesCardKeyDown(
+  href: string,
+  event: KeyboardEvent<HTMLElement>,
+) {
+  if (event.key !== 'Enter' && event.key !== ' ') return
+  event.preventDefault()
+  navigateBrandHref(href)
 }
 
 function BrandSeriesCta({ label, href }: { label: string; href: string }) {
@@ -77,10 +80,19 @@ interface BrandSeriesGridCardProps {
 function BrandSeriesGridCard({ slide }: BrandSeriesGridCardProps) {
   if (!slide.title) return null
 
+  const targetHref = slide.ctaHref.trim()
+  const isNavigable = Boolean(targetHref && targetHref !== '#')
+
   return (
     <article
-      tabIndex={0}
-      className="group relative aspect-[338/423] w-full shrink-0 overflow-hidden rounded-[20px] outline-none focus-visible:ring-2 focus-visible:ring-black/25 focus-visible:ring-offset-2"
+      tabIndex={isNavigable ? 0 : undefined}
+      role={isNavigable ? 'link' : undefined}
+      aria-label={isNavigable ? `${slide.title} 카테고리로 이동` : undefined}
+      className={`group relative aspect-[338/423] w-full shrink-0 overflow-hidden rounded-[20px] outline-none focus-visible:ring-2 focus-visible:ring-black/25 focus-visible:ring-offset-2 ${isNavigable ? 'cursor-pointer' : ''}`}
+      onClick={isNavigable ? () => navigateBrandHref(targetHref) : undefined}
+      onKeyDown={
+        isNavigable ? (event) => handleBrandSeriesCardKeyDown(targetHref, event) : undefined
+      }
     >
       <img src={slide.imageUrl} alt={slide.title} className="absolute inset-0 h-full w-full object-cover" />
 
@@ -192,7 +204,28 @@ export function BrandSection() {
                 <article
                   key={slide.id}
                   data-brand-slide-index={index}
-                  className="relative h-[431px] w-[345px] shrink-0 snap-start overflow-hidden"
+                  className={`relative h-[431px] w-[345px] shrink-0 snap-start overflow-hidden ${slide.variant === 'product' && slide.ctaHref.trim() ? 'cursor-pointer' : ''}`}
+                  role={
+                    slide.variant === 'product' && slide.ctaHref.trim() ? 'link' : undefined
+                  }
+                  tabIndex={
+                    slide.variant === 'product' && slide.ctaHref.trim() ? 0 : undefined
+                  }
+                  aria-label={
+                    slide.variant === 'product' && slide.ctaHref.trim()
+                      ? `${slide.title} 카테고리로 이동`
+                      : undefined
+                  }
+                  onClick={
+                    slide.variant === 'product' && slide.ctaHref.trim()
+                      ? () => navigateBrandHref(slide.ctaHref)
+                      : undefined
+                  }
+                  onKeyDown={
+                    slide.variant === 'product' && slide.ctaHref.trim()
+                      ? (event) => handleBrandSeriesCardKeyDown(slide.ctaHref, event)
+                      : undefined
+                  }
                 >
                   {slide.variant === 'intro' ? (
                     <BrandIntroMobileSlide imageUrl={slide.image} body={slide.body} />

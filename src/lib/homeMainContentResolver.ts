@@ -18,6 +18,7 @@ import type {
   AdminStyleBannerSection,
 } from './adminHomeMainConfig'
 import { STYLE_BANNER_PRODUCT_SLOTS } from './adminHomeMainConfig'
+import { resolveBrandSeriesCategoryPath } from './categoryRoutes'
 import { getProductDetailPath } from './productRoutes'
 import {
   getDefaultLookbookSlotUrls,
@@ -141,7 +142,8 @@ export function resolveBrandSeriesSlides(seriesBanners: AdminSeriesBanner[]): Re
     body: series.body,
     imageUrl: series.imageUrl ?? SERIES_FALLBACK_IMAGES[index % SERIES_FALLBACK_IMAGES.length],
     ctaLabel: series.ctaLabel.trim() || '상품 보러 가기',
-    ctaHref: series.ctaHref.trim(),
+    ctaHref:
+      series.ctaHref.trim() || resolveBrandSeriesCategoryPath(series.title) || '',
   }))
 }
 

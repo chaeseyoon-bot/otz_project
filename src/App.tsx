@@ -21,6 +21,7 @@ import { isMyPagePath } from './lib/myPageRoutes'
 import { parseProductId } from './lib/productRoutes'
 import { BestPage } from './pages/BestPage'
 import { EditorialPage } from './pages/EditorialPage'
+import { BrandStoryPage } from './pages/BrandStoryPage'
 import { NewPage } from './pages/NewPage'
 import { MobileProductDetailPage } from './pages/MobileProductDetailPage'
 import { PcProductDetailPage } from './pages/PcProductDetailPage'
@@ -79,6 +80,7 @@ export default function App() {
   const archiveDetailId = parseArchiveDetailId(pathname)
   const isArchive = pathname.startsWith('/archive')
   const isEditorial = pathname.startsWith('/editorial')
+  const isBrandStory = pathname.startsWith('/brand-story')
   const isCategoryShoes = pathname.startsWith('/category/shoes')
   const isSearchOverlay = isSearchOverlayPath(pathname)
   const isSearchResults = isSearchResultsPath(pathname)
@@ -92,7 +94,7 @@ export default function App() {
   const productId = parseProductId(pathname)
   const isProductDetail = productId != null
   const isAdmin = isAdminPath(pathname)
-  const isPlpRoute = isNew || isBest || isArchive || isEditorial || isCategoryShoes || isSearch
+  const isHome = pathname === '/' || pathname === ''
 
   /** PDP entry / product switch — always start at top (SPA keeps window scroll otherwise). */
   useLayoutEffect(() => {
@@ -185,6 +187,8 @@ export default function App() {
             <ArchivePage />
           ) : isEditorial ? (
             <EditorialPage />
+          ) : isBrandStory ? (
+            <BrandStoryPage />
           ) : (
             <HomePage />
           )}
@@ -200,7 +204,7 @@ export default function App() {
             <FooterSection />
           )}
           <BottomTabBar />
-          {!isPlpRoute ? <HomeMainPromoPopup /> : null}
+          {isHome ? <HomeMainPromoPopup /> : null}
         </div>
         <MobileGnbDrawer />
       </div>

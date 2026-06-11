@@ -1,0 +1,317 @@
+[
+  {
+    "name": "BRAND STORY",
+    "text": "BRAND STORY",
+    "fontSize": 34,
+    "fontWeight": 800,
+    "align": "LEFT"
+  },
+  {
+    "name": "Description",
+    "text": "EVRYDAY SPECIAL",
+    "fontSize": 100,
+    "fontWeight": 800,
+    "align": "CENTER"
+  },
+  {
+    "name": "Description",
+    "text": "오찌는 2009년 따스한 태양 아래 바닷바람이 살랑이는 캘리포니아 말리부의 자연에서 탄생한 브랜드입니다.\n우리는 일상 속에서도 여행과 같은 설렘이 느껴지도록 일상의 특별함을 선물합니다.\n\n미니멀한 디자인과 맨발의 편안함을 담은 신발을 통해 캘리포니아의 여유롭고 편안한 라이프스타일을 재해석했습니다.\n말리부의 포근한 햇살과 부드러운 모래 위를 걷는 느낌 그대로.\n오찌의 특별한 여정을 함께하세요.",
+    "fontSize": 24,
+    "fontWeight": 500,
+    "align": "CENTER"
+  },
+  {
+    "name": "Description",
+    "text": "OTZ만의 시그니처 감성",
+    "fontSize": 34,
+    "fontWeight": 800,
+    "align": "LEFT"
+  },
+  {
+    "name": "Description",
+    "text": "OTZ 브랜드의 시그니처인 둥급 쉐입의 앞코 실루엣은 5,000년 전 북부 알프스 산맥에서 발견된 OTZI 아이스맨으로 부터 영감을 받아 캘리포니아의 크리에이티브 디렉터 LUDO에 의해 미니멀하고 편안함을 담은 현대적 감각으로 재해석되면서 시작되었습니다.",
+    "fontSize": 15,
+    "fontWeight": 400,
+    "align": "LEFT"
+  },
+  {
+    "name": "Description",
+    "text": "편안함과 자연스러운 핏의 쿠션",
+    "fontSize": 34,
+    "fontWeight": 800,
+    "align": "LEFT"
+  },
+  {
+    "name": "Description",
+    "text": "통기성이 좋아서 맨발로 신어도 편해요!",
+    "fontSize": 20,
+    "fontWeight": 600,
+    "align": "RIGHT"
+  },
+  {
+    "name": "Description",
+    "text": "반발력을 지닌 메모리 쿠션인 코르크로 오랜시간 충격흡수를 해주며, \n발의 자연스러운 윤곽에 맞게 설계 되어 편안한 착화감을 제공합니다.",
+    "fontSize": 15,
+    "fontWeight": 400,
+    "align": "RIGHT"
+  },
+  {
+    "name": "Description",
+    "text": "THE SIGNATURE\nLINE-UP",
+    "fontSize": 88,
+    "fontWeight": 800,
+    "align": "LEFT"
+  },
+  {
+    "name": "Description",
+    "text": "ROMARY",
+    "fontSize": 52,
+    "fontWeight": 800,
+    "align": "LEFT"
+  },
+  {
+    "name": "Description",
+    "text": "OTZ의 대표 라인으로 자리 매김한 로마리\n낮은 굽에 스니커즈 아웃솔을 더해 날렵하지만, 편안한 착화감을 선사합니다. 일상은 물론 격식 있는 자리까지 자연스럽게 스타일링할 수 있습니다.",
+    "fontSize": 18,
+    "fontWeight": 500,
+    "align": "LEFT"
+  },
+  {
+    "name": "Description",
+    "text": "상품 보러 가기",
+    "fontSize": 14,
+    "fontWeight": 400,
+    "align": "LEFT"
+  },
+  {
+    "name": "Product Header Text",
+    "text": "OTZ ESSENTIAL\nROMARY",
+    "fontSize": 72,
+    "fontWeight": 800,
+    "align": "RIGHT"
+  },
+  {
+    "name": "Lomita Product Header Text",
+    "text": "OTZ ICONIC\nLOMITA",
+    "fontSize": 72,
+    "fontWeight": 800,
+    "align": "LEFT"
+  },
+  {
+    "name": "Description",
+    "text": "LOMITA",
+    "fontSize": 52,
+    "fontWeight": 800,
+    "align": "LEFT"
+  },
+  {
+    "name": "Description",
+    "text": "OTZ의 아이코닉 로미타\n안정적인 플랫폼이 자연스럽게 높이를 더하고 편안한 균형을 완성합니다.\n메리제인부터 스니커즈까지 오찌만의 감성을 담은 시그니처 라인입니다.",
+    "fontSize": 18,
+    "fontWeight": 500,
+    "align": "LEFT"
+  },
+  {
+    "name": "Description",
+    "text": "상품 보러 가기",
+    "fontSize": 14,
+    "fontWeight": 400,
+    "align": "LEFT"
+  },
+  {
+    "name": "Description",
+    "text": "TOPI",
+    "fontSize": 52,
+    "fontWeight": 800,
+    "align": "LEFT"
+  },
+  {
+    "name": "Description",
+    "text": "플랫폼 클로그 타입의 감각적인 실루엣, 토피 간결한 디자인과 안정적인 착화감으로 편안한 데일리 스타일을 완성합니다. 최근 로파서울과의 협업으로 더욱 주목받은 OTZ의 대표 라인입니다.",
+    "fontSize": 18,
+    "fontWeight": 500,
+    "align": "LEFT"
+  },
+  {
+    "name": "Description",
+    "text": "상품 보러 가기",
+    "fontSize": 14,
+    "fontWeight": 400,
+    "align": "LEFT"
+  },
+  {
+    "name": "Topi Product Header Text",
+    "text": "SLEEK PROFILE\nTOPI",
+    "fontSize": 72,
+    "fontWeight": 800,
+    "align": "RIGHT"
+  },
+  {
+    "name": "Heritage Product Header Text",
+    "text": "OTZ HERITAGE\n3300",
+    "fontSize": 72,
+    "fontWeight": 800,
+    "align": "LEFT"
+  },
+  {
+    "name": "Description",
+    "text": "3300",
+    "fontSize": 52,
+    "fontWeight": 800,
+    "align": "LEFT"
+  },
+  {
+    "name": "Description",
+    "text": "OTZ의 헤리티지를 담은 3300. 넓고 둥근 쉐입으로 편안한 착화감과 여유로운 실루엣을 완성합니다. 하이와 로우 두 가지 높이로 브랜드의 아이코닉한 스타일을 제안합니다.",
+    "fontSize": 18,
+    "fontWeight": 500,
+    "align": "LEFT"
+  },
+  {
+    "name": "Description",
+    "text": "상품 보러 가기",
+    "fontSize": 14,
+    "fontWeight": 400,
+    "align": "LEFT"
+  },
+  {
+    "name": "1566-8221",
+    "text": "1566-8221",
+    "fontSize": 18,
+    "fontWeight": 500,
+    "align": "LEFT"
+  },
+  {
+    "name": "평일 AM 10:00 - PM 06:00 / 점심 PM 12:00 - PM 01:00 / ",
+    "text": "평일 AM 10:00 - PM 05:00 / 점심 PM 12:00 - PM 01:00 / 토요일, 일요일, 공휴일 휴무",
+    "fontSize": 13,
+    "fontWeight": 500,
+    "align": "LEFT"
+  },
+  {
+    "name": "(주)미쏘 월드패션그룹 · 대표이사 : 조윤호 · 사업자등록번호 : 113-85-18630",
+    "text": "(주)이랜드월드패션사업부　대표이사 : 조동주　사업자등록번호 : 113-85-19030",
+    "fontSize": 13,
+    "fontWeight": 400,
+    "align": "LEFT"
+  },
+  {
+    "name": "[사업자정보확인]",
+    "text": "[사업자정보확인]",
+    "fontSize": 13,
+    "fontWeight": 400,
+    "align": "LEFT"
+  },
+  {
+    "name": "통신판매업신고번호 : 2025-서울강서-2203　주소 : 서울 강서구 마곡동로 146 이랜드패션사업부",
+    "text": "통신판매업신고번호 : 2025-서울강서-2203　주소 : 서울 강서구 마곡동로 146 이랜드패션사업부",
+    "fontSize": 13,
+    "fontWeight": 400,
+    "align": "LEFT"
+  },
+  {
+    "name": "개인정보보호책임자 : 김태위　E-mail : webmaster@otzstore.com　호스팅 서비스 제공자 : 카페24(주)",
+    "text": "개인정보보호책임자 : 김태위　E-mail : webmaster@otzstore.com　호스팅 서비스 제공자 : 카페24(주)",
+    "fontSize": 13,
+    "fontWeight": 400,
+    "align": "LEFT"
+  },
+  {
+    "name": "COPYRIGHT by ㈜이랜드월드. ALL RIGHT RESERVED",
+    "text": "COPYRIGHT by ㈜이랜드월드. ALL RIGHT RESERVED",
+    "fontSize": 13,
+    "fontWeight": 500,
+    "align": "LEFT"
+  },
+  {
+    "name": "본 사이트 내 모든 이미지 및 컨텐츠 등은 저작권법 제 4조의 의한 저작물로써 소유권은 ㈜",
+    "text": "본 사이트 내 모든 이미지 및 컨텐츠 등은 저작권법 제 4조의 의한 저작물로써 소유권은 ㈜이랜드월드패션사업부 에게 있으며, 무단 도용 시 법적인 제재를 받을 수 있습니다.",
+    "fontSize": 13,
+    "fontWeight": 400,
+    "align": "LEFT"
+  },
+  {
+    "name": "MORE",
+    "text": "MORE",
+    "fontSize": 14,
+    "fontWeight": 700,
+    "align": "LEFT"
+  },
+  {
+    "name": "브랜드스토리",
+    "text": "브랜드스토리",
+    "fontSize": 13,
+    "fontWeight": 500,
+    "align": "LEFT"
+  },
+  {
+    "name": "멤버십혜택",
+    "text": "멤버십혜택",
+    "fontSize": 13,
+    "fontWeight": 500,
+    "align": "LEFT"
+  },
+  {
+    "name": "SUPPORT",
+    "text": "SUPPORT",
+    "fontSize": 14,
+    "fontWeight": 700,
+    "align": "LEFT"
+  },
+  {
+    "name": "공지사항",
+    "text": "공지사항",
+    "fontSize": 13,
+    "fontWeight": 500,
+    "align": "LEFT"
+  },
+  {
+    "name": "대량주문문의",
+    "text": "대량주문문의",
+    "fontSize": 13,
+    "fontWeight": 500,
+    "align": "LEFT"
+  },
+  {
+    "name": "이벤트",
+    "text": "이벤트",
+    "fontSize": 13,
+    "fontWeight": 500,
+    "align": "LEFT"
+  },
+  {
+    "name": "멤버십",
+    "text": "멤버십",
+    "fontSize": 13,
+    "fontWeight": 500,
+    "align": "LEFT"
+  },
+  {
+    "name": "자주 묻는 질문 FAQ",
+    "text": "자주 묻는 질문 FAQ",
+    "fontSize": 13,
+    "fontWeight": 500,
+    "align": "LEFT"
+  },
+  {
+    "name": "이용약관",
+    "text": "이용약관",
+    "fontSize": 13,
+    "fontWeight": 500,
+    "align": "LEFT"
+  },
+  {
+    "name": "개인정보처리방침",
+    "text": "개인정보처리방침",
+    "fontSize": 13,
+    "fontWeight": 500,
+    "align": "LEFT"
+  },
+  {
+    "name": "이메일무단수집거부",
+    "text": "이메일무단수집거부",
+    "fontSize": 13,
+    "fontWeight": 500,
+    "align": "LEFT"
+  }
+]
