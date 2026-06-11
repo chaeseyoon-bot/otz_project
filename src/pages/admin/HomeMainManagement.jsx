@@ -46,6 +46,7 @@ import {
   MAX_MARKETING_POPUP_SLIDES,
   MAX_STYLE_BANNER_CARDS,
   MIN_PLANNING_COLLECTION_PRODUCTS,
+  MIN_MARKETING_POPUP_SLIDES,
   PLANNING_COLLECTION_PRODUCT_SLOTS,
   STYLE_BANNER_PRODUCT_SLOTS,
 } from '../../lib/adminHomeMainConfig'
@@ -65,7 +66,6 @@ import {
   searchAdminProductsForPicker,
 } from '../../lib/productsApi'
 import { PRODUCT_CARD_CUTS } from '../../lib/productImage'
-import { navigateSpa } from '../../lib/spaNavigation'
 
 const SECTION_TABS = [
   { id: 'main', label: '1. 메인 배너' },
@@ -79,6 +79,55 @@ const SECTION_TABS = [
   { id: 'lookbook', label: '9. 룩북' },
   { id: 'marketingPopup', label: '10. 마케팅 팝업' },
 ]
+
+const SECTION_SAVE_LABELS = {
+  main: '메인 배너',
+  quick: '퀵메뉴',
+  brand: '브랜드 배너',
+  series: '시리즈 배너',
+  planning: '기획전 배너',
+  collection: '기획전 컬렉션',
+  curation: '큐레이션 상품',
+  styling: '스타일 배너',
+  lookbook: '룩북',
+  marketingPopup: '마케팅 팝업',
+}
+
+function validateHomeMainActiveTab(activeTab, config) {
+  switch (activeTab) {
+    case 'planning': {
+      const filledBannerCount = config.planningBanners.filter((banner) =>
+        Boolean(banner.imageUrl?.trim()),
+      ).length
+      if (filledBannerCount < 1) {
+        return '기획전 배너를 1개 이상 등록해 주세요.'
+      }
+      return null
+    }
+    case 'collection': {
+      for (let index = 0; index < config.planningCollections.length; index++) {
+        const filledCount = countFilledPlanningCollectionProducts(
+          config.planningCollections[index].productIds,
+        )
+        if (filledCount < MIN_PLANNING_COLLECTION_PRODUCTS) {
+          return `기획전 컬렉션 ${index + 1}: 상품을 최소 ${MIN_PLANNING_COLLECTION_PRODUCTS}개 등록해 주세요.`
+        }
+      }
+      return null
+    }
+    case 'marketingPopup': {
+      const filledSlideCount = config.marketingPopupSlides.filter((slide) =>
+        Boolean(slide.imageUrl?.trim()),
+      ).length
+      if (filledSlideCount < MIN_MARKETING_POPUP_SLIDES) {
+        return '마케팅 팝업 이미지를 1개 이상 등록해 주세요.'
+      }
+      return null
+    }
+    default:
+      return null
+  }
+}
 
 const LOOKBOOK_SLOT_LABELS = [
   '슬롯 1 · MO 메인 / PC 히어로',
@@ -1477,16 +1526,10 @@ export function HomeMainManagement() {
   }
 
   const handleSave = () => {
-    for (let index = 0; index < config.planningCollections.length; index++) {
-      const filledCount = countFilledPlanningCollectionProducts(
-        config.planningCollections[index].productIds,
-      )
-      if (filledCount < MIN_PLANNING_COLLECTION_PRODUCTS) {
-        showMessage(
-          `기획전 컬렉션 ${index + 1}: 상품을 최소 ${MIN_PLANNING_COLLECTION_PRODUCTS}개 등록해 주세요.`,
-        )
-        return
-      }
+    const validationError = validateHomeMainActiveTab(activeTab, config)
+    if (validationError) {
+      showMessage(validationError)
+      return
     }
 
     setIsSaving(true)
@@ -1505,8 +1548,8 @@ export function HomeMainManagement() {
         marketingPopupSlides: config.marketingPopupSlides,
       })
       setConfig(saved)
-      showMessage('홈메인 설정이 저장되었습니다. 홈 화면에 반영됩니다.')
-      window.setTimeout(() => navigateSpa('/'), 600)
+      const sectionLabel = SECTION_SAVE_LABELS[activeTab] ?? '홈메인'
+      showMessage(`${sectionLabel} 설정이 저장되었습니다. 홈 화면에 반영됩니다.`)
     } catch {
       showMessage('저장에 실패했습니다. 이미지 용량이 크면 다시 시도해 주세요.')
     } finally {
@@ -2635,14 +2678,17 @@ export function HomeMainManagement() {
         </section>
       ) : null}
 
-      <div className="mt-8 flex justify-end border-t border-lightGray pt-6">
+      <div className="mt-8 flex flex-col items-end gap-2 border-t border-lightGray pt-6">
+        <p className="m-0 text-bodySmall text-subtleText">
+          현재 탭({SECTION_SAVE_LABELS[activeTab] ?? activeTab})만 검증 후 저장됩니다.
+        </p>
         <button
           type="button"
           disabled={isSaving}
           onClick={handleSave}
           className="rounded-sm border border-dark bg-dark px-6 py-3 text-bodyRegular2 text-white transition-opacity hover:opacity-90 disabled:opacity-50"
         >
-          {isSaving ? '저장 중…' : '설정 저장'}
+          {isSaving ? '저장 중…' : `${SECTION_SAVE_LABELS[activeTab] ?? '설정'} 저장`}
         </button>
       </div>
     </div>
