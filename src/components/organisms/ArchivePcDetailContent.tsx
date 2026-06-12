@@ -40,7 +40,7 @@ export function ArchivePcDetailContent({ detail }: ArchivePcDetailContentProps) 
                 <img
                   src={block.image.src}
                   alt={block.image.alt ?? ''}
-                  className="block h-auto w-full"
+                  className="block h-auto w-full px-[200px] pt-[40px] pb-[100px]"
                   loading={index === 0 ? 'eager' : 'lazy'}
                   decoding="async"
                   draggable={false}
