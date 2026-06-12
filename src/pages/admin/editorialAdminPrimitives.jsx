@@ -1,9 +1,13 @@
 import { useEffect, useRef, useState } from 'react'
+import { ProductEditorialThumbnail } from '../../components/molecules/ProductEditorialThumbnail'
 import {
   adminProductTitle,
+  fetchAdminProductById,
   fetchProductById,
+  fetchProductRowById,
   formatAdminDiscountRate,
   formatAdminPrice,
+  getProductThumbnailCandidates,
   searchAdminProductsForPicker,
 } from '../../lib/productsApi'
 
@@ -53,12 +57,49 @@ export function TextInput({ value, onChange, placeholder, multiline = false, row
   )
 }
 
+function useImageAspectRatio(url) {
+  const [aspectRatio, setAspectRatio] = useState(1)
+
+  useEffect(() => {
+    if (!url) {
+      setAspectRatio(1)
+      return undefined
+    }
+    let cancelled = false
+    const img = new Image()
+    img.onload = () => {
+      if (!cancelled && img.naturalWidth > 0 && img.naturalHeight > 0) {
+        setAspectRatio(img.naturalWidth / img.naturalHeight)
+      }
+    }
+    img.onerror = () => {
+      if (!cancelled) setAspectRatio(1)
+    }
+    img.src = url
+    return () => {
+      cancelled = true
+    }
+  }, [url])
+
+  return aspectRatio
+}
+
 export function ImageUploader({ label, spec, aspectClass, previewUrl, fileName, isUploading, onSelect, onClear }) {
   const inputRef = useRef(null)
+  const naturalAspectRatio = useImageAspectRatio(previewUrl)
+  const useDynamicAspect = !aspectClass
+  const previewClassName = [
+    'shrink-0 overflow-hidden rounded-sm border border-lightGray bg-light',
+    aspectClass ?? (previewUrl ? '' : 'aspect-square w-[88px]'),
+  ]
+    .filter(Boolean)
+    .join(' ')
+  const previewStyle =
+    useDynamicAspect && previewUrl ? { width: 88, aspectRatio: naturalAspectRatio } : undefined
 
   return (
     <div className="flex items-start gap-2.5">
-      <div className={`shrink-0 overflow-hidden rounded-sm border border-lightGray bg-light ${aspectClass}`}>
+      <div className={previewClassName} style={previewStyle}>
         {previewUrl ? (
           <img src={previewUrl} alt="" className="size-full object-cover" draggable={false} />
         ) : (
@@ -102,9 +143,20 @@ export function ImageUploader({ label, spec, aspectClass, previewUrl, fileName, 
   )
 }
 
+async function resolveProductRowForThumbnail(productId) {
+  const row = await fetchProductRowById(productId)
+  if (row) return row
+  try {
+    return await fetchAdminProductById(productId)
+  } catch {
+    return null
+  }
+}
+
 export function ProductIdField({ productId, slotLabel, onAssign, onClear }) {
   const [draft, setDraft] = useState(productId != null ? String(productId) : '')
   const [product, setProduct] = useState(null)
+  const [thumbCandidates, setThumbCandidates] = useState([])
   const [isLoading, setIsLoading] = useState(false)
 
   useEffect(() => {
@@ -114,13 +166,16 @@ export function ProductIdField({ productId, slotLabel, onAssign, onClear }) {
   useEffect(() => {
     if (productId == null) {
       setProduct(null)
+      setThumbCandidates([])
       return undefined
     }
     let cancelled = false
     setIsLoading(true)
-    fetchProductById(productId)
-      .then((row) => {
-        if (!cancelled) setProduct(row ?? null)
+    Promise.all([fetchProductById(productId), resolveProductRowForThumbnail(productId)])
+      .then(([mapped, row]) => {
+        if (cancelled) return
+        setProduct(mapped ?? null)
+        setThumbCandidates(row ? getProductThumbnailCandidates(row, 'square') : [])
       })
       .finally(() => {
         if (!cancelled) setIsLoading(false)
@@ -147,8 +202,12 @@ export function ProductIdField({ productId, slotLabel, onAssign, onClear }) {
         <div className="size-12 shrink-0 overflow-hidden rounded-sm border border-lightGray bg-light">
           {isLoading ? (
             <div className="flex size-full items-center justify-center text-[9px] text-subtleText">…</div>
-          ) : product?.image ? (
-            <img src={product.image} alt="" className="size-full object-cover" draggable={false} />
+          ) : thumbCandidates.length > 0 ? (
+            <ProductEditorialThumbnail
+              candidates={thumbCandidates}
+              className="size-full"
+              emptyLabel="없음"
+            />
           ) : (
             <div className="flex size-full items-center justify-center text-[9px] text-subtleText">없음</div>
           )}
@@ -190,19 +249,25 @@ export function ProductSlotPicker({ productId, slotLabel, onAssign, onClear }) {
   const [query, setQuery] = useState('')
   const [results, setResults] = useState([])
   const [selected, setSelected] = useState(null)
+  const [thumbCandidates, setThumbCandidates] = useState([])
   const [isSearching, setIsSearching] = useState(false)
   const [isOpen, setIsOpen] = useState(productId == null)
 
   useEffect(() => {
     if (productId == null) {
       setSelected(null)
+      setThumbCandidates([])
       setIsOpen(true)
       return undefined
     }
     let cancelled = false
-    fetchProductById(productId).then((product) => {
-      if (!cancelled) setSelected(product)
-    })
+    Promise.all([fetchProductById(productId), resolveProductRowForThumbnail(productId)]).then(
+      ([product, row]) => {
+        if (cancelled) return
+        setSelected(product ?? null)
+        setThumbCandidates(row ? getProductThumbnailCandidates(row, 'square') : [])
+      },
+    )
     setIsOpen(false)
     return () => {
       cancelled = true
@@ -235,7 +300,11 @@ export function ProductSlotPicker({ productId, slotLabel, onAssign, onClear }) {
       </div>
       {selected ? (
         <div className="mt-1.5 flex items-center gap-2">
-          <img src={selected.image} alt="" className="size-9 rounded-sm object-cover" />
+          <ProductEditorialThumbnail
+            candidates={thumbCandidates}
+            className="size-9 shrink-0 overflow-hidden rounded-sm bg-white"
+            emptyLabel="없음"
+          />
           <div className="min-w-0 flex-1">
             <p className="m-0 truncate text-[11px] text-dark">{adminProductTitle(selected)}</p>
             <p className="m-0 text-[10px] text-subtleText">

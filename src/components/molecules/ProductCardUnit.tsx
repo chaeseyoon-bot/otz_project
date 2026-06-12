@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState } from 'react'
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { getProductHeartIconDataUri } from '../../lib/productHeartIcon'
 import { figmaAsset } from '../../lib/figmaAssetUrl'
 import { AdaptiveProductImage } from './AdaptiveProductImage'
@@ -64,6 +64,10 @@ interface ProductCardUnitProps {
   soldOutSizes?: readonly string[]
   /** BEST PLP — Figma 2705:29783: black rank badge on thumbnail (1-based). */
   rank?: number
+  /** Hide multi-cut dot indicators on thumbnail (e.g. editorial product sections). */
+  hideMultiCutDots?: boolean
+  /** Override price row wrapper below title. */
+  priceRowClassName?: string
 }
 
 const SWIPE_COMMIT_PX = 48
@@ -83,7 +87,6 @@ function NewMultiCutMedia({
   hideDots?: boolean
 }) {
   const [active, setActive] = useState(0)
-  const [slideWidth, setSlideWidth] = useState(0)
   const [dragOffset, setDragOffset] = useState(0)
   const [isDragging, setIsDragging] = useState(false)
   const viewportRef = useRef<HTMLDivElement>(null)
@@ -100,21 +103,6 @@ function NewMultiCutMedia({
     [slides.length],
   )
 
-  useLayoutEffect(() => {
-    const el = viewportRef.current
-    if (!el) return
-
-    const measure = () => {
-      const width = Math.round(el.getBoundingClientRect().width)
-      if (width > 0) setSlideWidth(width)
-    }
-
-    measure()
-    const observer = new ResizeObserver(measure)
-    observer.observe(el)
-    return () => observer.disconnect()
-  }, [])
-
   useEffect(() => {
     setActive(0)
     setDragOffset(0)
@@ -129,19 +117,21 @@ function NewMultiCutMedia({
       setIsDragging(false)
       setDragOffset(0)
 
+      const slideWidth = viewportRef.current?.clientWidth ?? 0
       const threshold = slideWidth > 0 ? Math.min(SWIPE_COMMIT_PX, slideWidth * 0.2) : SWIPE_COMMIT_PX
       let next = dragStartIndexRef.current
       if (dx < -threshold) next += 1
       else if (dx > threshold) next -= 1
       goToIndex(next)
     },
-    [goToIndex, slideWidth],
+    [goToIndex],
   )
 
-  const translateX =
-    slideWidth > 0
-      ? -(isDragging ? dragStartIndexRef.current : active) * slideWidth + (isDragging ? dragOffset : 0)
-      : 0
+  const slideShare = slides.length > 0 ? 100 / slides.length : 100
+  const slideIndex = isDragging ? dragStartIndexRef.current : active
+  const translateX = isDragging
+    ? `calc(-${slideIndex * slideShare}% + ${dragOffset}px)`
+    : `-${slideIndex * slideShare}%`
 
   return (
     <div className="relative h-full w-full overflow-hidden bg-light">
@@ -195,17 +185,17 @@ function NewMultiCutMedia({
         }
       >
         <div
-          className={`flex h-full ${isDragging ? '' : 'transition-transform duration-300 ease-out motion-reduce:transition-none'}`}
+          className={`flex h-full flex-nowrap ${isDragging ? '' : 'transition-transform duration-300 ease-out motion-reduce:transition-none'}`}
           style={{
-            width: slideWidth > 0 ? slideWidth * slides.length : '100%',
-            transform: slideWidth > 0 ? `translate3d(${translateX}px, 0, 0)` : undefined,
+            width: `${slides.length * 100}%`,
+            transform: `translate3d(${translateX}, 0, 0)`,
           }}
         >
           {slides.map((slide, slideIndex) => (
             <div
               key={slideIndex}
               className="relative box-border h-full shrink-0 overflow-hidden bg-light"
-              style={{ width: slideWidth > 0 ? slideWidth : '100%' }}
+              style={{ width: `${slideShare}%` }}
               aria-hidden={slideIndex !== active && !isDragging}
             >
               <AdaptiveProductImage
@@ -375,6 +365,8 @@ export function ProductCardUnit({
   sizeOptions = product.sizeOptions ?? DEFAULT_PRODUCT_SIZES,
   soldOutSizes = product.soldOutSizes ?? [],
   rank,
+  hideMultiCutDots = false,
+  priceRowClassName = 'flex flex-wrap items-center gap-x-[6px] gap-y-0 pt-1',
 }: ProductCardUnitProps) {
   const [isDesktop, setIsDesktop] = useState(
     () => typeof window !== 'undefined' && window.matchMedia('(min-width: 1024px)').matches,
@@ -399,7 +391,11 @@ export function ProductCardUnit({
     <article className={articleClassName}>
       <div className="relative isolate aspect-[4/5] w-full shrink-0 overflow-hidden bg-light">
         {slides && slides.length > 0 ? (
-          <NewMultiCutMedia productTitle={product.title} slides={slides} hideDots={sizePanelOpen} />
+          <NewMultiCutMedia
+            productTitle={product.title}
+            slides={slides}
+            hideDots={hideMultiCutDots || sizePanelOpen}
+          />
         ) : (
           <div className={`relative h-full w-full overflow-hidden ${mediaInnerClassName}`.trim()}>
             <AdaptiveProductImage
@@ -423,7 +419,7 @@ export function ProductCardUnit({
         ) : null}
       </div>
       <p className={titleClassName}>{product.title}</p>
-      <div className="flex flex-wrap items-center gap-x-[6px] gap-y-0 pt-1">
+      <div className={priceRowClassName}>
         <span className="text-[15px] font-bold text-primary">{product.discountRate}</span>
         <span className="text-[15px] font-bold text-black">{product.price}</span>
         {product.originalPrice ? (

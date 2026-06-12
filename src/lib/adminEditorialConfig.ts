@@ -32,12 +32,33 @@ export const EDITORIAL_SECTION_LABELS: Record<EditorialSectionType, string> = {
   benefit: '혜택',
   gift: '기프트',
   coupon: '쿠폰',
-  lookbook: '룩북',
+  lookbook: '이미지',
   featured_products: '피처드 상품',
   middle_banner: '중간 배너',
-  middle_lookbook: '중간 룩북',
+  middle_lookbook: '이미지',
   product_tabs: '상품 탭',
   must_item: 'MUST ITEM',
+}
+
+const EDITORIAL_IMAGE_BLOCK_TYPES: EditorialSectionType[] = ['lookbook', 'middle_lookbook']
+
+/** Sequential label for lookbook image blocks: 이미지 01, 이미지 02, … */
+export function getEditorialImageBlockLabel(
+  sectionOrder: EditorialSectionType[],
+  sectionType: EditorialSectionType,
+): string {
+  if (!EDITORIAL_IMAGE_BLOCK_TYPES.includes(sectionType)) {
+    return EDITORIAL_SECTION_LABELS[sectionType]
+  }
+  let imageIndex = 0
+  for (const type of sectionOrder) {
+    if (!EDITORIAL_IMAGE_BLOCK_TYPES.includes(type)) continue
+    imageIndex += 1
+    if (type === sectionType) {
+      return `이미지 ${String(imageIndex).padStart(2, '0')}`
+    }
+  }
+  return EDITORIAL_SECTION_LABELS[sectionType]
 }
 
 export const DEFAULT_EDITORIAL_SECTION_ORDER: EditorialSectionType[] = [
@@ -443,11 +464,15 @@ function normalizeHeroTab(tab: Partial<AdminEditorialHeroTab>, fallback: AdminEd
 
 function normalizeProductIds(ids: unknown, slotCount: number): (number | null)[] {
   const source = Array.isArray(ids) ? ids : []
+  const seen = new Set<number>()
   return Array.from({ length: slotCount }, (_, index) => {
     const value = source[index]
     if (value == null) return null
     const numeric = Number(value)
-    return Number.isFinite(numeric) ? numeric : null
+    if (!Number.isFinite(numeric)) return null
+    if (seen.has(numeric)) return null
+    seen.add(numeric)
+    return numeric
   })
 }
 

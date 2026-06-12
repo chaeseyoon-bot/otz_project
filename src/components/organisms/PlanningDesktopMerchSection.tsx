@@ -1,6 +1,7 @@
-import { useEffect, useMemo, useState } from 'react'
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { PLANNING_BANNER_DIM_OVERLAY } from '../molecules/PlanningBannerMobileSlide'
 import { useAdminHomeMainConfig } from '../../hooks/useAdminHomeMainConfig'
+import { useHorizontalMouseDragScroll } from '../../hooks/useHorizontalMouseDragScroll'
 import { usePlanningCollectionsContent } from '../../hooks/usePlanningCollectionsContent'
 import { resolvePlanningBanners } from '../../lib/homeMainContentResolver'
 import { getProductHeartIconDataUri } from '../../lib/productHeartIcon'
@@ -62,9 +63,69 @@ export function PlanningDesktopMerchSection() {
     () => resolvePlanningBanners(planningBanners),
     [planningBanners, updatedAt],
   )
+  const planningScrollerRef = useRef<HTMLDivElement>(null)
   const [planningActiveIndex, setPlanningActiveIndex] = useState(0)
   const [activeIndex, setActiveIndex] = useState(0)
   const [likedByCollection, setLikedByCollection] = useState<Record<string, boolean[]>>({})
+
+  const syncPlanningIndexFromScroll = useCallback(() => {
+    const el = planningScrollerRef.current
+    if (!el) return
+
+    const slideElements = Array.from(el.querySelectorAll<HTMLElement>('[data-planning-slide-index]'))
+    if (!slideElements.length) return
+
+    const currentLeft = el.scrollLeft
+    let nearestIndex = 0
+    let minDistance = Number.POSITIVE_INFINITY
+
+    slideElements.forEach((slideEl, index) => {
+      const distance = Math.abs(slideEl.offsetLeft - currentLeft)
+      if (distance < minDistance) {
+        minDistance = distance
+        nearestIndex = index
+      }
+    })
+
+    setPlanningActiveIndex(nearestIndex)
+  }, [])
+
+  const snapPlanningToNearestSlide = useCallback(() => {
+    const el = planningScrollerRef.current
+    if (!el) return
+
+    const slideWidth = el.clientWidth
+    if (slideWidth <= 0) return
+
+    const maxScrollLeft = slideWidth * Math.max(0, planningSlides.length - 1)
+    const slideIndex = Math.round(el.scrollLeft / slideWidth)
+    const targetLeft = Math.min(maxScrollLeft, Math.max(0, slideIndex * slideWidth))
+
+    if (Math.abs(el.scrollLeft - targetLeft) < 1) {
+      syncPlanningIndexFromScroll()
+      return
+    }
+
+    el.scrollTo({ left: targetLeft, behavior: 'smooth' })
+  }, [planningSlides.length, syncPlanningIndexFromScroll])
+
+  const scrollToPlanningSlide = useCallback((index: number) => {
+    const el = planningScrollerRef.current
+    if (!el) return
+
+    const targetSlide = el.querySelector<HTMLElement>(`[data-planning-slide-index="${index}"]`)
+    if (!targetSlide) return
+
+    el.scrollTo({
+      left: targetSlide.offsetLeft,
+      behavior: 'smooth',
+    })
+  }, [])
+
+  useHorizontalMouseDragScroll(planningScrollerRef, {
+    enabled: planningSlides.length >= 2,
+    onDragEnd: snapPlanningToNearestSlide,
+  })
 
   useEffect(() => {
     setLikedByCollection((prev) => {
@@ -82,7 +143,6 @@ export function PlanningDesktopMerchSection() {
   const isFirst = activeIndex <= 0
   const isLast = activeIndex >= total - 1
   const safePlanningIndex = Math.min(planningActiveIndex, Math.max(0, planningSlides.length - 1))
-  const planningSlide = planningSlides[safePlanningIndex]
   const showPlanningIndicator = planningSlides.length >= 2
 
   const goPrev = () => setActiveIndex((i) => Math.max(0, i - 1))
@@ -95,7 +155,7 @@ export function PlanningDesktopMerchSection() {
     }))
   }
 
-  if (!planningSlide || !card) return null
+  if (!planningSlides.length || !card) return null
 
   const collectionLikes = likedByCollection[card.id] ?? card.products.map(() => false)
 
@@ -103,42 +163,62 @@ export function PlanningDesktopMerchSection() {
     <section className="hidden lg:mx-auto lg:block lg:max-w-[1400px] lg:py-[64px]">
       <div className="flex items-stretch gap-5">
         {/* CONTENTS01 — 420×524 */}
-        <article className="relative h-[524px] w-[420px] shrink-0 overflow-hidden">
-          <img
-            src={planningSlide.imageUrl}
-            alt={planningSlide.title}
-            className="h-full w-full object-cover"
-          />
+        <div className="relative h-[524px] w-[420px] shrink-0">
           <div
-            className="pointer-events-none absolute inset-0 mix-blend-darken"
-            style={{ backgroundImage: PLANNING_BANNER_DIM_OVERLAY }}
-            aria-hidden
-          />
-          <div className="absolute inset-x-[30px] bottom-10 flex flex-col items-center gap-4 text-center text-white">
-            <span className="rounded-[5px] bg-black px-[18px] py-[6px] text-[15px] font-bold leading-[1.4] tracking-[-0.02em]">
-              {planningSlide.badge}
-            </span>
-            <div className="flex flex-col gap-1.5">
-              <h3 className="m-0 text-[24px] font-extrabold leading-[1.2] tracking-[-0.02em]">{planningSlide.title}</h3>
-              <p className="m-0 text-[14px] font-normal leading-[1.4] tracking-[-0.02em]">{planningSlide.subtitle}</p>
+            ref={planningScrollerRef}
+            onScroll={syncPlanningIndexFromScroll}
+            className={`h-full w-full overflow-x-auto scroll-smooth [scrollbar-width:none] [-ms-overflow-style:none] [&::-webkit-scrollbar]:hidden snap-x snap-mandatory ${
+              showPlanningIndicator ? 'cursor-grab active:cursor-grabbing' : ''
+            }`}
+            style={{ WebkitOverflowScrolling: 'touch' }}
+          >
+            <div className="flex h-full w-max">
+              {planningSlides.map((slide, index) => (
+                <article
+                  key={slide.id}
+                  data-planning-slide-index={index}
+                  className="relative h-[524px] w-[420px] shrink-0 snap-start overflow-hidden"
+                >
+                  <img
+                    src={slide.imageUrl}
+                    alt={slide.title}
+                    className="h-full w-full object-cover"
+                    draggable={false}
+                  />
+                  <div
+                    className="pointer-events-none absolute inset-0 mix-blend-darken"
+                    style={{ backgroundImage: PLANNING_BANNER_DIM_OVERLAY }}
+                    aria-hidden
+                  />
+                  <div className="absolute inset-x-[30px] bottom-10 flex flex-col items-center gap-4 text-center text-white">
+                    <span className="rounded-[5px] bg-black px-[18px] py-[6px] text-[15px] font-bold leading-[1.4] tracking-[-0.02em]">
+                      {slide.badge}
+                    </span>
+                    <div className="flex flex-col gap-1.5">
+                      <h3 className="m-0 text-[24px] font-extrabold leading-[1.2] tracking-[-0.02em]">{slide.title}</h3>
+                      <p className="m-0 text-[14px] font-normal leading-[1.4] tracking-[-0.02em]">{slide.subtitle}</p>
+                    </div>
+                  </div>
+                </article>
+              ))}
             </div>
           </div>
 
           {showPlanningIndicator ? (
-            <div className="absolute bottom-0 left-1/2 z-20 flex w-full max-w-[420px] -translate-x-1/2 gap-[3px] p-[3px]">
+            <div className="pointer-events-none absolute bottom-0 left-1/2 z-20 flex w-full max-w-[420px] -translate-x-1/2 gap-[3px] p-[3px]">
               {planningSlides.map((slide, index) => (
                 <button
                   key={slide.id}
                   type="button"
                   aria-label={`${index + 1}번 기획전 배너로 이동`}
                   aria-current={index === safePlanningIndex}
-                  className={`h-[2px] flex-1 border-0 p-0 ${index === safePlanningIndex ? 'bg-white' : 'bg-white/50'}`}
-                  onClick={() => setPlanningActiveIndex(index)}
+                  className={`pointer-events-auto h-[2px] flex-1 border-0 p-0 ${index === safePlanningIndex ? 'bg-white' : 'bg-white/50'}`}
+                  onClick={() => scrollToPlanningSlide(index)}
                 />
               ))}
             </div>
           ) : null}
-        </article>
+        </div>
 
         {/* Figma 2601:23257 CONTENTS02 — h matches left 524; inner row 419; justify-between → Control-Bar */}
         <div className="flex h-[524px] min-h-0 min-w-0 flex-1 flex-col justify-between rounded-[20px] bg-light px-[30px] pb-0 pt-[30px]">

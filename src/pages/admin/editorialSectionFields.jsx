@@ -13,6 +13,7 @@ import { FormRow, ImageUploader, ProductIdField, TextInput } from './editorialAd
 
 export function EditorialSectionFields({
   sectionType,
+  imageLabel,
   event,
   uploadingKey,
   onUpdate,
@@ -222,9 +223,8 @@ export function EditorialSectionFields({
     case 'lookbook':
       return (
         <ImageUploader
-          label="룩북 이미지"
+          label={imageLabel ?? '이미지 01'}
           spec="MO/PC 공용 · 통이미지"
-          aspectClass="aspect-[3/4] w-[88px]"
           previewUrl={event.lookbookPair[0]?.imageUrl}
           fileName={event.lookbookPair[0]?.imageFileName}
           isUploading={uploadingKey === `editorial-lookbook-${event.id}`}
@@ -274,9 +274,8 @@ export function EditorialSectionFields({
     case 'middle_lookbook':
       return (
         <ImageUploader
-          label="룩북 이미지"
+          label={imageLabel ?? '이미지 02'}
           spec="MO/PC 공용 · 통이미지"
-          aspectClass="aspect-[3/4] w-[88px]"
           previewUrl={event.middleLookbook[0]?.imageUrl}
           fileName={event.middleLookbook[0]?.imageFileName}
           isUploading={uploadingKey === `editorial-midlook-${event.id}`}

@@ -109,9 +109,9 @@ function EditorialBenefitSection({ items }: { items: EditorialEventDetail['benef
 
 function EditorialGiftSection({ gift }: { gift: EditorialEventDetail['giftSection'] }) {
   return (
-    <section className="flex w-full flex-col items-center gap-5 bg-dark px-[360px] pb-[60px] pt-10">
+    <section className="flex w-full flex-col items-center justify-center gap-[30px] bg-dark px-0 pb-[60px] pt-0">
       <div className="flex h-[14px] w-6 items-center justify-center">
-        <span className="block size-0 border-x-[12px] border-b-[14px] border-x-transparent border-b-light" aria-hidden />
+        <span className="block size-0 border-x-[12px] border-t-[14px] border-x-transparent border-t-light" aria-hidden />
       </div>
       <h2 className="m-0 text-center text-[30px] font-extrabold leading-[1.2] tracking-[-0.02em] text-white">
         {gift.title}
@@ -144,7 +144,7 @@ function EditorialCouponCard({ coupon }: { coupon: EditorialCouponItem }) {
           <p className="m-0">{coupon.conditions[1]}</p>
         </div>
         <div className="flex justify-center pb-0 pt-1">
-          <span className="block size-0 border-x-[12px] border-t-[14px] border-x-transparent border-t-[#f1f1f1]" aria-hidden />
+          <span className="block size-0 -scale-y-100 border-x-[12px] border-t-[14px] border-x-transparent border-t-[#f1f1f1]" aria-hidden />
         </div>
       </div>
       <div className="flex min-w-0 flex-1 flex-col justify-between py-10 pl-[60px]">
@@ -231,8 +231,8 @@ function EditorialProductGrid({
 }) {
   const gridClass =
     section.columns === 5
-      ? 'grid grid-cols-5 gap-x-4 gap-y-14'
-      : 'grid grid-cols-4 gap-x-4 gap-y-14'
+      ? 'grid grid-cols-5 auto-rows-[1fr] items-stretch gap-x-4 gap-y-10'
+      : 'grid grid-cols-4 auto-rows-[1fr] items-stretch gap-x-4 gap-y-10'
 
   return (
     <div className={`w-full ${section.darkBackground ? 'bg-dark px-[110px] py-16' : 'bg-white px-0 py-10'}`}>
@@ -252,11 +252,15 @@ function EditorialProductGrid({
           {section.note}
         </p>
       ) : null}
-      <div className={`mx-auto mt-10 max-w-[1180px] ${gridClass}`}>
-        {section.products.map((product) => (
+      <div
+        className={`mt-10 w-full ${gridClass} ${
+          section.darkBackground ? 'bg-light px-[50px] pt-5 pb-[30px] text-dark' : ''
+        }`}
+      >
+        {section.products.map((product, index) => (
           <div
-            key={product.id}
-            className="cursor-pointer"
+            key={`${product.id}-${index}`}
+            className="flex h-full min-w-0 w-full cursor-pointer flex-col"
             role="link"
             tabIndex={0}
             onClick={() => navigateSpa(getProductDetailPath(product.id))}
@@ -271,10 +275,11 @@ function EditorialProductGrid({
               product={product}
               liked={likedIds.has(product.id)}
               onToggleLike={() => onToggleLike(product.id)}
-              articleClassName="flex w-full flex-col"
-              titleClassName="min-w-0 pt-3 text-[14px] font-normal leading-[1.4] tracking-[-0.02em] text-textDefault"
+              articleClassName="flex h-full w-full min-h-0 flex-col"
+              titleClassName="min-h-[32px] min-w-0 truncate pt-3 text-[14px] font-normal leading-[1.4] tracking-[-0.02em] text-textDefault"
+              priceRowClassName="flex min-h-[25px] flex-wrap items-center gap-x-[6px] gap-y-0 pt-1"
               mediaInnerClassName="aspect-[1200/1500] lg:aspect-[1200/1500]"
-              showSizeQuickSelect
+              hideMultiCutDots
             />
           </div>
         ))}

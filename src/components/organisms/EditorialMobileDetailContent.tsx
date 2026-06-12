@@ -248,7 +248,7 @@ function MobileProductGrid({
               onToggleLike={() => onToggleLike(product.id)}
               articleClassName="flex w-full flex-col"
               titleClassName="min-w-0 truncate pt-3 text-[13px] font-normal leading-[1.4] tracking-[-0.02em] text-textDefault"
-              showSizeQuickSelect
+              hideMultiCutDots
             />
           </div>
         ))}
@@ -350,8 +350,8 @@ function MobileTabbedProducts({
               liked={likedIds.has(product.id)}
               onToggleLike={() => onToggleLike(product.id)}
               articleClassName="flex w-full flex-col"
-              titleClassName="min-w-0 truncate pt-[7px] text-[13px] font-normal leading-[1.35] tracking-[-0.02em] text-textDefault"
-              showSizeQuickSelect
+              titleClassName="min-w-0 truncate pt-3 text-[13px] font-normal leading-[1.4] tracking-[-0.02em] text-textDefault"
+              hideMultiCutDots
             />
           </div>
         ))}

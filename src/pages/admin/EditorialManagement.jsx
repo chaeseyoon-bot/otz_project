@@ -8,6 +8,7 @@ import {
   EDITORIAL_CATEGORY_OPTIONS,
   EDITORIAL_SECTION_LABELS,
   EDITORIAL_SECTION_TYPES,
+  getEditorialImageBlockLabel,
   getNextEditorialId,
   loadAdminEditorialConfig,
 } from '../../lib/adminEditorialConfig'
@@ -406,7 +407,7 @@ export function EditorialManagement() {
         </aside>
 
         <div className="grid min-h-0 min-w-0 grid-cols-1 overflow-hidden lg:grid-cols-[minmax(0,1fr)_300px]">
-          <div className="min-h-0 overflow-y-auto overscroll-contain px-5 py-4">
+          <div className="flex min-h-0 flex-col items-start justify-start overflow-y-auto overscroll-contain px-5 py-4">
             <div className="mx-auto w-full max-w-2xl space-y-5 pb-6">
               <SectionBlock title="기본 정보">
                 <div className="space-y-2.5">
@@ -509,7 +510,7 @@ export function EditorialManagement() {
                     <div key={sectionType} className="rounded-sm border border-lightGray bg-light3 p-2.5">
                       <div className="mb-2 flex items-center justify-between gap-2">
                         <p className="m-0 text-[11px] font-semibold text-dark">
-                          {EDITORIAL_SECTION_LABELS[sectionType]}
+                          {getEditorialImageBlockLabel(selectedEvent.sectionOrder, sectionType)}
                         </p>
                         <SectionOrderToolbar
                           index={index}
@@ -521,6 +522,7 @@ export function EditorialManagement() {
                       </div>
                       <EditorialSectionFields
                         sectionType={sectionType}
+                        imageLabel={getEditorialImageBlockLabel(selectedEvent.sectionOrder, sectionType)}
                         event={selectedEvent}
                         uploadingKey={uploadingKey}
                         onUpdate={updateSelectedEvent}
