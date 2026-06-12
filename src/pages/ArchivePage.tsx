@@ -1,18 +1,30 @@
-import { useCallback, useMemo, useState } from 'react'
+import { useCallback, useEffect, useMemo, useState } from 'react'
 import { ArchiveMasonryGrid } from '../components/organisms/ArchiveMasonryGrid'
 import type { ArchiveLookbookItem } from '../data/archiveLookbooks'
+import { ARCHIVE_DETAIL_CONFIG_UPDATED_EVENT } from '../lib/adminArchiveDetailConfig'
+import { filterResolvedArchiveLookbooks } from '../lib/archiveLookbooksResolver'
 import { getArchiveDetailPath, navigateSpa } from '../lib/spaNavigation'
-import {
-  ARCHIVE_SEASON_FILTERS,
-  filterArchiveLookbooks,
-  type ArchiveSeasonId,
-} from '../data/archiveLookbooks'
+import { ARCHIVE_SEASON_FILTERS, type ArchiveSeasonId } from '../data/archiveLookbooks'
 
 /** Figma 2624:12205 (MO) / 2474:3469 (PC) */
 export function ArchivePage() {
   const [activeSeason, setActiveSeason] = useState<ArchiveSeasonId>('all')
+  const [listVersion, setListVersion] = useState(0)
 
-  const lookbooks = useMemo(() => filterArchiveLookbooks(activeSeason), [activeSeason])
+  useEffect(() => {
+    const refresh = () => setListVersion((version) => version + 1)
+    window.addEventListener(ARCHIVE_DETAIL_CONFIG_UPDATED_EVENT, refresh)
+    window.addEventListener('storage', refresh)
+    return () => {
+      window.removeEventListener(ARCHIVE_DETAIL_CONFIG_UPDATED_EVENT, refresh)
+      window.removeEventListener('storage', refresh)
+    }
+  }, [])
+
+  const lookbooks = useMemo(
+    () => filterResolvedArchiveLookbooks(activeSeason),
+    [activeSeason, listVersion],
+  )
 
   const handleLookbookClick = useCallback((item: ArchiveLookbookItem) => {
     navigateSpa(getArchiveDetailPath(item.id))

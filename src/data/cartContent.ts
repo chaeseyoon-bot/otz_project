@@ -57,7 +57,7 @@ export const DEMO_CART_ITEMS: CartItem[] = [
     price: 67_150,
     quantity: 1,
     optionLabel: '[옵션 : 225]',
-    image: 'product_01.png',
+    image: 'product_03.png',
     shippingLabel: '배송 : [무료] / 기본배송',
     deliveryEstimate: '6월 4일 (목) 이내 배송시작',
     discountAmount: 3_000,

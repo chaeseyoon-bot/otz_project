@@ -1,0 +1,472 @@
+import { useEffect, useMemo, useState } from 'react'
+import { uploadAdminBannerImage } from '../../lib/adminBannerUpload'
+import {
+  countCompleteRows,
+  countDetailImages,
+  createEmptyAdminArchiveDetailRow,
+  createEmptyAdminArchiveImageRef,
+  createDefaultAdminArchiveDetailConfig,
+  loadAdminArchiveDetailConfig,
+  MAX_ARCHIVE_DETAIL_IMAGES,
+  MAX_ARCHIVE_DETAIL_ROWS,
+  saveAdminArchiveDetailConfig,
+} from '../../lib/adminArchiveDetailConfig'
+import { getArchiveDetailPath } from '../../lib/archiveRoutes'
+import { navigateSpa } from '../../lib/spaNavigation'
+import { ImageUploader } from './editorialAdminPrimitives'
+
+function SectionBlock({ title, hint, children }) {
+  return (
+    <section className="border-b border-lightGray pb-5 last:border-b-0">
+      <h3 className="m-0 text-[12px] font-semibold text-dark">{title}</h3>
+      {hint ? <p className="m-0 mt-1 text-[10px] text-subtleText">{hint}</p> : null}
+      <div className="mt-3">{children}</div>
+    </section>
+  )
+}
+
+function ColumnSelector({ value, onChange, compact = false }) {
+  const options = [
+    { value: 1, label: '1개' },
+    { value: 2, label: '2개' },
+    { value: 3, label: '3개' },
+  ]
+
+  return (
+    <div className="flex flex-wrap gap-1.5">
+      {options.map((option) => {
+        const isActive = value === option.value
+        return (
+          <button
+            key={option.value}
+            type="button"
+            className={`rounded-sm border transition-colors ${
+              compact ? 'px-2 py-1 text-[10px]' : 'px-3 py-1.5 text-[12px]'
+            } ${
+              isActive
+                ? 'border-dark bg-dark text-white'
+                : 'border-lightGray bg-white text-dark hover:border-dark'
+            }`}
+            onClick={() => onChange(option.value)}
+          >
+            {option.label}
+          </button>
+        )
+      })}
+    </div>
+  )
+}
+
+function RowToolbar({ index, total, onMoveUp, onMoveDown, onRemove }) {
+  return (
+    <div className="flex shrink-0 items-center gap-1">
+      <button
+        type="button"
+        disabled={index === 0}
+        className="rounded-sm border border-lightGray bg-white px-1.5 py-0.5 text-[10px] disabled:opacity-30"
+        onClick={onMoveUp}
+        aria-label="위로"
+      >
+        ↑
+      </button>
+      <button
+        type="button"
+        disabled={index >= total - 1}
+        className="rounded-sm border border-lightGray bg-white px-1.5 py-0.5 text-[10px] disabled:opacity-30"
+        onClick={onMoveDown}
+        aria-label="아래로"
+      >
+        ↓
+      </button>
+      <button
+        type="button"
+        className="rounded-sm border border-lightGray bg-white px-1.5 py-0.5 text-[10px] text-subtleText"
+        onClick={onRemove}
+      >
+        행 제거
+      </button>
+    </div>
+  )
+}
+
+function DetailRowEditor({
+  row,
+  rowIndex,
+  totalRows,
+  lookbookId,
+  uploadingKey,
+  onColumnsChange,
+  onImageChange,
+  onClearImage,
+  onMoveUp,
+  onMoveDown,
+  onRemove,
+}) {
+  const slotLabels = ['왼쪽', '가운데', '오른쪽']
+
+  return (
+    <article className="rounded-sm border border-lightGray bg-light3 p-3">
+      <div className="mb-3 flex flex-wrap items-center justify-between gap-2">
+        <div className="flex flex-wrap items-center gap-2">
+          <p className="m-0 text-[11px] font-semibold text-dark">{rowIndex + 1}행</p>
+          <ColumnSelector value={row.columnsPerRow} onChange={onColumnsChange} compact />
+        </div>
+        <RowToolbar
+          index={rowIndex}
+          total={totalRows}
+          onMoveUp={onMoveUp}
+          onMoveDown={onMoveDown}
+          onRemove={onRemove}
+        />
+      </div>
+
+      <div
+        className={`grid gap-3 ${
+          row.columnsPerRow === 1
+            ? 'grid-cols-1'
+            : row.columnsPerRow === 2
+              ? 'grid-cols-1 sm:grid-cols-2'
+              : 'grid-cols-1 sm:grid-cols-3'
+        }`}
+      >
+        {Array.from({ length: row.columnsPerRow }, (_, slotIndex) => (
+          <ImageUploader
+            key={`${row.id}-slot-${slotIndex}`}
+            label={row.columnsPerRow === 1 ? '이미지' : slotLabels[slotIndex]}
+            spec="MO/PC 공용"
+            aspectClass="aspect-[3/4] w-full max-w-[140px]"
+            previewUrl={row.images[slotIndex]?.imageUrl}
+            fileName={row.images[slotIndex]?.imageFileName}
+            isUploading={uploadingKey === `archive-row-${lookbookId}-${rowIndex}-${slotIndex}`}
+            onSelect={(e) => {
+              const file = e.target.files?.[0]
+              onImageChange(slotIndex, file)
+              e.target.value = ''
+            }}
+            onClear={() => onClearImage(slotIndex)}
+          />
+        ))}
+      </div>
+    </article>
+  )
+}
+
+export function ArchiveDetailManagement() {
+  const [config, setConfig] = useState(createDefaultAdminArchiveDetailConfig)
+  const [selectedId, setSelectedId] = useState('archive-01')
+  const [uploadingKey, setUploadingKey] = useState(null)
+  const [isSaving, setIsSaving] = useState(false)
+  const [message, setMessage] = useState(null)
+
+  useEffect(() => {
+    const loaded = loadAdminArchiveDetailConfig()
+    setConfig(loaded)
+    if (loaded.lookbooks[0]) setSelectedId(loaded.lookbooks[0].id)
+  }, [])
+
+  const selected = useMemo(
+    () => config.lookbooks.find((item) => item.id === selectedId) ?? null,
+    [config.lookbooks, selectedId],
+  )
+
+  const showMessage = (text) => {
+    setMessage(text)
+    window.setTimeout(() => setMessage(null), 2800)
+  }
+
+  const updateSelected = (patch) => {
+    if (!selectedId) return
+    setConfig((prev) => ({
+      ...prev,
+      lookbooks: prev.lookbooks.map((item) => (item.id === selectedId ? { ...item, ...patch } : item)),
+    }))
+  }
+
+  const updateDetailRows = (nextRows) => {
+    updateSelected({ detailRows: nextRows })
+  }
+
+  const handleImageUpload = async (file, folder, onDone) => {
+    if (!file) return
+    setUploadingKey(folder)
+    try {
+      const result = await uploadAdminBannerImage(file, folder)
+      onDone(result.url, result.fileName)
+      showMessage('이미지가 업로드되었습니다.')
+    } catch (error) {
+      const detail = error instanceof Error ? error.message : '이미지 업로드에 실패했습니다.'
+      showMessage(detail)
+    } finally {
+      setUploadingKey(null)
+    }
+  }
+
+  const addDetailRow = (columnsPerRow = 1) => {
+    if (!selected) return
+    if (selected.detailRows.length >= MAX_ARCHIVE_DETAIL_ROWS) {
+      showMessage(`상세 행은 최대 ${MAX_ARCHIVE_DETAIL_ROWS}개까지 추가할 수 있습니다.`)
+      return
+    }
+    if (countDetailImages(selected.detailRows) >= MAX_ARCHIVE_DETAIL_IMAGES) {
+      showMessage(`상세 이미지는 최대 ${MAX_ARCHIVE_DETAIL_IMAGES}장까지 등록할 수 있습니다.`)
+      return
+    }
+    updateDetailRows([...selected.detailRows, createEmptyAdminArchiveDetailRow(columnsPerRow)])
+  }
+
+  const removeDetailRow = (rowIndex) => {
+    if (!selected) return
+    updateDetailRows(selected.detailRows.filter((_, index) => index !== rowIndex))
+  }
+
+  const moveDetailRow = (rowIndex, direction) => {
+    if (!selected) return
+    const target = rowIndex + direction
+    if (target < 0 || target >= selected.detailRows.length) return
+    const next = [...selected.detailRows]
+    ;[next[rowIndex], next[target]] = [next[target], next[rowIndex]]
+    updateDetailRows(next)
+  }
+
+  const setRowColumns = (rowIndex, columnsPerRow) => {
+    if (!selected) return
+    const next = selected.detailRows.map((row, index) => {
+      if (index !== rowIndex) return row
+      const images = [...row.images]
+      while (images.length < columnsPerRow) images.push(createEmptyAdminArchiveImageRef())
+      return { ...row, columnsPerRow, images: images.slice(0, columnsPerRow) }
+    })
+    updateDetailRows(next)
+  }
+
+  const setRowImage = (rowIndex, slotIndex, patch) => {
+    if (!selected) return
+    const next = selected.detailRows.map((row, index) => {
+      if (index !== rowIndex) return row
+      const images = row.images.map((image, imageIndex) =>
+        imageIndex === slotIndex ? { ...image, ...patch } : image,
+      )
+      return { ...row, images }
+    })
+    updateDetailRows(next)
+  }
+
+  const handleRowImageUpload = async (rowIndex, slotIndex, file) => {
+    if (!selected || !file) return
+    if (countDetailImages(selected.detailRows) >= MAX_ARCHIVE_DETAIL_IMAGES && !selected.detailRows[rowIndex]?.images[slotIndex]?.imageUrl) {
+      showMessage(`상세 이미지는 최대 ${MAX_ARCHIVE_DETAIL_IMAGES}장까지 등록할 수 있습니다.`)
+      return
+    }
+
+    await handleImageUpload(
+      file,
+      `archive-row-${selected.id}-${rowIndex}-${slotIndex}`,
+      (url, fileName) => setRowImage(rowIndex, slotIndex, { imageUrl: url, imageFileName: fileName }),
+    )
+  }
+
+  const handleSave = () => {
+    if (!selected) return
+    if (!selected.thumbnailUrl?.trim()) {
+      showMessage('리스트 썸네일 이미지를 등록해 주세요.')
+      return
+    }
+
+    const completeRows = countCompleteRows(selected.detailRows)
+    if (!completeRows) {
+      showMessage('상세 이미지 행을 1개 이상 완성해 주세요. (행마다 이미지를 모두 등록)')
+      return
+    }
+
+    const hasIncomplete = selected.detailRows.some((row) => {
+      const filled = row.images.slice(0, row.columnsPerRow).filter((img) => img.imageUrl?.trim()).length
+      return filled > 0 && filled < row.columnsPerRow
+    })
+    if (hasIncomplete) {
+      showMessage('이미지가 비어 있는 행이 있습니다. 행을 완성하거나 제거해 주세요.')
+      return
+    }
+
+    setIsSaving(true)
+    try {
+      const lookbooks = config.lookbooks.map((item) => {
+        if (item.id !== selected.id) return item
+        return {
+          ...item,
+          detailRows: item.detailRows.filter((row) =>
+            row.images.slice(0, row.columnsPerRow).every((img) => img.imageUrl?.trim()),
+          ),
+        }
+      })
+      const saved = saveAdminArchiveDetailConfig({ lookbooks })
+      setConfig(saved)
+      showMessage('아카이브 설정이 저장되었습니다. 목록·상세에 반영됩니다.')
+    } catch {
+      showMessage('저장에 실패했습니다. 이미지 용량이 크면 다시 시도해 주세요.')
+    } finally {
+      setIsSaving(false)
+    }
+  }
+
+  if (!selected) {
+    return (
+      <div className="p-8">
+        <p className="m-0 text-bodyRegular2 text-subtleText">등록된 아카이브가 없습니다.</p>
+      </div>
+    )
+  }
+
+  const imageCount = countDetailImages(selected.detailRows)
+  const rowCount = selected.detailRows.length
+
+  return (
+    <div className="flex min-h-0 flex-1 flex-col overflow-hidden">
+      {message ? (
+        <div className="fixed bottom-6 right-6 z-50 rounded-sm border border-dark bg-dark px-4 py-3 text-bodySmall text-white shadow-lg">
+          {message}
+        </div>
+      ) : null}
+
+      <header className="sticky top-0 z-20 flex shrink-0 flex-wrap items-center justify-between gap-3 border-b border-lightGray bg-white px-5 py-3">
+        <div className="min-w-0">
+          <h2 className="m-0 text-[18px] font-bold text-dark">아카이브 상세 관리</h2>
+          <p className="m-0 text-[11px] text-subtleText">
+            MO/PC 동일 이미지 · 행마다 1~3열 자유 배치
+          </p>
+        </div>
+        <div className="flex shrink-0 flex-wrap items-center gap-2">
+          <button
+            type="button"
+            className="rounded-sm border border-lightGray bg-white px-2.5 py-1.5 text-[11px] text-dark"
+            onClick={() => navigateSpa(getArchiveDetailPath(selected.id))}
+          >
+            상세 보기
+          </button>
+          <button
+            type="button"
+            disabled={isSaving}
+            className="rounded-sm border-0 bg-dark px-3 py-1.5 text-[12px] text-white disabled:opacity-50"
+            onClick={handleSave}
+          >
+            {isSaving ? '저장 중…' : '저장'}
+          </button>
+        </div>
+      </header>
+
+      <div className="grid min-h-0 flex-1 grid-cols-[168px_minmax(0,1fr)] overflow-hidden">
+        <aside className="flex min-h-0 flex-col border-r border-lightGray bg-light3 px-2 py-3">
+          <p className="m-0 text-[11px] font-semibold text-dark">룩북 목록</p>
+          <ul className="m-0 mt-2 min-h-0 flex-1 list-none space-y-0.5 overflow-y-auto p-0">
+            {config.lookbooks.map((item) => {
+              const isActive = item.id === selectedId
+              const hasThumb = Boolean(item.thumbnailUrl)
+              const rows = item.detailRows.length
+              const images = countDetailImages(item.detailRows)
+              return (
+                <li key={item.id}>
+                  <button
+                    type="button"
+                    className={`flex w-full flex-col rounded-sm border-0 px-2 py-1.5 text-left ${
+                      isActive ? 'bg-dark text-white' : 'bg-white text-dark hover:bg-light'
+                    }`}
+                    onClick={() => setSelectedId(item.id)}
+                  >
+                    <span className="text-[10px] opacity-70">{item.id}</span>
+                    <span className="text-[11px]">
+                      {hasThumb ? '썸네일 ✓' : '썸네일 —'} · {rows}행 · {images}장
+                    </span>
+                  </button>
+                </li>
+              )
+            })}
+          </ul>
+        </aside>
+
+        <div className="min-h-0 overflow-y-auto overscroll-contain px-5 py-4">
+          <div className="mx-auto w-full max-w-2xl space-y-5 pb-6">
+            <SectionBlock title="리스트 썸네일" hint="아카이브 목록 카드에 노출됩니다.">
+              <ImageUploader
+                label="썸네일"
+                spec="MO/PC 공용 · 1장"
+                aspectClass="aspect-[4/5] w-[100px]"
+                previewUrl={selected.thumbnailUrl}
+                fileName={selected.thumbnailFileName}
+                isUploading={uploadingKey === `archive-thumb-${selected.id}`}
+                onSelect={(e) => {
+                  const file = e.target.files?.[0]
+                  handleImageUpload(file, `archive-thumb-${selected.id}`, (url, fileName) => {
+                    updateSelected({ thumbnailUrl: url, thumbnailFileName: fileName })
+                  })
+                  e.target.value = ''
+                }}
+                onClear={() => updateSelected({ thumbnailUrl: null, thumbnailFileName: null })}
+              />
+            </SectionBlock>
+
+            <SectionBlock
+              title="상세 이미지 (행 단위)"
+              hint="행마다 1~3개를 선택해 감각적으로 배치하세요. MO는 세로 1열, PC는 행 구성 그대로 노출됩니다."
+            >
+              {selected.detailRows.length ? (
+                <div className="space-y-3">
+                  {selected.detailRows.map((row, rowIndex) => (
+                    <DetailRowEditor
+                      key={row.id}
+                      row={row}
+                      rowIndex={rowIndex}
+                      totalRows={selected.detailRows.length}
+                      lookbookId={selected.id}
+                      uploadingKey={uploadingKey}
+                      onColumnsChange={(columns) => setRowColumns(rowIndex, columns)}
+                      onImageChange={(slotIndex, file) => handleRowImageUpload(rowIndex, slotIndex, file)}
+                      onClearImage={(slotIndex) =>
+                        setRowImage(rowIndex, slotIndex, { imageUrl: null, imageFileName: null })
+                      }
+                      onMoveUp={() => moveDetailRow(rowIndex, -1)}
+                      onMoveDown={() => moveDetailRow(rowIndex, 1)}
+                      onRemove={() => removeDetailRow(rowIndex)}
+                    />
+                  ))}
+                </div>
+              ) : (
+                <p className="m-0 rounded-sm border border-dashed border-lightGray bg-light3 px-3 py-6 text-center text-[11px] text-subtleText">
+                  등록된 행이 없습니다. 아래에서 행을 추가해 주세요.
+                </p>
+              )}
+
+              <div className="mt-3 flex flex-wrap items-center gap-2">
+                <button
+                  type="button"
+                  disabled={Boolean(uploadingKey)}
+                  className="rounded-sm border border-dashed border-lightGray bg-white px-3 py-2 text-[12px] text-dark hover:border-dark disabled:opacity-40"
+                  onClick={() => addDetailRow(1)}
+                >
+                  + 1열 행 추가
+                </button>
+                <button
+                  type="button"
+                  disabled={Boolean(uploadingKey)}
+                  className="rounded-sm border border-dashed border-lightGray bg-white px-3 py-2 text-[12px] text-dark hover:border-dark disabled:opacity-40"
+                  onClick={() => addDetailRow(2)}
+                >
+                  + 2열 행 추가
+                </button>
+                <button
+                  type="button"
+                  disabled={Boolean(uploadingKey)}
+                  className="rounded-sm border border-dashed border-lightGray bg-white px-3 py-2 text-[12px] text-dark hover:border-dark disabled:opacity-40"
+                  onClick={() => addDetailRow(3)}
+                >
+                  + 3열 행 추가
+                </button>
+                <span className="text-[10px] text-subtleText">
+                  {rowCount}행 · {imageCount}/{MAX_ARCHIVE_DETAIL_IMAGES}장
+                </span>
+              </div>
+            </SectionBlock>
+          </div>
+        </div>
+      </div>
+    </div>
+  )
+}

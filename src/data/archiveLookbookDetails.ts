@@ -9,6 +9,69 @@ export interface ArchiveLookbookDetailImage {
 export type ArchivePcDetailBlock =
   | { type: 'full'; image: ArchiveLookbookDetailImage }
   | { type: 'split'; left: ArchiveLookbookDetailImage; right: ArchiveLookbookDetailImage }
+  | {
+      type: 'triple'
+      left: ArchiveLookbookDetailImage
+      center: ArchiveLookbookDetailImage
+      right: ArchiveLookbookDetailImage
+    }
+
+export type ArchiveColumnsPerRow = 1 | 2 | 3
+
+export function buildPcBlockFromRowImages(
+  images: ArchiveLookbookDetailImage[],
+  columnsPerRow: ArchiveColumnsPerRow,
+): ArchivePcDetailBlock | null {
+  if (!images.length) return null
+
+  const count = Math.min(columnsPerRow, images.length) as 1 | 2 | 3
+  const chunk = images.slice(0, count)
+
+  if (count === 1) {
+    return { type: 'full', image: chunk[0] }
+  }
+  if (count === 2) {
+    return { type: 'split', left: chunk[0], right: chunk[1] }
+  }
+  return { type: 'triple', left: chunk[0], center: chunk[1], right: chunk[2] }
+}
+
+/** Groups flat detail images into PC row blocks (uniform columns per row). */
+export function buildPcBlocksFromImages(
+  images: ArchiveLookbookDetailImage[],
+  columnsPerRow: ArchiveColumnsPerRow,
+): ArchivePcDetailBlock[] {
+  const blocks: ArchivePcDetailBlock[] = []
+  let index = 0
+
+  while (index < images.length) {
+    const remaining = images.length - index
+    const count = Math.min(columnsPerRow, remaining) as 1 | 2 | 3
+    const chunk = images.slice(index, index + count)
+    const block = buildPcBlockFromRowImages(chunk, count)
+    if (block) blocks.push(block)
+    index += count
+  }
+
+  return blocks
+}
+
+export interface ArchiveDetailRowInput {
+  columnsPerRow: ArchiveColumnsPerRow
+  images: ArchiveLookbookDetailImage[]
+}
+
+/** Builds PC blocks from per-row column settings (mixed 1/2/3 layout). */
+export function buildPcBlocksFromRows(rows: ArchiveDetailRowInput[]): ArchivePcDetailBlock[] {
+  const blocks: ArchivePcDetailBlock[] = []
+
+  for (const row of rows) {
+    const block = buildPcBlockFromRowImages(row.images, row.columnsPerRow)
+    if (block) blocks.push(block)
+  }
+
+  return blocks
+}
 
 export interface ArchiveLookbookDetail {
   lookbookId: string
@@ -68,7 +131,8 @@ function fallbackDetailFromListItem(item: ArchiveLookbookItem): ArchiveLookbookD
   }
 }
 
-export function getArchiveLookbookDetail(lookbookId: string): ArchiveLookbookDetail | undefined {
+/** Static preset / fallback only — skips admin overrides. */
+export function getStaticArchiveLookbookDetail(lookbookId: string): ArchiveLookbookDetail | undefined {
   const listItem = ARCHIVE_LOOKBOOK_ITEMS.find((item) => item.id === lookbookId)
   if (!listItem) return undefined
 
@@ -78,4 +142,9 @@ export function getArchiveLookbookDetail(lookbookId: string): ArchiveLookbookDet
   }
 
   return fallbackDetailFromListItem(listItem)
+}
+
+/** @deprecated Use `getArchiveLookbookDetail` from `../lib/archiveLookbookDetailResolver`. */
+export function getArchiveLookbookDetail(lookbookId: string): ArchiveLookbookDetail | undefined {
+  return getStaticArchiveLookbookDetail(lookbookId)
 }

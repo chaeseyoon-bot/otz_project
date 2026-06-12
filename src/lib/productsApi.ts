@@ -968,7 +968,18 @@ export async function fetchProductById(
 
   const rows = await loadProductRows()
   const match = rows.find((row) => row.id === numericId)
-  return match ? mapProductRow(match) : null
+  if (match) return mapProductRow(match)
+
+  if (isSupabaseConfigured) {
+    try {
+      const adminRow = await fetchAdminProductById(numericId)
+      if (adminRow) return mapProductRow(adminRow)
+    } catch {
+      // Fall through to null when Supabase lookup fails.
+    }
+  }
+
+  return null
 }
 
 export interface ProductDetailResult {

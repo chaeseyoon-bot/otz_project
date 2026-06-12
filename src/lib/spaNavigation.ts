@@ -1,5 +1,6 @@
 import { isAdminPath } from './adminRoutes'
 import { isArchiveDetailPath } from './archiveRoutes'
+import { isEditorialDetailPath } from './editorialRoutes'
 import { isCartPath } from './cartRoutes'
 import { isCheckoutPath } from './checkoutRoutes'
 import { isOrderCompletePath, isOrderDetailPath } from './orderRoutes'
@@ -22,6 +23,7 @@ export type SpaPath =
   | '/search'
   | `/search/results${string}`
   | `/archive/${string}`
+  | `/editorial/${string}`
   | `/product/${string}`
   | `/mypage/orders/${string}`
   | '/admin'
@@ -29,6 +31,8 @@ export type SpaPath =
   | '/admin/products/new'
   | `/admin/products/${string}/edit`
   | '/admin/main'
+  | '/admin/editorial'
+  | '/admin/archive'
 
 type PathListener = (pathname: string) => void
 
@@ -67,6 +71,8 @@ export function isSpaPath(path: string): path is SpaPath {
   if (path.startsWith('/best')) return true
   if (path === '/archive') return true
   if (isArchiveDetailPath(path)) return true
+  if (path === '/editorial') return true
+  if (isEditorialDetailPath(path)) return true
   if (path.startsWith('/editorial')) return true
   if (path.startsWith('/brand-story')) return true
   if (path.startsWith('/category/shoes')) return true
@@ -100,3 +106,4 @@ export function navigateSpa(path: SpaPath) {
 }
 
 export { getArchiveDetailPath } from './archiveRoutes'
+export { getEditorialDetailPath } from './editorialRoutes'

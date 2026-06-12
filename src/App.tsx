@@ -7,6 +7,7 @@ import { HomeMainPromoPopup } from './components/organisms/HomeMainPromoPopup'
 import { MobileGnbDrawer } from './components/organisms/MobileGnbDrawer'
 import { MobileGnbProvider } from './contexts/MobileGnbContext'
 import { CartProvider } from './contexts/CartContext'
+import { EditorialConfigProvider } from './contexts/EditorialConfigContext'
 import { HomeMainConfigProvider } from './contexts/HomeMainConfigContext'
 import { tokens } from './design-system/tokens'
 import { CategoryShoesPage } from './pages/CategoryShoesPage'
@@ -14,6 +15,7 @@ import { HomePage } from './pages/HomePage'
 import { ArchiveDetailPage } from './pages/ArchiveDetailPage'
 import { ArchivePage } from './pages/ArchivePage'
 import { parseArchiveDetailId } from './lib/archiveRoutes'
+import { parseEditorialDetailId } from './lib/editorialRoutes'
 import { isCartPath } from './lib/cartRoutes'
 import { isCheckoutPath } from './lib/checkoutRoutes'
 import { isOrderCompletePath, isOrderDetailPath, parseOrderDetailId } from './lib/orderRoutes'
@@ -21,6 +23,7 @@ import { isMyPagePath } from './lib/myPageRoutes'
 import { parseProductId } from './lib/productRoutes'
 import { BestPage } from './pages/BestPage'
 import { EditorialPage } from './pages/EditorialPage'
+import { EditorialDetailPage } from './pages/EditorialDetailPage'
 import { BrandStoryPage } from './pages/BrandStoryPage'
 import { NewPage } from './pages/NewPage'
 import { MobileProductDetailPage } from './pages/MobileProductDetailPage'
@@ -38,8 +41,17 @@ import { PcMyPage } from './pages/PcMyPage'
 import { PcSearchResultsPage } from './pages/PcSearchResultsPage'
 import { SearchPage } from './pages/SearchPage'
 import { isSearchOverlayPath, isSearchResultsPath } from './lib/searchRoutes'
-import { getAdminActiveMenu, isAdminMainPath, isAdminPath, isAdminProductFormPath } from './lib/adminRoutes'
+import {
+  getAdminActiveMenu,
+  isAdminArchivePath,
+  isAdminEditorialPath,
+  isAdminMainPath,
+  isAdminPath,
+  isAdminProductFormPath,
+} from './lib/adminRoutes'
 import { AdminLayout } from './pages/admin/AdminLayout'
+import { ArchiveDetailManagement } from './pages/admin/ArchiveDetailManagement'
+import { EditorialManagement } from './pages/admin/EditorialManagement'
 import { HomeMainManagement } from './pages/admin/HomeMainManagement'
 import { ProductManagement } from './pages/admin/ProductManagement'
 import { ProductRegistration } from './pages/admin/ProductRegistration'
@@ -78,6 +90,7 @@ export default function App() {
   const isNew = pathname.startsWith('/new')
   const isBest = pathname.startsWith('/best')
   const archiveDetailId = parseArchiveDetailId(pathname)
+  const editorialDetailId = parseEditorialDetailId(pathname)
   const isArchive = pathname.startsWith('/archive')
   const isEditorial = pathname.startsWith('/editorial')
   const isBrandStory = pathname.startsWith('/brand-story')
@@ -103,6 +116,11 @@ export default function App() {
       return
     }
 
+    if (isAdmin) {
+      window.scrollTo(0, 0)
+      return
+    }
+
     /** Shorter route body can leave scrollY past max — browser clamps async; sync before paint to avoid header scroll glitches. */
     const root = document.documentElement
     const maxScroll = Math.max(0, root.scrollHeight - window.innerHeight)
@@ -110,20 +128,64 @@ export default function App() {
     if (y > maxScroll) {
       window.scrollTo(0, maxScroll)
     }
-  }, [pathname, productId])
+  }, [pathname, productId, isAdmin])
+
+  /** Admin pages manage scroll inside panels — lock document scroll to avoid empty tail space. */
+  useLayoutEffect(() => {
+    if (!isAdmin) return undefined
+
+    const html = document.documentElement
+    const body = document.body
+    const root = document.getElementById('root')
+
+    const prevHtmlOverflow = html.style.overflow
+    const prevHtmlHeight = html.style.height
+    const prevBodyOverflow = body.style.overflow
+    const prevBodyHeight = body.style.height
+    const prevRootOverflow = root?.style.overflow ?? ''
+    const prevRootHeight = root?.style.height ?? ''
+
+    html.style.overflow = 'hidden'
+    html.style.height = '100%'
+    body.style.overflow = 'hidden'
+    body.style.height = '100%'
+    if (root) {
+      root.style.height = '100%'
+      root.style.overflow = 'hidden'
+    }
+    window.scrollTo(0, 0)
+
+    return () => {
+      html.style.overflow = prevHtmlOverflow
+      html.style.height = prevHtmlHeight
+      body.style.overflow = prevBodyOverflow
+      body.style.height = prevBodyHeight
+      if (root) {
+        root.style.overflow = prevRootOverflow
+        root.style.height = prevRootHeight
+      }
+    }
+  }, [isAdmin])
 
   return (
     <HomeMainConfigProvider>
+      <EditorialConfigProvider>
       {isAdmin ? (
-        <AdminLayout activeMenu={getAdminActiveMenu(pathname)}>
-          {isAdminMainPath(pathname) ? (
-            <HomeMainManagement />
-          ) : isAdminProductFormPath(pathname) ? (
-            <ProductRegistration pathname={pathname} />
-          ) : (
-            <ProductManagement />
-          )}
-        </AdminLayout>
+        <div className="h-dvh max-h-dvh overflow-hidden">
+          <AdminLayout activeMenu={getAdminActiveMenu(pathname)}>
+            {isAdminEditorialPath(pathname) ? (
+              <EditorialManagement />
+            ) : isAdminArchivePath(pathname) ? (
+              <ArchiveDetailManagement />
+            ) : isAdminMainPath(pathname) ? (
+              <HomeMainManagement />
+            ) : isAdminProductFormPath(pathname) ? (
+              <ProductRegistration pathname={pathname} />
+            ) : (
+              <ProductManagement />
+            )}
+          </AdminLayout>
+        </div>
       ) : (
     <MobileGnbProvider>
       <CartProvider>
@@ -185,6 +247,8 @@ export default function App() {
             <ArchiveDetailPage lookbookId={archiveDetailId} />
           ) : isArchive ? (
             <ArchivePage />
+          ) : editorialDetailId ? (
+            <EditorialDetailPage editorialId={editorialDetailId} />
           ) : isEditorial ? (
             <EditorialPage />
           ) : isBrandStory ? (
@@ -211,6 +275,7 @@ export default function App() {
       </CartProvider>
     </MobileGnbProvider>
       )}
+      </EditorialConfigProvider>
     </HomeMainConfigProvider>
   )
 }

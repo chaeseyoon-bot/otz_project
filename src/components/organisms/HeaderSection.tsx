@@ -4,6 +4,7 @@ import { useHorizontalMouseDragScroll } from '../../hooks/useHorizontalMouseDrag
 
 import { figmaAsset } from '../../lib/figmaAssetUrl'
 import { isArchiveDetailPath } from '../../lib/archiveRoutes'
+import { isEditorialDetailPath } from '../../lib/editorialRoutes'
 import { isCartPath } from '../../lib/cartRoutes'
 import { isCheckoutPath } from '../../lib/checkoutRoutes'
 import { isOrderCompletePath, isOrderDetailPath } from '../../lib/orderRoutes'
@@ -64,6 +65,7 @@ export function HeaderSection() {
   const isBrandStory = pathname.startsWith('/brand-story')
   const isSearch = pathname.startsWith('/search')
   const isArchiveDetail = isArchiveDetailPath(pathname)
+  const isEditorialDetail = isEditorialDetailPath(pathname)
   const isProductDetail = isProductDetailPath(pathname)
   const isMyPage = isMyPagePath(pathname)
   const isCart = isCartPath(pathname)
@@ -74,6 +76,7 @@ export function HeaderSection() {
     isCategoryShoes ||
     isBrandStory ||
     isArchiveDetail ||
+    isEditorialDetail ||
     isSearch ||
     isProductDetail ||
     isMyPage ||

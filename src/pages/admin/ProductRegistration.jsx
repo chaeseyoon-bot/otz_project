@@ -853,7 +853,7 @@ export function ProductRegistration({ pathname }) {
   }
 
   return (
-    <div className="relative px-8 py-8">
+    <div className="relative min-h-0 flex-1 overflow-y-auto px-8 py-8">
       {toast ? (
         <div className="fixed bottom-6 right-6 z-50 rounded-sm border border-dark bg-dark px-4 py-3 text-bodySmall text-white shadow-lg">
           {toast}

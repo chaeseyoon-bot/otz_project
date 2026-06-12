@@ -1,5 +1,6 @@
 import { useCallback, useLayoutEffect, useRef, useState } from 'react'
 import type { ProductMultiCutSlide } from './ProductCardUnit'
+import { PRODUCT_CUT_CONTAIN_CLASS, PRODUCT_CUT_PORTRAIT_CLASS } from '../../lib/productImage'
 import { AdaptiveProductImage } from './AdaptiveProductImage'
 
 const SWIPE_COMMIT_PX = 48
@@ -160,8 +161,8 @@ export function ProductDetailImageGallery({
                 src={slide.image}
                 alt={slide.variant === 'square' ? `${productTitle} 누끼컷` : `${productTitle} 화보컷`}
                 baseClassName="pointer-events-none select-none"
-                containClassName="max-h-full max-w-full object-contain mix-blend-multiply"
-                portraitClassName="h-full w-auto object-contain mix-blend-multiply"
+                containClassName={PRODUCT_CUT_CONTAIN_CLASS}
+                portraitClassName={PRODUCT_CUT_PORTRAIT_CLASS}
                 draggable={false}
                 loading={slideIndex === 0 ? 'eager' : 'lazy'}
               />

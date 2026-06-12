@@ -1,10 +1,18 @@
 import { navigateSpa } from '../../lib/spaNavigation'
-import { ADMIN_MAIN_PATH, ADMIN_PRODUCT_NEW_PATH, ADMIN_PRODUCTS_PATH } from '../../lib/adminRoutes'
+import {
+  ADMIN_ARCHIVE_PATH,
+  ADMIN_EDITORIAL_PATH,
+  ADMIN_MAIN_PATH,
+  ADMIN_PRODUCT_NEW_PATH,
+  ADMIN_PRODUCTS_PATH,
+} from '../../lib/adminRoutes'
 
 const ADMIN_MENU_ITEMS = [
   { id: 'products-list', label: '상품 목록', path: ADMIN_PRODUCTS_PATH },
   { id: 'products-new', label: '상품 등록', path: ADMIN_PRODUCT_NEW_PATH },
   { id: 'main', label: '홈메인관리', path: ADMIN_MAIN_PATH },
+  { id: 'editorial', label: '에디토리얼', path: ADMIN_EDITORIAL_PATH },
+  { id: 'archive', label: '아카이브 상세', path: ADMIN_ARCHIVE_PATH },
   { id: 'orders', label: '주문 관리', path: '/admin/orders', disabled: true },
   { id: 'members', label: '회원 관리', path: '/admin/members', disabled: true },
   { id: 'settings', label: '설정', path: '/admin/settings', disabled: true },
@@ -16,7 +24,7 @@ const ADMIN_MENU_ITEMS = [
  */
 export function AdminLayout({ activeMenu, children }) {
   return (
-    <div className="flex min-h-screen bg-light font-pretendard">
+    <div className="flex h-full min-h-0 overflow-hidden bg-light font-pretendard">
       <aside
         className="flex w-[240px] shrink-0 flex-col border-r border-lightGray bg-white"
         aria-label="어드민 메뉴"
@@ -68,7 +76,7 @@ export function AdminLayout({ activeMenu, children }) {
         </div>
       </aside>
 
-      <main className="min-w-0 flex-1 overflow-auto bg-white">{children}</main>
+      <main className="flex min-h-0 min-w-0 flex-1 flex-col overflow-hidden bg-white">{children}</main>
     </div>
   )
 }

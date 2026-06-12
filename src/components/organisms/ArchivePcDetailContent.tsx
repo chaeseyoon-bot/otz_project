@@ -49,6 +49,25 @@ export function ArchivePcDetailContent({ detail }: ArchivePcDetailContentProps) 
             )
           }
 
+          if (block.type === 'triple') {
+            return (
+              <div key={`triple-${index}`} className="flex w-full gap-2">
+                {[block.left, block.center, block.right].map((image, sideIndex) => (
+                  <div key={`${image.src}-${sideIndex}`} className="min-w-0 flex-1 overflow-hidden">
+                    <img
+                      src={image.src}
+                      alt={image.alt ?? ''}
+                      className="block h-auto w-full"
+                      loading="lazy"
+                      decoding="async"
+                      draggable={false}
+                    />
+                  </div>
+                ))}
+              </div>
+            )
+          }
+
           return (
             <div key={`split-${index}`} className="flex w-full gap-2">
               {[block.left, block.right].map((image, sideIndex) => (

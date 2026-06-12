@@ -1,7 +1,5 @@
-import {
-  getArchiveLookbookDetail,
-  type ArchiveLookbookDetail,
-} from '../data/archiveLookbookDetails'
+import type { ArchiveLookbookDetail } from '../data/archiveLookbookDetails'
+import { getArchiveLookbookDetail } from './archiveLookbookDetailResolver'
 import { ARCHIVE_LOOKBOOK_ITEMS } from '../data/archiveLookbooks'
 
 export const LOOKBOOK_HOME_IMAGE_SLOTS = 7

@@ -40,7 +40,6 @@ import {
   CURATION_PRODUCT_SLOTS,
   loadAdminHomeMainConfig,
   LOOKBOOK_IMAGE_SLOTS,
-  LOOKBOOK_MOBILE_VISIBLE_SLOTS,
   countFilledPlanningCollectionProducts,
   MAX_PLANNING_COLLECTIONS,
   MAX_MARKETING_POPUP_SLIDES,
@@ -1077,33 +1076,35 @@ function StyleBannerAdminPanel({
 
 function LookbookCopyPanel({ lookbookSection, onUpdate }) {
   return (
-    <article className="rounded-sm border border-lightGray bg-white p-5">
-      <h3 className="m-0 mb-4 text-bodyBold1 text-dark">룩북 텍스트</h3>
-      <div className="grid gap-3 sm:grid-cols-2">
-        <div className="flex flex-col gap-1 sm:col-span-2">
-          <FieldLabel>아카이브 룩북 (기본 이미지 소스)</FieldLabel>
-          <select
-            value={lookbookSection.archiveLookbookId ?? ''}
-            onChange={(event) =>
-              onUpdate({
-                archiveLookbookId: event.target.value ? event.target.value : null,
-              })
-            }
-            className="h-10 rounded-sm border border-lightGray bg-white px-3 text-bodyRegular2 text-dark outline-none focus:border-dark"
-          >
-            <option value="">최신 룩북 ({getLatestArchiveLookbookId()})</option>
-            {ARCHIVE_LOOKBOOK_ITEMS.map((item, index) => (
-              <option key={item.id} value={item.id}>
-                {index + 1}. {item.id}
-                {item.title ? ` — ${item.title}` : ''}
-              </option>
-            ))}
-          </select>
-          <p className="m-0 text-[11px] text-subtleText">
-            슬롯에 직접 업로드한 이미지가 없으면 선택한 아카이브 룩북에서 MO 3장 · PC 7장을 불러옵니다.
-          </p>
-        </div>
-        <div className="flex flex-col gap-1">
+    <article className="flex w-full flex-col gap-3 rounded-sm border border-lightGray bg-white p-4">
+      <h3 className="m-0 text-bodyBold1 text-dark">룩북 텍스트</h3>
+
+      <div className="flex w-full flex-col items-start gap-y-2">
+        <span className="shrink-0 whitespace-nowrap text-bodySmall text-subtleText">아카이브 룩북</span>
+        <select
+          value={lookbookSection.archiveLookbookId ?? ''}
+          onChange={(event) =>
+            onUpdate({
+              archiveLookbookId: event.target.value ? event.target.value : null,
+            })
+          }
+          className="h-9 w-full rounded-sm border border-lightGray bg-white px-3 text-bodyRegular2 text-dark outline-none focus:border-dark"
+        >
+          <option value="">최신 룩북 ({getLatestArchiveLookbookId()})</option>
+          {ARCHIVE_LOOKBOOK_ITEMS.map((item, index) => (
+            <option key={item.id} value={item.id}>
+              {index + 1}. {item.id}
+              {item.title ? ` — ${item.title}` : ''}
+            </option>
+          ))}
+        </select>
+      </div>
+      <p className="m-0 text-[11px] text-subtleText">
+        슬롯에 직접 업로드한 이미지가 없으면 선택한 아카이브 룩북에서 MO 3장 · PC 7장을 불러옵니다.
+      </p>
+
+      <div className="flex w-full flex-col gap-3">
+        <div className="flex min-w-0 w-full flex-col gap-1">
           <FieldLabel>뱃지 (PC)</FieldLabel>
           <TextInput
             value={lookbookSection.badge}
@@ -1111,7 +1112,7 @@ function LookbookCopyPanel({ lookbookSection, onUpdate }) {
             placeholder="ARCHIVE"
           />
         </div>
-        <div className="flex flex-col gap-1">
+        <div className="flex min-w-0 w-full flex-col gap-1">
           <FieldLabel>모바일 CTA</FieldLabel>
           <TextInput
             value={lookbookSection.mobileCtaLabel}
@@ -1119,27 +1120,33 @@ function LookbookCopyPanel({ lookbookSection, onUpdate }) {
             placeholder="아카이브 바로가기"
           />
         </div>
-        <div className="flex flex-col gap-1 sm:col-span-2">
-          <FieldLabel hint="최대 2줄 (Enter로 줄바꿈)">메인 타이틀</FieldLabel>
-          <textarea
-            rows={2}
-            value={lookbookSection.title}
-            onChange={(e) => onUpdate({ title: clampLookbookTitle(e.target.value) })}
-            placeholder={'SPRING IN\nOTZ'}
-            className="resize-none rounded-sm border border-lightGray bg-white px-3 py-2 text-bodyRegular2 text-dark outline-none focus:border-dark"
-          />
-        </div>
-        <div className="flex flex-col gap-1 sm:col-span-2">
-          <FieldLabel>본문</FieldLabel>
-          <TextInput
-            value={lookbookSection.body}
-            onChange={(value) => onUpdate({ body: value })}
-            placeholder="룩북 소개 문구"
-            multiline
-          />
-        </div>
+      </div>
+
+      <div className="flex flex-col gap-1">
+        <FieldLabel hint="최대 2줄 (Enter로 줄바꿈)">메인 타이틀</FieldLabel>
+        <textarea
+          rows={2}
+          value={lookbookSection.title}
+          onChange={(e) => onUpdate({ title: clampLookbookTitle(e.target.value) })}
+          placeholder={'SPRING IN\nOTZ'}
+          className="resize-none rounded-sm border border-lightGray bg-white px-3 py-2 text-bodyRegular2 text-dark outline-none focus:border-dark"
+        />
+      </div>
+
+      <div className="flex flex-col gap-1">
+        <FieldLabel>본문</FieldLabel>
+        <TextInput
+          value={lookbookSection.body}
+          onChange={(value) => onUpdate({ body: value })}
+          placeholder="룩북 소개 문구"
+          multiline
+          rows={2}
+        />
+      </div>
+
+      <div className="grid grid-cols-1 gap-3 sm:grid-cols-3">
         {lookbookSection.tags.map((tag, index) => (
-          <div key={index} className="flex flex-col gap-1">
+          <div key={index} className="flex min-w-0 flex-col gap-1">
             <FieldLabel>태그 {index + 1}</FieldLabel>
             <TextInput
               value={tag}
@@ -1152,51 +1159,70 @@ function LookbookCopyPanel({ lookbookSection, onUpdate }) {
             />
           </div>
         ))}
-        <div className="flex flex-col gap-1 sm:col-span-2">
-          <FieldLabel>링크 URL</FieldLabel>
-          <TextInput
-            value={lookbookSection.linkHref}
-            onChange={(value) => onUpdate({ linkHref: value })}
-            placeholder="/archive"
-          />
-        </div>
+      </div>
+
+      <div className="flex flex-col gap-1">
+        <FieldLabel>링크 URL</FieldLabel>
+        <TextInput
+          value={lookbookSection.linkHref}
+          onChange={(value) => onUpdate({ linkHref: value })}
+          placeholder="/archive"
+        />
       </div>
     </article>
   )
 }
 
-function LookbookSlotsPanel({ resolved, lookbookSection }) {
-  const archiveId = resolved.archiveLookbookId
-  const archiveDefaults = getDefaultLookbookSlotUrls(archiveId)
-
+function LookbookPcPreview({ resolved }) {
   return (
-    <article className="rounded-sm border border-lightGray bg-white p-5">
-      <div className="mb-4 flex items-center justify-between gap-3">
-        <h3 className="m-0 text-bodyBold1 text-dark">홈 노출 이미지</h3>
-        <span className="text-bodySmall text-subtleText">MO {LOOKBOOK_MOBILE_VISIBLE_SLOTS} · PC {LOOKBOOK_IMAGE_SLOTS}</span>
-      </div>
-      <p className="m-0 mb-4 text-[11px] text-subtleText">
-        소스: {archiveId} · 커스텀 {lookbookSection.imageSlots.filter((slot) => slot.imageUrl).length}/
-        {LOOKBOOK_IMAGE_SLOTS}
-      </p>
-      <div className="grid grid-cols-2 gap-3">
-        {resolved.imageUrls.map((url, slotIndex) => {
-          const isCustom = Boolean(lookbookSection.imageSlots[slotIndex]?.imageUrl)
-          return (
-            <div key={slotIndex} className="rounded-sm border border-lightGray bg-light3 p-2">
-              <p className="m-0 mb-2 text-[10px] font-semibold text-dark">{LOOKBOOK_SLOT_LABELS[slotIndex]}</p>
-              <div className="aspect-[4/5] overflow-hidden rounded-sm border border-lightGray bg-white">
-                <img src={url} alt="" className="size-full object-cover" draggable={false} />
-              </div>
-              <p className="m-0 mt-1 text-[10px] text-subtleText">
-                {isCustom ? '관리자 업로드' : '아카이브 기본'}
-                {!isCustom && archiveDefaults[slotIndex] ? '' : ''}
-              </p>
+    <div className="w-full min-w-0 rounded-sm bg-light p-4">
+      <div className="flex w-full min-w-0 items-start gap-4">
+        <div className="flex w-[38%] min-w-[120px] max-w-[200px] shrink-0 flex-col gap-3 pt-1">
+          <span className="inline-flex w-fit rounded-full bg-black px-2.5 py-1 text-[10px] font-normal leading-snug text-white">
+            {resolved.badge}
+          </span>
+          <div className="flex flex-col gap-2">
+            <h4 className="m-0 text-sm font-extrabold leading-tight tracking-tight text-dark">
+              {resolved.titleLines.map((line, index) => (
+                <span key={index} className="block">
+                  {line}
+                </span>
+              ))}
+            </h4>
+            <p className="m-0 text-[11px] leading-snug text-textDefault">{resolved.body}</p>
+            <div className="flex flex-wrap gap-1">
+              {resolved.tags.map((tag) => (
+                <span
+                  key={tag}
+                  className="inline-flex rounded-full border border-[#999] px-2 py-0.5 text-[9px] text-textDefault"
+                >
+                  {tag}
+                </span>
+              ))}
             </div>
-          )
-        })}
+          </div>
+          <span className="text-[10px] text-textDefault underline">{resolved.mobileCtaLabel}</span>
+        </div>
+
+        <div className="flex min-w-0 flex-1 items-stretch justify-end gap-0 overflow-hidden">
+          <div className="relative h-[140px] w-[112px] shrink-0 overflow-hidden bg-white">
+            <img
+              src={resolved.pcHeroImage}
+              alt=""
+              className="absolute inset-0 size-full object-cover"
+              draggable={false}
+            />
+          </div>
+          <div className="grid shrink-0 grid-cols-3 grid-rows-2">
+            {resolved.pcGridImages.map((src, index) => (
+              <div key={index} className="relative h-[70px] w-[56px] overflow-hidden bg-white">
+                <img src={src} alt="" className="absolute inset-0 size-full object-cover" draggable={false} />
+              </div>
+            ))}
+          </div>
+        </div>
       </div>
-    </article>
+    </div>
   )
 }
 
@@ -1263,19 +1289,16 @@ function LookbookAdminPanel({ lookbookSection, onUpdate, onUpdateSlot, onImageUp
 
   return (
     <div className="space-y-6">
-      <div className="grid items-start gap-6 lg:grid-cols-[minmax(0,1fr)_400px]">
-        <LookbookCopyPanel lookbookSection={lookbookSection} onUpdate={onUpdate} />
-        <LookbookSlotsPanel resolved={resolved} lookbookSection={lookbookSection} />
-      </div>
+      <LookbookCopyPanel lookbookSection={lookbookSection} onUpdate={onUpdate} />
 
       <article className="rounded-sm border border-lightGray bg-white p-5">
         <h3 className="m-0 mb-4 text-bodyBold1 text-dark">이미지 슬롯 설정</h3>
         <p className="m-0 mb-4 text-[11px] text-subtleText">
           비워 두면 아카이브 룩북 기본 이미지가 사용됩니다. 업로드 시 해당 슬롯만 교체됩니다.
         </p>
-        <div className="grid gap-6 sm:grid-cols-2 xl:grid-cols-3">
+        <div className="grid grid-cols-6 gap-6">
           {lookbookSection.imageSlots.map((slot, slotIndex) => (
-            <div key={slotIndex} className="rounded-sm border border-lightGray bg-light3 p-4">
+            <div key={slotIndex} className="w-full min-w-0 rounded-sm border border-lightGray bg-light3 p-4">
               <p className="m-0 mb-3 text-bodySmall font-semibold text-dark">{LOOKBOOK_SLOT_LABELS[slotIndex]}</p>
               <ImageUploader
                 label="이미지"
@@ -1309,33 +1332,7 @@ function LookbookAdminPanel({ lookbookSection, onUpdate, onUpdateSlot, onImageUp
 
         <article className="rounded-sm border border-lightGray bg-white p-5">
           <h3 className="m-0 mb-3 text-bodyBold1 text-dark">PC 미리보기</h3>
-          <div className="flex min-w-0 items-stretch justify-end gap-0 overflow-x-auto">
-            <div className="relative h-[200px] w-[160px] shrink-0 overflow-hidden bg-light">
-              <img
-                src={resolved.pcHeroImage}
-                alt=""
-                className="absolute inset-0 size-full object-cover"
-                draggable={false}
-              />
-            </div>
-            <div className="grid shrink-0 grid-cols-3 grid-rows-2">
-              {resolved.pcGridImages.map((src, index) => (
-                <div key={index} className="relative h-[100px] w-[80px] overflow-hidden bg-light">
-                  <img src={src} alt="" className="absolute inset-0 size-full object-cover" draggable={false} />
-                </div>
-              ))}
-            </div>
-          </div>
-          <div className="mt-4 flex flex-wrap gap-1.5">
-            {resolved.tags.map((tag) => (
-              <span
-                key={tag}
-                className="inline-flex rounded-full border border-[#999] px-2 py-1 text-[10px] text-textDefault"
-              >
-                {tag}
-              </span>
-            ))}
-          </div>
+          <LookbookPcPreview resolved={resolved} />
         </article>
       </div>
     </div>
@@ -1864,7 +1861,7 @@ export function HomeMainManagement() {
   )
 
   return (
-    <div className="relative px-8 py-8">
+    <div className="relative min-h-0 flex-1 overflow-y-auto px-8 py-8">
       {message ? (
         <div className="fixed bottom-6 right-6 z-50 rounded-sm border border-dark bg-dark px-4 py-3 text-bodySmall text-white shadow-lg">
           {message}

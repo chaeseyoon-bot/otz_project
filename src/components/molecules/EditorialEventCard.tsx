@@ -1,4 +1,6 @@
 import type { EditorialEventItem } from '../../data/editorialEvents'
+import { getEditorialDetailPath } from '../../lib/editorialRoutes'
+import { navigateSpa } from '../../lib/spaNavigation'
 
 export interface EditorialEventCardProps {
   event: EditorialEventItem
@@ -8,13 +10,13 @@ export interface EditorialEventCardProps {
 
 /** Figma 2629:54151 (MO) / 2629:52689 (PC) — thumbnail + title + period below image. */
 export function EditorialEventCard({ event, className = '', onClick }: EditorialEventCardProps) {
-  const Wrapper = onClick ? 'button' : 'article'
+  const handleClick = onClick ?? (() => navigateSpa(getEditorialDetailPath(event.id)))
 
   return (
-    <Wrapper
-      type={onClick ? 'button' : undefined}
-      className={`block w-full border-0 bg-transparent p-0 text-left ${className}`}
-      onClick={onClick}
+    <button
+      type="button"
+      className={`block w-full cursor-pointer border-0 bg-transparent p-0 text-left ${className}`}
+      onClick={handleClick}
     >
       <div className="relative aspect-[272/340] w-full overflow-hidden bg-light">
         <img
@@ -38,6 +40,6 @@ export function EditorialEventCard({ event, className = '', onClick }: Editorial
           {event.period}
         </p>
       </div>
-    </Wrapper>
+    </button>
   )
 }

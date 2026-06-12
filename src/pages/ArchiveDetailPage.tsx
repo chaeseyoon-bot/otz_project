@@ -1,8 +1,9 @@
-import { useEffect } from 'react'
+import { useEffect, useMemo, useState } from 'react'
 import { ArchiveDetailImageStack } from '../components/molecules/ArchiveDetailImageStack'
 import { ArchiveMobileDetailHeader } from '../components/organisms/ArchiveMobileDetailHeader'
 import { ArchivePcDetailContent } from '../components/organisms/ArchivePcDetailContent'
-import { getArchiveLookbookDetail } from '../data/archiveLookbookDetails'
+import { ARCHIVE_DETAIL_CONFIG_UPDATED_EVENT } from '../lib/adminArchiveDetailConfig'
+import { getArchiveLookbookDetail } from '../lib/archiveLookbookDetailResolver'
 import { navigateSpa } from '../lib/spaNavigation'
 
 export interface ArchiveDetailPageProps {
@@ -11,7 +12,21 @@ export interface ArchiveDetailPageProps {
 
 /** Figma 2679:10237 (MO) / 2679:10518 (PC) */
 export function ArchiveDetailPage({ lookbookId }: ArchiveDetailPageProps) {
-  const detail = getArchiveLookbookDetail(lookbookId)
+  const [detailVersion, setDetailVersion] = useState(0)
+  const detail = useMemo(
+    () => getArchiveLookbookDetail(lookbookId),
+    [lookbookId, detailVersion],
+  )
+
+  useEffect(() => {
+    const refresh = () => setDetailVersion((version) => version + 1)
+    window.addEventListener(ARCHIVE_DETAIL_CONFIG_UPDATED_EVENT, refresh)
+    window.addEventListener('storage', refresh)
+    return () => {
+      window.removeEventListener(ARCHIVE_DETAIL_CONFIG_UPDATED_EVENT, refresh)
+      window.removeEventListener('storage', refresh)
+    }
+  }, [])
 
   useEffect(() => {
     if (!detail) {

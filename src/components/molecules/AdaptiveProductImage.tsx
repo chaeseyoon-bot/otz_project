@@ -8,7 +8,7 @@ interface AdaptiveProductImageProps {
   baseClassName?: string
   /** Classes when the image is square-ish or landscape (contained). */
   containClassName: string
-  /** Classes when the image is portrait — fills the frame (typically object-cover, no letterboxing). */
+  /** Classes when the image is portrait — should fill frame height (object-cover, no letterboxing). */
   portraitClassName: string
   /**
    * Known orientation of the cut. When provided it is authoritative and skips the

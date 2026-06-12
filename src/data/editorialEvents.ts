@@ -1,4 +1,5 @@
 import { editorialAsset } from '../lib/editorialAssetUrl'
+import { resolveEditorialListItems } from '../lib/editorialContentResolver'
 
 export type EditorialCategoryId = 'all' | 'collection' | 'curation' | 'collabo'
 
@@ -105,7 +106,14 @@ export const EDITORIAL_EVENTS: EditorialEventItem[] = [
   },
 ]
 
+/** Returns admin-saved events when available, else static mock list. */
+export function getEditorialEvents(): EditorialEventItem[] {
+  const resolved = resolveEditorialListItems()
+  return resolved.length ? resolved : EDITORIAL_EVENTS
+}
+
 export function filterEditorialEvents(category: EditorialCategoryId): EditorialEventItem[] {
-  if (category === 'all') return EDITORIAL_EVENTS
-  return EDITORIAL_EVENTS.filter((item) => item.category === category)
+  const events = getEditorialEvents()
+  if (category === 'all') return events
+  return events.filter((item) => item.category === category)
 }

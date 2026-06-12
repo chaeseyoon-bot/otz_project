@@ -5,6 +5,11 @@ export function parseProductPrice(price: string): number {
   return Number(price.replace(/,/g, '')) || 0
 }
 
+function resolveCartThumbnailImage(product: ProductCardItem): string {
+  const squareSlide = product.multiCutSlides?.find((slide) => slide.variant === 'square')
+  return squareSlide?.image ?? product.image
+}
+
 export function buildCartItemFromProduct(
   product: ProductCardItem,
   options: {
@@ -22,7 +27,7 @@ export function buildCartItemFromProduct(
     price,
     quantity: 1,
     optionLabel: `[옵션 : ${options.size}]`,
-    image: product.image,
+    image: resolveCartThumbnailImage(product),
     shippingLabel: shippingFee === 0 ? '배송 : [무료] / 기본배송' : '배송 : [유료] / 기본배송',
     selected: true,
     shippingBreakdown: {

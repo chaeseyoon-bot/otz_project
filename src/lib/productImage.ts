@@ -137,3 +137,9 @@ export function swapImageExtension(url: string): string | null {
   if (/\.webp(\?|$)/i.test(url)) return url.replace(/\.webp(\?|$)/i, '.png$1')
   return null
 }
+
+/** Square / 누끼 cuts — fit inside the frame. */
+export const PRODUCT_CUT_CONTAIN_CLASS = 'h-full w-full object-contain object-center mix-blend-multiply'
+
+/** Portrait / 화보 cuts — fill frame height, crop sides (no top/bottom letterboxing). */
+export const PRODUCT_CUT_PORTRAIT_CLASS = 'h-full w-full object-cover object-center mix-blend-multiply'

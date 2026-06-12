@@ -22,6 +22,7 @@ import { getProductDetailPath, parseShoesProductNum } from '../lib/productRoutes
 import { getStorefrontSizeOptionsForProductId } from '../lib/productSizeOptions'
 import { navigateSpa } from '../lib/spaNavigation'
 import { shoesProductPdpGallerySlides } from '../lib/shoesAssetUrl'
+import { PRODUCT_CUT_CONTAIN_CLASS, PRODUCT_CUT_PORTRAIT_CLASS } from '../lib/productImage'
 
 const iconChevronDown = figmaAsset('icons/list_chevron.svg')
 const iconDetailShare = figmaAsset('icons/detail_share.svg')
@@ -202,8 +203,8 @@ export function PcProductDetailPage({ productId }: PcProductDetailPageProps) {
                             src={slide.image}
                             alt=""
                             orientation={slide.variant === 'square' ? 'square' : 'portrait'}
-                            containClassName="w-full object-contain mix-blend-multiply"
-                            portraitClassName="h-full w-auto object-contain mix-blend-multiply"
+                            containClassName={PRODUCT_CUT_CONTAIN_CLASS}
+                            portraitClassName={PRODUCT_CUT_PORTRAIT_CLASS}
                             draggable={false}
                             loading={index < 2 ? 'eager' : 'lazy'}
                           />

@@ -1,5 +1,6 @@
 import { useCallback, useLayoutEffect, useState } from 'react'
 import { figmaAsset } from '../../lib/figmaAssetUrl'
+import { PRODUCT_CUT_CONTAIN_CLASS, PRODUCT_CUT_PORTRAIT_CLASS } from '../../lib/productImage'
 import type { ProductMultiCutSlide } from '../molecules/ProductCardUnit'
 import { AdaptiveProductImage } from '../molecules/AdaptiveProductImage'
 
@@ -73,8 +74,8 @@ export function ProductDetailPcGallery({
                 alt={slide.variant === 'square' ? `${productTitle} 누끼컷` : `${productTitle} 화보컷`}
                 orientation={slide.variant === 'square' ? 'square' : 'portrait'}
                 baseClassName="block"
-                containClassName="w-full h-auto object-contain mix-blend-multiply"
-                portraitClassName="h-full w-auto object-contain mix-blend-multiply"
+                containClassName={PRODUCT_CUT_CONTAIN_CLASS}
+                portraitClassName={PRODUCT_CUT_PORTRAIT_CLASS}
                 draggable={false}
                 loading={index < 3 ? 'eager' : 'lazy'}
               />
@@ -84,18 +85,16 @@ export function ProductDetailPcGallery({
       </div>
 
       <div className="relative h-[800px] w-[640px] shrink-0 overflow-hidden bg-light">
-        <div className="absolute inset-0 flex items-center justify-center">
-          <AdaptiveProductImage
-            key={activeSlide.image}
-            src={activeSlide.image}
-            alt={activeSlide.variant === 'square' ? `${productTitle} 누끼컷` : `${productTitle} 화보컷`}
-            orientation={activeSlide.variant === 'square' ? 'square' : 'portrait'}
-            containClassName="size-[640px] object-cover mix-blend-multiply"
-            portraitClassName="h-[800px] w-auto object-contain mix-blend-multiply"
-            draggable={false}
-            loading="eager"
-          />
-        </div>
+        <AdaptiveProductImage
+          key={activeSlide.image}
+          src={activeSlide.image}
+          alt={activeSlide.variant === 'square' ? `${productTitle} 누끼컷` : `${productTitle} 화보컷`}
+          orientation={activeSlide.variant === 'square' ? 'square' : 'portrait'}
+          containClassName="size-full object-contain object-center mix-blend-multiply"
+          portraitClassName={PRODUCT_CUT_PORTRAIT_CLASS}
+          draggable={false}
+          loading="eager"
+        />
 
         {canNavigate ? (
           <>
