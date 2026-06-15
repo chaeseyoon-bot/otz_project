@@ -15,7 +15,8 @@
     "assets:sync": "node scripts/clean-figma-assets.mjs && node scripts/download-figma-assets.mjs",
     "assets:sync:dev": "node scripts/sync-figma-dev-assets.mjs",
     "assets:seed:shoes": "node scripts/seed-shoes-placeholders.mjs",
-    "products:seed-stock": "node scripts/seed-product-stock.mjs"
+    "products:seed-stock": "node scripts/seed-product-stock.mjs",
+    "products:backfill-image-urls": "node scripts/backfill-product-image-urls.mjs"
   },
   "dependencies": {
     "@supabase/supabase-js": "^2.105.4",

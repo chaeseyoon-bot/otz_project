@@ -1,4 +1,4 @@
-const ARCHIVE_DETAIL_ID_PATTERN = /^archive-\d{2}$/
+const ARCHIVE_DETAIL_ID_PATTERN = /^archive-\d{2,}$/
 
 export function isArchiveDetailPath(pathname: string): boolean {
   const id = parseArchiveDetailId(pathname)

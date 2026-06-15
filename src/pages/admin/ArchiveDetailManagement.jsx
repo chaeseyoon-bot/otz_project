@@ -5,15 +5,19 @@ import {
   countDetailImages,
   createEmptyAdminArchiveDetailRow,
   createEmptyAdminArchiveImageRef,
+  createEmptyAdminArchiveLookbookEntry,
   createDefaultAdminArchiveDetailConfig,
+  getNextArchiveLookbookId,
   loadAdminArchiveDetailConfig,
   MAX_ARCHIVE_DETAIL_IMAGES,
   MAX_ARCHIVE_DETAIL_ROWS,
+  MAX_ARCHIVE_LOOKBOOKS,
   saveAdminArchiveDetailConfig,
+  sortArchiveLookbooksNewestFirst,
 } from '../../lib/adminArchiveDetailConfig'
 import { getArchiveDetailPath } from '../../lib/archiveRoutes'
 import { navigateSpa } from '../../lib/spaNavigation'
-import { ImageUploader } from './editorialAdminPrimitives'
+import { ImageUploader, TextInput } from './editorialAdminPrimitives'
 
 function SectionBlock({ title, hint, children }) {
   return (
@@ -153,15 +157,21 @@ function DetailRowEditor({
 
 export function ArchiveDetailManagement() {
   const [config, setConfig] = useState(createDefaultAdminArchiveDetailConfig)
-  const [selectedId, setSelectedId] = useState('archive-01')
+  const [selectedId, setSelectedId] = useState(null)
   const [uploadingKey, setUploadingKey] = useState(null)
   const [isSaving, setIsSaving] = useState(false)
   const [message, setMessage] = useState(null)
 
+  const sortedLookbooks = useMemo(
+    () => sortArchiveLookbooksNewestFirst(config.lookbooks),
+    [config.lookbooks],
+  )
+
   useEffect(() => {
     const loaded = loadAdminArchiveDetailConfig()
     setConfig(loaded)
-    if (loaded.lookbooks[0]) setSelectedId(loaded.lookbooks[0].id)
+    const first = sortArchiveLookbooksNewestFirst(loaded.lookbooks)[0]
+    setSelectedId(first?.id ?? null)
   }, [])
 
   const selected = useMemo(
@@ -267,6 +277,10 @@ export function ArchiveDetailManagement() {
 
   const handleSave = () => {
     if (!selected) return
+    if (!selected.title.trim()) {
+      showMessage('룩북 제목을 입력해 주세요.')
+      return
+    }
     if (!selected.thumbnailUrl?.trim()) {
       showMessage('리스트 썸네일 이미지를 등록해 주세요.')
       return
@@ -308,10 +322,62 @@ export function ArchiveDetailManagement() {
     }
   }
 
+  const handleAddLookbook = () => {
+    const nextId = getNextArchiveLookbookId(config.lookbooks)
+    if (!nextId) {
+      showMessage(`룩북은 최대 ${MAX_ARCHIVE_LOOKBOOKS}개까지 등록할 수 있습니다.`)
+      return
+    }
+    const nextEntry = createEmptyAdminArchiveLookbookEntry(nextId)
+    setConfig((prev) => ({
+      ...prev,
+      lookbooks: sortArchiveLookbooksNewestFirst([nextEntry, ...prev.lookbooks]),
+    }))
+    setSelectedId(nextId)
+  }
+
+  const handleRemoveLookbook = (lookbookId) => {
+    const nextLookbooks = config.lookbooks.filter((item) => item.id !== lookbookId)
+    setConfig((prev) => ({ ...prev, lookbooks: nextLookbooks }))
+    if (selectedId === lookbookId) {
+      setSelectedId(sortArchiveLookbooksNewestFirst(nextLookbooks)[0]?.id ?? null)
+    }
+    try {
+      saveAdminArchiveDetailConfig({ lookbooks: nextLookbooks })
+      showMessage('룩북이 삭제되었습니다.')
+    } catch {
+      showMessage('삭제 저장에 실패했습니다.')
+    }
+  }
+
   if (!selected) {
     return (
-      <div className="p-8">
-        <p className="m-0 text-bodyRegular2 text-subtleText">등록된 아카이브가 없습니다.</p>
+      <div className="flex min-h-0 flex-1 flex-col overflow-hidden">
+        {message ? (
+          <div className="fixed bottom-6 right-6 z-50 rounded-sm border border-dark bg-dark px-4 py-3 text-bodySmall text-white shadow-lg">
+            {message}
+          </div>
+        ) : null}
+        <header className="flex shrink-0 items-center justify-between gap-3 border-b border-lightGray px-5 py-3">
+          <div>
+            <h2 className="m-0 text-[18px] font-bold text-dark">아카이브 상세 관리</h2>
+            <p className="m-0 text-[11px] text-subtleText">룩북을 한 개씩 추가하면 최신 항목이 목록 맨 위에 노출됩니다.</p>
+          </div>
+          <button
+            type="button"
+            className="rounded-sm border border-dark bg-dark px-3 py-1.5 text-[12px] text-white"
+            onClick={handleAddLookbook}
+          >
+            + 룩북 추가
+          </button>
+        </header>
+        <div className="flex flex-1 items-center justify-center p-8">
+          <p className="m-0 text-center text-bodyRegular2 text-subtleText">
+            등록된 룩북이 없습니다.
+            <br />
+            상단의 「+ 룩북 추가」로 첫 룩북을 등록해 주세요.
+          </p>
+        </div>
       </div>
     )
   }
@@ -355,27 +421,50 @@ export function ArchiveDetailManagement() {
 
       <div className="grid min-h-0 flex-1 grid-cols-[168px_minmax(0,1fr)] overflow-hidden">
         <aside className="flex min-h-0 flex-col border-r border-lightGray bg-light3 px-2 py-3">
-          <p className="m-0 text-[11px] font-semibold text-dark">룩북 목록</p>
+          <div className="flex items-center justify-between gap-1">
+            <p className="m-0 text-[11px] font-semibold text-dark">룩북 목록</p>
+            <button
+              type="button"
+              className="rounded-sm border border-lightGray bg-white px-1.5 py-0.5 text-[10px] text-dark"
+              onClick={handleAddLookbook}
+            >
+              +추가
+            </button>
+          </div>
+          <p className="m-0 mt-1 text-[9px] leading-snug text-subtleText">최신 등록이 위 · archive-01이 가장 오래됨</p>
           <ul className="m-0 mt-2 min-h-0 flex-1 list-none space-y-0.5 overflow-y-auto p-0">
-            {config.lookbooks.map((item) => {
+            {sortedLookbooks.map((item) => {
               const isActive = item.id === selectedId
               const hasThumb = Boolean(item.thumbnailUrl)
               const rows = item.detailRows.length
               const images = countDetailImages(item.detailRows)
               return (
                 <li key={item.id}>
-                  <button
-                    type="button"
-                    className={`flex w-full flex-col rounded-sm border-0 px-2 py-1.5 text-left ${
-                      isActive ? 'bg-dark text-white' : 'bg-white text-dark hover:bg-light'
-                    }`}
-                    onClick={() => setSelectedId(item.id)}
-                  >
-                    <span className="text-[10px] opacity-70">{item.id}</span>
-                    <span className="text-[11px]">
-                      {hasThumb ? '썸네일 ✓' : '썸네일 —'} · {rows}행 · {images}장
-                    </span>
-                  </button>
+                  <div className="flex items-stretch gap-0.5">
+                    <button
+                      type="button"
+                      className={`flex min-w-0 flex-1 flex-col rounded-sm border-0 px-2 py-1.5 text-left ${
+                        isActive ? 'bg-dark text-white' : 'bg-white text-dark hover:bg-light'
+                      }`}
+                      onClick={() => setSelectedId(item.id)}
+                    >
+                      <span className="text-[10px] opacity-70">{item.id}</span>
+                      <span className="truncate text-[11px]">
+                        {item.title.trim() || '(제목 없음)'}
+                      </span>
+                      <span className="text-[10px] opacity-80">
+                        {hasThumb ? '썸네일 ✓' : '썸네일 —'} · {rows}행 · {images}장
+                      </span>
+                    </button>
+                    <button
+                      type="button"
+                      className="shrink-0 rounded-sm border border-lightGray bg-white px-1 text-[10px] text-subtleText hover:text-dark"
+                      onClick={() => handleRemoveLookbook(item.id)}
+                      aria-label={`${item.id} 삭제`}
+                    >
+                      ×
+                    </button>
+                  </div>
                 </li>
               )
             })}
@@ -384,6 +473,17 @@ export function ArchiveDetailManagement() {
 
         <div className="min-h-0 overflow-y-auto overscroll-contain px-5 py-4">
           <div className="mx-auto w-full max-w-2xl space-y-5 pb-6">
+            <SectionBlock title="룩북 정보">
+              <div className="max-w-md">
+                <p className="m-0 mb-1 text-[11px] text-dark">제목</p>
+                <TextInput
+                  value={selected.title}
+                  onChange={(value) => updateSelected({ title: value })}
+                  placeholder="예: 26SS NEW EDITION"
+                />
+              </div>
+            </SectionBlock>
+
             <SectionBlock title="리스트 썸네일" hint="아카이브 목록 카드에 노출됩니다.">
               <ImageUploader
                 label="썸네일"

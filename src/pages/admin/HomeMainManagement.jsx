@@ -26,7 +26,7 @@ import { useHomeMainConfigContext } from '../../contexts/HomeMainConfigContext'
 import { useLockBodyScroll } from '../../hooks/useLockBodyScroll'
 import { uploadAdminBannerImage } from '../../lib/adminBannerUpload'
 import { loadHomeMainConfigFromSupabase, upsertHomeBannerSection } from '../../lib/homeBannersApi'
-import { ARCHIVE_LOOKBOOK_ITEMS } from '../../data/archiveLookbooks'
+import { resolveArchiveLookbookItems } from '../../lib/archiveLookbooksResolver'
 import {
   clampCurationTitle,
   clampLookbookTitle,
@@ -1092,7 +1092,7 @@ function LookbookCopyPanel({ lookbookSection, onUpdate }) {
           className="h-9 w-full rounded-sm border border-lightGray bg-white px-3 text-bodyRegular2 text-dark outline-none focus:border-dark"
         >
           <option value="">최신 룩북 ({getLatestArchiveLookbookId()})</option>
-          {ARCHIVE_LOOKBOOK_ITEMS.map((item, index) => (
+          {resolveArchiveLookbookItems().map((item, index) => (
             <option key={item.id} value={item.id}>
               {index + 1}. {item.id}
               {item.title ? ` — ${item.title}` : ''}

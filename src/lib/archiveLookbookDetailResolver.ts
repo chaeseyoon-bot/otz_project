@@ -7,6 +7,7 @@ import {
 import { ARCHIVE_LOOKBOOK_ITEMS } from '../data/archiveLookbooks'
 import {
   type AdminArchiveLookbookEntry,
+  archiveEntryHasDetailData,
   loadAdminArchiveDetailConfig,
 } from './adminArchiveDetailConfig'
 
@@ -29,12 +30,10 @@ function flattenRowImages(entry: AdminArchiveLookbookEntry): ArchiveLookbookDeta
   return images
 }
 
-function resolveFromAdminEntry(entry: AdminArchiveLookbookEntry): ArchiveLookbookDetail | undefined {
+function resolveFromAdminEntry(entry: AdminArchiveLookbookEntry): ArchiveLookbookDetail {
   const listItem = ARCHIVE_LOOKBOOK_ITEMS.find((item) => item.id === entry.id)
-  if (!listItem) return undefined
-
   const staticDetail = getStaticArchiveLookbookDetail(entry.id)
-  const title = staticDetail?.title ?? listItem.title ?? 'ARCHIVE'
+  const title = entry.title.trim() || staticDetail?.title || listItem?.title || 'ARCHIVE'
 
   const rowInputs = entry.detailRows
     .map((row) => {
@@ -55,7 +54,7 @@ function resolveFromAdminEntry(entry: AdminArchiveLookbookEntry): ArchiveLookboo
     ? mobileImages
     : entry.thumbnailUrl?.trim()
       ? [{ src: entry.thumbnailUrl.trim() }]
-      : (staticDetail?.mobileImages ?? [{ src: listItem.image }])
+      : (staticDetail?.mobileImages ?? (listItem ? [{ src: listItem.image }] : []))
 
   return {
     lookbookId: entry.id,
@@ -65,19 +64,12 @@ function resolveFromAdminEntry(entry: AdminArchiveLookbookEntry): ArchiveLookboo
   }
 }
 
-function entryHasAdminData(entry: AdminArchiveLookbookEntry): boolean {
-  if (entry.thumbnailUrl?.trim()) return true
-  return entry.detailRows.some((row) =>
-    row.images.slice(0, row.columnsPerRow).some((img) => Boolean(img.imageUrl?.trim())),
-  )
-}
-
 /** Resolves archive lookbook detail — admin overrides merged over static presets. */
 export function getArchiveLookbookDetail(lookbookId: string): ArchiveLookbookDetail | undefined {
   const admin = loadAdminArchiveDetailConfig()
   const entry = admin.lookbooks.find((item) => item.id === lookbookId)
 
-  if (entry && entryHasAdminData(entry)) {
+  if (entry && archiveEntryHasDetailData(entry)) {
     return resolveFromAdminEntry(entry)
   }
 

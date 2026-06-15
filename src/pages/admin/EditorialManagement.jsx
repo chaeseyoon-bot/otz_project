@@ -11,6 +11,8 @@ import {
   getEditorialImageBlockLabel,
   getNextEditorialId,
   loadAdminEditorialConfig,
+  MAX_EDITORIAL_EVENTS,
+  sortEditorialEventsNewestFirst,
 } from '../../lib/adminEditorialConfig'
 import { resolveEditorialEventDetail } from '../../lib/editorialContentResolver'
 import { getEditorialDetailPath } from '../../lib/editorialRoutes'
@@ -182,16 +184,22 @@ function EditorialPreviewPanel({ event, config }) {
 export function EditorialManagement() {
   const { saveConfig } = useEditorialConfigContext()
   const [config, setConfig] = useState(createDefaultEditorialConfig)
-  const [selectedEventId, setSelectedEventId] = useState('editorial-01')
+  const [selectedEventId, setSelectedEventId] = useState(null)
   const [uploadingKey, setUploadingKey] = useState(null)
   const [isSaving, setIsSaving] = useState(false)
   const [message, setMessage] = useState(null)
   const [sectionToAdd, setSectionToAdd] = useState('')
 
+  const sortedEvents = useMemo(
+    () => sortEditorialEventsNewestFirst(config.events),
+    [config.events],
+  )
+
   useEffect(() => {
     const loaded = loadAdminEditorialConfig()
     setConfig(loaded)
-    if (loaded.events[0]) setSelectedEventId(loaded.events[0].id)
+    const first = sortEditorialEventsNewestFirst(loaded.events)[0]
+    setSelectedEventId(first?.id ?? null)
   }, [])
 
   const selectedEvent = useMemo(
@@ -260,27 +268,30 @@ export function EditorialManagement() {
   const handleAddEvent = () => {
     const nextId = getNextEditorialId(config.events)
     if (!nextId) {
-      showMessage(`기획전은 최대 ${config.events.length}개까지 등록할 수 있습니다.`)
+      showMessage(`기획전은 최대 ${MAX_EDITORIAL_EVENTS}개까지 등록할 수 있습니다.`)
       return
     }
     const index = Number(nextId.replace('editorial-', ''))
     const nextEvent = createEmptyEditorialEvent(index)
-    setConfig((prev) => ({ ...prev, events: [...prev.events, nextEvent] }))
+    setConfig((prev) => ({
+      ...prev,
+      events: sortEditorialEventsNewestFirst([nextEvent, ...prev.events]),
+    }))
     setSelectedEventId(nextId)
   }
 
   const handleRemoveEvent = (eventId) => {
-    if (config.events.length <= 1) {
-      showMessage('최소 1개의 기획전이 필요합니다.')
-      return
-    }
-    setConfig((prev) => ({
-      ...prev,
-      events: prev.events.filter((event) => event.id !== eventId),
-    }))
+    const nextEvents = config.events.filter((event) => event.id !== eventId)
+    setConfig((prev) => ({ ...prev, events: nextEvents }))
     if (selectedEventId === eventId) {
-      const remaining = config.events.filter((event) => event.id !== eventId)
-      setSelectedEventId(remaining[0]?.id ?? null)
+      setSelectedEventId(sortEditorialEventsNewestFirst(nextEvents)[0]?.id ?? null)
+    }
+    try {
+      const saved = saveConfig({ events: nextEvents })
+      setConfig(saved)
+      showMessage('기획전이 삭제되었습니다.')
+    } catch {
+      showMessage('삭제 저장에 실패했습니다.')
     }
   }
 
@@ -334,8 +345,32 @@ export function EditorialManagement() {
 
   if (!selectedEvent) {
     return (
-      <div className="p-8">
-        <p className="m-0 text-bodyRegular2 text-subtleText">등록된 기획전이 없습니다.</p>
+      <div className="flex min-h-0 flex-1 flex-col overflow-hidden">
+        {message ? (
+          <div className="fixed bottom-6 right-6 z-50 rounded-sm border border-dark bg-dark px-4 py-3 text-bodySmall text-white shadow-lg">
+            {message}
+          </div>
+        ) : null}
+        <header className="flex shrink-0 items-center justify-between gap-3 border-b border-lightGray px-5 py-3">
+          <div>
+            <h2 className="m-0 text-[18px] font-bold text-dark">기획전 관리</h2>
+            <p className="m-0 text-[11px] text-subtleText">기획전을 한 개씩 추가하면 최신 항목이 목록 맨 위에 노출됩니다.</p>
+          </div>
+          <button
+            type="button"
+            className="rounded-sm border border-dark bg-dark px-3 py-1.5 text-[12px] text-white"
+            onClick={handleAddEvent}
+          >
+            + 기획전 추가
+          </button>
+        </header>
+        <div className="flex flex-1 items-center justify-center p-8">
+          <p className="m-0 text-center text-bodyRegular2 text-subtleText">
+            등록된 기획전이 없습니다.
+            <br />
+            상단의 「+ 기획전 추가」로 첫 기획전을 등록해 주세요.
+          </p>
+        </div>
       </div>
     )
   }
@@ -384,22 +419,33 @@ export function EditorialManagement() {
               +추가
             </button>
           </div>
+          <p className="m-0 mt-1 text-[9px] leading-snug text-subtleText">최신 등록이 위 · editorial-01이 가장 오래됨</p>
           <ul className="m-0 mt-2 min-h-0 flex-1 list-none space-y-0.5 overflow-y-auto p-0">
-            {config.events.map((event) => {
+            {sortedEvents.map((event) => {
               const isActive = event.id === selectedEventId
               return (
                 <li key={event.id}>
-                  <button
-                    type="button"
-                    className={`flex w-full flex-col rounded-sm border-0 px-2 py-1.5 text-left ${
-                      isActive ? 'bg-dark text-white' : 'bg-white text-dark hover:bg-light'
-                    }`}
-                    onClick={() => setSelectedEventId(event.id)}
-                  >
-                    <span className="text-[10px] opacity-70">{event.id}</span>
-                    <span className="truncate text-[11px]">{event.title || '제목 없음'}</span>
-                    {!event.enabled ? <span className="text-[9px] opacity-60">OFF</span> : null}
-                  </button>
+                  <div className="flex items-stretch gap-0.5">
+                    <button
+                      type="button"
+                      className={`flex min-w-0 flex-1 flex-col rounded-sm border-0 px-2 py-1.5 text-left ${
+                        isActive ? 'bg-dark text-white' : 'bg-white text-dark hover:bg-light'
+                      }`}
+                      onClick={() => setSelectedEventId(event.id)}
+                    >
+                      <span className="text-[10px] opacity-70">{event.id}</span>
+                      <span className="truncate text-[11px]">{event.title || '제목 없음'}</span>
+                      {!event.enabled ? <span className="text-[9px] opacity-60">OFF</span> : null}
+                    </button>
+                    <button
+                      type="button"
+                      className="shrink-0 rounded-sm border border-lightGray bg-white px-1 text-[10px] text-subtleText hover:text-dark"
+                      onClick={() => handleRemoveEvent(event.id)}
+                      aria-label={`${event.id} 삭제`}
+                    >
+                      ×
+                    </button>
+                  </div>
                 </li>
               )
             })}

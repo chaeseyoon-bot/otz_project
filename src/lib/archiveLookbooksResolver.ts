@@ -1,18 +1,48 @@
-import { ARCHIVE_LOOKBOOK_ITEMS, type ArchiveLookbookItem, type ArchiveSeasonId } from '../data/archiveLookbooks'
-import { loadAdminArchiveDetailConfig } from './adminArchiveDetailConfig'
+import {
+  ARCHIVE_LOOKBOOK_ITEMS,
+  type ArchiveLookbookItem,
+  type ArchiveSeasonId,
+} from '../data/archiveLookbooks'
+import {
+  archiveEntryHasListData,
+  loadAdminArchiveDetailConfig,
+  sortArchiveLookbooksNewestFirst,
+} from './adminArchiveDetailConfig'
 
-/** List thumbnails — admin override merged over static manifest. */
+function staticItemForId(id: string): ArchiveLookbookItem | undefined {
+  return ARCHIVE_LOOKBOOK_ITEMS.find((item) => item.id === id)
+}
+
+function adminEntryToListItem(entry: {
+  id: string
+  title: string
+  seasons: ArchiveSeasonId[]
+  aspectRatio: number
+  thumbnailUrl: string | null
+}): ArchiveLookbookItem | null {
+  const thumbnail = entry.thumbnailUrl?.trim()
+  if (!thumbnail) return null
+
+  const staticItem = staticItemForId(entry.id)
+  return {
+    id: entry.id,
+    image: thumbnail,
+    aspectRatio: entry.aspectRatio || staticItem?.aspectRatio || 460 / 575,
+    seasons: entry.seasons.length ? entry.seasons : (staticItem?.seasons ?? ['all']),
+    title: entry.title.trim() || staticItem?.title,
+  }
+}
+
+/** List thumbnails — admin entries (newest first), else static Figma manifest. */
 export function resolveArchiveLookbookItems(): ArchiveLookbookItem[] {
   const admin = loadAdminArchiveDetailConfig()
+  const fromAdmin = sortArchiveLookbooksNewestFirst(admin.lookbooks)
+    .filter(archiveEntryHasListData)
+    .map(adminEntryToListItem)
+    .filter((item): item is ArchiveLookbookItem => item != null)
 
-  return ARCHIVE_LOOKBOOK_ITEMS.map((item) => {
-    const entry = admin.lookbooks.find((lookbook) => lookbook.id === item.id)
-    const thumbnailUrl = entry?.thumbnailUrl?.trim()
-    if (thumbnailUrl) {
-      return { ...item, image: thumbnailUrl }
-    }
-    return item
-  })
+  if (fromAdmin.length) return fromAdmin
+  return ARCHIVE_LOOKBOOK_ITEMS
 }
 
 export function filterResolvedArchiveLookbooks(season: ArchiveSeasonId): ArchiveLookbookItem[] {

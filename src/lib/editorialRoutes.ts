@@ -1,4 +1,4 @@
-const EDITORIAL_DETAIL_ID_PATTERN = /^editorial-\d{2}$/
+const EDITORIAL_DETAIL_ID_PATTERN = /^editorial-\d{2,}$/
 
 export function isEditorialDetailPath(pathname: string): boolean {
   return parseEditorialDetailId(pathname) !== null

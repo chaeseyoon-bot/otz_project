@@ -145,6 +145,8 @@ export interface AdminEditorialEvent {
   productTabs: AdminEditorialProductTab[]
   mustItemSection: AdminEditorialProductSection
   sectionOrder: EditorialSectionType[]
+  /** ISO timestamp — newest entries sort to the top of the list */
+  createdAt: string
 }
 
 export interface AdminEditorialConfig {
@@ -231,7 +233,7 @@ export function createEmptyEditorialProductTab(): AdminEditorialProductTab {
   }
 }
 
-export function createEmptyEditorialEvent(index: number): AdminEditorialEvent {
+export function createEmptyEditorialEvent(index = 1): AdminEditorialEvent {
   const id = `editorial-${String(index).padStart(2, '0')}`
   return {
     id,
@@ -261,7 +263,34 @@ export function createEmptyEditorialEvent(index: number): AdminEditorialEvent {
     productTabs: [createEmptyEditorialProductTab()],
     mustItemSection: defaultProductSection('MUST ITEM', MUST_ITEM_SLOTS, 5),
     sectionOrder: [...DEFAULT_EDITORIAL_SECTION_ORDER],
+    createdAt: new Date().toISOString(),
   }
+}
+
+function parseEditorialIdNumber(id: string): number {
+  const match = /^editorial-(\d+)$/.exec(id)
+  return match ? Number(match[1]) : 0
+}
+
+function inferLegacyEditorialCreatedAt(id: string): string {
+  const index = parseEditorialIdNumber(id)
+  if (!index) return new Date().toISOString()
+  return new Date(Date.UTC(2020, 0, index)).toISOString()
+}
+
+/** Newest first — later createdAt / higher id at the top. */
+export function compareEditorialEventsNewestFirst(
+  a: AdminEditorialEvent,
+  b: AdminEditorialEvent,
+): number {
+  const aMs = Date.parse(a.createdAt)
+  const bMs = Date.parse(b.createdAt)
+  if (Number.isFinite(aMs) && Number.isFinite(bMs) && aMs !== bMs) return bMs - aMs
+  return parseEditorialIdNumber(b.id) - parseEditorialIdNumber(a.id)
+}
+
+export function sortEditorialEventsNewestFirst(events: AdminEditorialEvent[]): AdminEditorialEvent[] {
+  return [...events].sort(compareEditorialEventsNewestFirst)
 }
 
 export function normalizeSectionOrder(order: unknown): EditorialSectionType[] {
@@ -385,6 +414,7 @@ function createEditorial01Preset(): AdminEditorialEvent {
       productIds: [1, 2, 3, 4, 5, 6, 7, 8, null, null],
     },
     sectionOrder: [...DEFAULT_EDITORIAL_SECTION_ORDER],
+    createdAt: inferLegacyEditorialCreatedAt('editorial-01'),
   }
 }
 
@@ -438,10 +468,7 @@ function createListOnlyEvent(item: (typeof EDITORIAL_EVENTS)[number]): AdminEdit
 }
 
 export function createDefaultEditorialConfig(): AdminEditorialConfig {
-  const events = EDITORIAL_EVENTS.map((item) =>
-    item.id === 'editorial-01' ? createEditorial01Preset() : createListOnlyEvent(item),
-  )
-  return { version: 1, events, updatedAt: null }
+  return { version: 1, events: [], updatedAt: null }
 }
 
 function normalizeImageSlot(slot: Partial<AdminEditorialImageSlot> | undefined): AdminEditorialImageSlot {
@@ -590,21 +617,29 @@ function normalizeEvent(event: Partial<AdminEditorialEvent>, fallback: AdminEdit
       MUST_ITEM_SLOTS,
     ),
     sectionOrder: normalizeSectionOrder(event.sectionOrder ?? fallback.sectionOrder),
+    createdAt:
+      typeof event.createdAt === 'string' && event.createdAt.trim()
+        ? event.createdAt
+        : inferLegacyEditorialCreatedAt(
+            typeof event.id === 'string' ? event.id : fallback.id,
+          ),
   }
 }
 
 export function normalizeEditorialConfig(raw: Partial<AdminEditorialConfig> | null | undefined): AdminEditorialConfig {
-  const defaults = createDefaultEditorialConfig()
-  if (!raw || !Array.isArray(raw.events)) return defaults
+  if (!raw || !Array.isArray(raw.events)) return createDefaultEditorialConfig()
 
-  const fallbackById = new Map(defaults.events.map((event) => [event.id, event]))
-  const events = raw.events
-    .slice(0, MAX_EDITORIAL_EVENTS)
-    .map((event) => normalizeEvent(event, fallbackById.get(event.id ?? '') ?? createEmptyEditorialEvent(1)))
+  const events = sortEditorialEventsNewestFirst(
+    raw.events
+      .slice(0, MAX_EDITORIAL_EVENTS)
+      .map((event) =>
+        normalizeEvent(event, createEmptyEditorialEvent(parseEditorialIdNumber(event.id ?? '') || 1)),
+      ),
+  )
 
   return {
     version: 1,
-    events: events.length ? events : defaults.events,
+    events,
     updatedAt: typeof raw.updatedAt === 'string' ? raw.updatedAt : null,
   }
 }
@@ -641,9 +676,7 @@ export function saveAdminEditorialConfig(
 }
 
 export function getNextEditorialId(events: AdminEditorialEvent[]): string | null {
-  for (let index = 1; index <= MAX_EDITORIAL_EVENTS; index += 1) {
-    const id = `editorial-${String(index).padStart(2, '0')}`
-    if (!events.some((event) => event.id === id)) return id
-  }
-  return null
+  if (events.length >= MAX_EDITORIAL_EVENTS) return null
+  const maxNum = events.reduce((max, event) => Math.max(max, parseEditorialIdNumber(event.id)), 0)
+  return `editorial-${String(maxNum + 1).padStart(2, '0')}`
 }

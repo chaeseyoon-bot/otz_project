@@ -19,6 +19,7 @@ import {
   MUST_ITEM_SLOTS,
   normalizeSectionOrder,
   PRODUCT_TAB_SLOTS,
+  sortEditorialEventsNewestFirst,
 } from './adminEditorialConfig'
 import { fetchProductById } from './productsApi'
 
@@ -97,7 +98,7 @@ function resolveBenefits(event: AdminEditorialEvent): EditorialBenefitItem[] {
 }
 
 export function resolveEditorialListItems(config: AdminEditorialConfig = loadAdminEditorialConfig()): EditorialEventItem[] {
-  return config.events
+  return sortEditorialEventsNewestFirst(config.events)
     .filter((event) => event.enabled)
     .map((event) => ({
       id: event.id,

@@ -1,12 +1,17 @@
 import type { ArchiveLookbookDetail } from '../data/archiveLookbookDetails'
 import { getArchiveLookbookDetail } from './archiveLookbookDetailResolver'
-import { ARCHIVE_LOOKBOOK_ITEMS } from '../data/archiveLookbooks'
+import { getLatestArchiveLookbookIdFromConfig, loadAdminArchiveDetailConfig } from './adminArchiveDetailConfig'
+import { resolveArchiveLookbookItems } from './archiveLookbooksResolver'
 
 export const LOOKBOOK_HOME_IMAGE_SLOTS = 7
 export const LOOKBOOK_HOME_MOBILE_VISIBLE = 3
 
 export function getLatestArchiveLookbookId(): string {
-  return ARCHIVE_LOOKBOOK_ITEMS[0]?.id ?? 'archive-01'
+  return (
+    getLatestArchiveLookbookIdFromConfig() ??
+    resolveArchiveLookbookItems()[0]?.id ??
+    'archive-01'
+  )
 }
 
 function padImageUrls(urls: string[], count: number, fallback: string): string[] {
@@ -24,14 +29,16 @@ export function extractPcImageUrlsFromDetail(detail: ArchiveLookbookDetail): str
   for (const block of detail.pcBlocks) {
     if (block.type === 'full') {
       urls.push(block.image.src)
-    } else {
+    } else if (block.type === 'split') {
       urls.push(block.left.src, block.right.src)
+    } else {
+      urls.push(block.left.src, block.center.src, block.right.src)
     }
   }
   const fallback =
     detail.mobileImages[0]?.src ??
     urls[0] ??
-    ARCHIVE_LOOKBOOK_ITEMS.find((item) => item.id === detail.lookbookId)?.image ??
+    resolveArchiveLookbookItems().find((item) => item.id === detail.lookbookId)?.image ??
     ''
   return padImageUrls(urls, LOOKBOOK_HOME_IMAGE_SLOTS, fallback)
 }
@@ -49,7 +56,7 @@ export function extractMobileImageUrlsFromDetail(detail: ArchiveLookbookDetail):
 export function getDefaultLookbookSlotUrls(lookbookId: string): string[] {
   const detail = getArchiveLookbookDetail(lookbookId)
   if (!detail) {
-    const item = ARCHIVE_LOOKBOOK_ITEMS.find((entry) => entry.id === lookbookId)
+    const item = resolveArchiveLookbookItems().find((entry) => entry.id === lookbookId)
     const fallback = item?.image ?? ''
     return padImageUrls(fallback ? [fallback] : [], LOOKBOOK_HOME_IMAGE_SLOTS, fallback)
   }
@@ -57,7 +64,11 @@ export function getDefaultLookbookSlotUrls(lookbookId: string): string[] {
 }
 
 export function resolveArchiveLookbookId(lookbookId: string | null | undefined): string {
-  if (lookbookId && ARCHIVE_LOOKBOOK_ITEMS.some((item) => item.id === lookbookId)) {
+  const items = resolveArchiveLookbookItems()
+  if (lookbookId && items.some((item) => item.id === lookbookId)) {
+    return lookbookId
+  }
+  if (lookbookId && loadAdminArchiveDetailConfig().lookbooks.some((entry) => entry.id === lookbookId)) {
     return lookbookId
   }
   return getLatestArchiveLookbookId()

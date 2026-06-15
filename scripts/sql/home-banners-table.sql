@@ -16,6 +16,11 @@ ALTER TABLE public.home_banners ADD COLUMN IF NOT EXISTS link_url text;
 ALTER TABLE public.home_banners ADD COLUMN IF NOT EXISTS metadata jsonb NOT NULL DEFAULT '{}'::jsonb;
 ALTER TABLE public.home_banners ADD COLUMN IF NOT EXISTS created_at timestamptz NOT NULL DEFAULT now();
 
+-- image_url / link_url: optional denormalized fields; full config lives in metadata (jsonb).
+-- Quick menu, curation, etc. may save text-only before any image is uploaded.
+ALTER TABLE public.home_banners ALTER COLUMN image_url DROP NOT NULL;
+ALTER TABLE public.home_banners ALTER COLUMN link_url DROP NOT NULL;
+
 -- section_id unique (Upsert 키)
 DO $$
 BEGIN

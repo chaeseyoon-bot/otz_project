@@ -12,7 +12,7 @@ const ADMIN_MENU_ITEMS = [
   { id: 'products-new', label: '상품 등록', path: ADMIN_PRODUCT_NEW_PATH },
   { id: 'main', label: '홈메인관리', path: ADMIN_MAIN_PATH },
   { id: 'editorial', label: '에디토리얼', path: ADMIN_EDITORIAL_PATH },
-  { id: 'archive', label: '아카이브 상세', path: ADMIN_ARCHIVE_PATH },
+  { id: 'archive', label: '아카이브', path: ADMIN_ARCHIVE_PATH },
   { id: 'orders', label: '주문 관리', path: '/admin/orders', disabled: true },
   { id: 'members', label: '회원 관리', path: '/admin/members', disabled: true },
   { id: 'settings', label: '설정', path: '/admin/settings', disabled: true },

@@ -1,5 +1,5 @@
 import { buildPcBlocksFromImages } from '../data/archiveLookbookDetails'
-import { ARCHIVE_LOOKBOOK_ITEMS } from '../data/archiveLookbooks'
+import type { ArchiveSeasonId } from '../data/archiveLookbooks'
 
 export const ARCHIVE_DETAIL_CONFIG_UPDATED_EVENT = 'otz-archive-detail-config-updated'
 
@@ -7,6 +7,7 @@ const STORAGE_KEY = 'otz-admin-archive-detail'
 
 export const MAX_ARCHIVE_DETAIL_IMAGES = 30
 export const MAX_ARCHIVE_DETAIL_ROWS = 20
+export const MAX_ARCHIVE_LOOKBOOKS = 50
 
 export type ArchiveColumnsPerRow = 1 | 2 | 3
 
@@ -23,9 +24,16 @@ export interface AdminArchiveDetailRow {
 
 export interface AdminArchiveLookbookEntry {
   id: string
+  /** List card title on archive page */
+  title: string
+  seasons: ArchiveSeasonId[]
+  /** Masonry aspect ratio (width / height) */
+  aspectRatio: number
   thumbnailUrl: string | null
   thumbnailFileName: string | null
   detailRows: AdminArchiveDetailRow[]
+  /** ISO timestamp — newest entries sort to the top of the list */
+  createdAt: string
 }
 
 export interface AdminArchiveDetailConfig {
@@ -39,6 +47,8 @@ interface LegacyAdminArchiveLookbookEntry extends Partial<AdminArchiveLookbookEn
   columnsPerRow?: ArchiveColumnsPerRow
   detailImages?: AdminArchiveImageRef[]
 }
+
+const DEFAULT_ASPECT_RATIO = 460 / 575
 
 export function createEmptyAdminArchiveImageRef(): AdminArchiveImageRef {
   return { imageUrl: null, imageFileName: null }
@@ -61,18 +71,68 @@ export function createEmptyAdminArchiveDetailRow(
 export function createEmptyAdminArchiveLookbookEntry(id: string): AdminArchiveLookbookEntry {
   return {
     id,
+    title: '',
+    seasons: ['all'],
+    aspectRatio: DEFAULT_ASPECT_RATIO,
     thumbnailUrl: null,
     thumbnailFileName: null,
     detailRows: [],
+    createdAt: new Date().toISOString(),
   }
 }
 
 export function createDefaultAdminArchiveDetailConfig(): AdminArchiveDetailConfig {
   return {
     version: 1,
-    lookbooks: ARCHIVE_LOOKBOOK_ITEMS.map((item) => createEmptyAdminArchiveLookbookEntry(item.id)),
+    lookbooks: [],
     updatedAt: null,
   }
+}
+
+export function archiveEntryHasListData(entry: AdminArchiveLookbookEntry): boolean {
+  return Boolean(entry.thumbnailUrl?.trim())
+}
+
+export function archiveEntryHasDetailData(entry: AdminArchiveLookbookEntry): boolean {
+  if (entry.thumbnailUrl?.trim()) return true
+  return entry.detailRows.some((row) =>
+    row.images.slice(0, row.columnsPerRow).some((img) => Boolean(img.imageUrl?.trim())),
+  )
+}
+
+function parseArchiveIdNumber(id: string): number {
+  const match = /^archive-(\d+)$/.exec(id)
+  return match ? Number(match[1]) : 0
+}
+
+/** Newest first — higher id / later createdAt at the top. */
+export function compareArchiveLookbooksNewestFirst(
+  a: AdminArchiveLookbookEntry,
+  b: AdminArchiveLookbookEntry,
+): number {
+  const aMs = Date.parse(a.createdAt)
+  const bMs = Date.parse(b.createdAt)
+  if (Number.isFinite(aMs) && Number.isFinite(bMs) && aMs !== bMs) return bMs - aMs
+  return parseArchiveIdNumber(b.id) - parseArchiveIdNumber(a.id)
+}
+
+export function sortArchiveLookbooksNewestFirst(
+  lookbooks: AdminArchiveLookbookEntry[],
+): AdminArchiveLookbookEntry[] {
+  return [...lookbooks].sort(compareArchiveLookbooksNewestFirst)
+}
+
+export function getNextArchiveLookbookId(lookbooks: AdminArchiveLookbookEntry[]): string | null {
+  if (lookbooks.length >= MAX_ARCHIVE_LOOKBOOKS) return null
+  const maxNum = lookbooks.reduce((max, entry) => Math.max(max, parseArchiveIdNumber(entry.id)), 0)
+  return `archive-${String(maxNum + 1).padStart(2, '0')}`
+}
+
+export function getLatestArchiveLookbookIdFromConfig(
+  config: AdminArchiveDetailConfig = loadAdminArchiveDetailConfig(),
+): string | null {
+  const published = sortArchiveLookbooksNewestFirst(config.lookbooks).filter(archiveEntryHasListData)
+  return published[0]?.id ?? null
 }
 
 export function countDetailImages(rows: AdminArchiveDetailRow[]): number {
@@ -166,32 +226,57 @@ function migrateLegacyDetailRows(raw: LegacyAdminArchiveLookbookEntry): AdminArc
     .slice(0, MAX_ARCHIVE_DETAIL_ROWS)
 }
 
-function normalizeLookbookEntry(
-  raw: LegacyAdminArchiveLookbookEntry | undefined,
-  fallback: AdminArchiveLookbookEntry,
-): AdminArchiveLookbookEntry {
-  const detailRows = migrateLegacyDetailRows(raw ?? {})
+function inferLegacyCreatedAt(id: string): string {
+  const index = parseArchiveIdNumber(id)
+  if (!index) return new Date().toISOString()
+  return new Date(Date.UTC(2020, 0, index)).toISOString()
+}
+
+function normalizeSeasons(value: unknown): ArchiveSeasonId[] {
+  if (!Array.isArray(value)) return ['all']
+  const allowed = new Set<ArchiveSeasonId>(['all', '26ss', '25fw', '25ss', '24fw', '24ss', '23fw'])
+  const seasons = value.filter((item): item is ArchiveSeasonId => typeof item === 'string' && allowed.has(item as ArchiveSeasonId))
+  return seasons.length ? seasons : ['all']
+}
+
+function normalizeLookbookEntry(raw: LegacyAdminArchiveLookbookEntry | undefined): AdminArchiveLookbookEntry | null {
+  if (!raw || typeof raw.id !== 'string' || !raw.id.trim()) return null
+
+  const detailRows = migrateLegacyDetailRows(raw)
+  const entry = createEmptyAdminArchiveLookbookEntry(raw.id)
 
   return {
-    id: typeof raw?.id === 'string' ? raw.id : fallback.id,
-    thumbnailUrl: typeof raw?.thumbnailUrl === 'string' ? raw.thumbnailUrl : null,
-    thumbnailFileName: typeof raw?.thumbnailFileName === 'string' ? raw.thumbnailFileName : null,
-    detailRows: detailRows.length ? detailRows : fallback.detailRows,
+    ...entry,
+    title: typeof raw.title === 'string' ? raw.title : entry.title,
+    seasons: normalizeSeasons(raw.seasons),
+    aspectRatio:
+      typeof raw.aspectRatio === 'number' && Number.isFinite(raw.aspectRatio) && raw.aspectRatio > 0
+        ? raw.aspectRatio
+        : entry.aspectRatio,
+    thumbnailUrl: typeof raw.thumbnailUrl === 'string' ? raw.thumbnailUrl : null,
+    thumbnailFileName: typeof raw.thumbnailFileName === 'string' ? raw.thumbnailFileName : null,
+    detailRows,
+    createdAt:
+      typeof raw.createdAt === 'string' && raw.createdAt.trim()
+        ? raw.createdAt
+        : inferLegacyCreatedAt(raw.id),
   }
 }
 
 export function normalizeAdminArchiveDetailConfig(
   raw: Partial<AdminArchiveDetailConfig> | null | undefined,
 ): AdminArchiveDetailConfig {
-  const defaults = createDefaultAdminArchiveDetailConfig()
-  if (!raw || !Array.isArray(raw.lookbooks)) return defaults
+  if (!raw || !Array.isArray(raw.lookbooks)) return createDefaultAdminArchiveDetailConfig()
+
+  const lookbooks = raw.lookbooks
+    .map((item) => normalizeLookbookEntry(item))
+    .filter((item): item is AdminArchiveLookbookEntry => item != null)
+    .filter((entry) => archiveEntryHasDetailData(entry) || entry.title.trim())
+    .slice(0, MAX_ARCHIVE_LOOKBOOKS)
 
   return {
     version: 1,
-    lookbooks: defaults.lookbooks.map((fallback) => {
-      const found = raw.lookbooks?.find((item) => item.id === fallback.id)
-      return normalizeLookbookEntry(found, fallback)
-    }),
+    lookbooks: sortArchiveLookbooksNewestFirst(lookbooks),
     updatedAt: typeof raw.updatedAt === 'string' ? raw.updatedAt : null,
   }
 }
