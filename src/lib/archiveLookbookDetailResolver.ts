@@ -56,9 +56,19 @@ function resolveFromAdminEntry(entry: AdminArchiveLookbookEntry): ArchiveLookboo
       ? [{ src: entry.thumbnailUrl.trim() }]
       : (staticDetail?.mobileImages ?? (listItem ? [{ src: listItem.image }] : []))
 
+  const introHeading = entry.introHeading?.trim() ?? ''
+  const introBody = entry.introBody?.trim() ?? ''
+  const intro =
+    introHeading || introBody ? { heading: introHeading, body: introBody } : null
+
+  const firstRowImageCount =
+    rowInputs[0]?.images.length ?? (imagesForDetail.length > 0 ? 1 : 0)
+
   return {
     lookbookId: entry.id,
     title,
+    intro,
+    firstRowImageCount,
     mobileImages: imagesForDetail,
     pcBlocks: rowInputs.length ? buildPcBlocksFromRows(rowInputs) : [],
   }

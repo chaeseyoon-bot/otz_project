@@ -32,6 +32,9 @@ export interface AdminArchiveLookbookEntry {
   thumbnailUrl: string | null
   thumbnailFileName: string | null
   detailRows: AdminArchiveDetailRow[]
+  /** Shown below the first detail image row (Figma 131:3486). */
+  introHeading: string
+  introBody: string
   /** ISO timestamp — newest entries sort to the top of the list */
   createdAt: string
 }
@@ -77,6 +80,8 @@ export function createEmptyAdminArchiveLookbookEntry(id: string): AdminArchiveLo
     thumbnailUrl: null,
     thumbnailFileName: null,
     detailRows: [],
+    introHeading: '',
+    introBody: '',
     createdAt: new Date().toISOString(),
   }
 }
@@ -94,6 +99,7 @@ export function archiveEntryHasListData(entry: AdminArchiveLookbookEntry): boole
 }
 
 export function archiveEntryHasDetailData(entry: AdminArchiveLookbookEntry): boolean {
+  if (entry.introHeading?.trim() || entry.introBody?.trim()) return true
   if (entry.thumbnailUrl?.trim()) return true
   return entry.detailRows.some((row) =>
     row.images.slice(0, row.columnsPerRow).some((img) => Boolean(img.imageUrl?.trim())),
@@ -256,6 +262,8 @@ function normalizeLookbookEntry(raw: LegacyAdminArchiveLookbookEntry | undefined
     thumbnailUrl: typeof raw.thumbnailUrl === 'string' ? raw.thumbnailUrl : null,
     thumbnailFileName: typeof raw.thumbnailFileName === 'string' ? raw.thumbnailFileName : null,
     detailRows,
+    introHeading: typeof raw.introHeading === 'string' ? raw.introHeading : '',
+    introBody: typeof raw.introBody === 'string' ? raw.introBody : '',
     createdAt:
       typeof raw.createdAt === 'string' && raw.createdAt.trim()
         ? raw.createdAt

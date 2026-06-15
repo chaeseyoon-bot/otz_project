@@ -77,10 +77,19 @@ export interface ArchiveLookbookDetail {
   lookbookId: string
   /** Figma 2679:10527 / 2679:12040 */
   title: string
+  /** Intro copy below the first image row (Figma 131:3486). */
+  intro?: ArchiveDetailIntro | null
+  /** Mobile stack: insert intro after this many images (first row). */
+  firstRowImageCount: number
   /** MO 2679:10237 — full width, natural height, vertical stack */
   mobileImages: ArchiveLookbookDetailImage[]
   /** PC 2679:10534 — 1400px editorial layout */
   pcBlocks: ArchivePcDetailBlock[]
+}
+
+export interface ArchiveDetailIntro {
+  heading: string
+  body: string
 }
 
 function img(file: string, alt?: string): ArchiveLookbookDetailImage {
@@ -126,6 +135,8 @@ function fallbackDetailFromListItem(item: ArchiveLookbookItem): ArchiveLookbookD
   return {
     lookbookId: item.id,
     title: item.title ?? 'ARCHIVE',
+    intro: null,
+    firstRowImageCount: 1,
     mobileImages: [single],
     pcBlocks: [{ type: 'full', image: single }],
   }
@@ -138,7 +149,12 @@ export function getStaticArchiveLookbookDetail(lookbookId: string): ArchiveLookb
 
   const preset = DETAIL_PRESETS[lookbookId]
   if (preset) {
-    return { lookbookId, ...preset }
+    return {
+      lookbookId,
+      intro: null,
+      firstRowImageCount: 1,
+      ...preset,
+    }
   }
 
   return fallbackDetailFromListItem(listItem)

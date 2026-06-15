@@ -504,6 +504,32 @@ export function ArchiveDetailManagement() {
             </SectionBlock>
 
             <SectionBlock
+              title="상세 소개 문구"
+              hint="첫 번째 이미지 행 바로 아래에 노출됩니다. (MO/PC 공용 · Figma 131:3486)"
+            >
+              <div className="space-y-3">
+                <div>
+                  <p className="m-0 mb-1 text-[11px] text-dark">소개 제목</p>
+                  <TextInput
+                    value={selected.introHeading}
+                    onChange={(value) => updateSelected({ introHeading: value })}
+                    placeholder="예: ROMARY PETAL SHEER"
+                  />
+                </div>
+                <div>
+                  <p className="m-0 mb-1 text-[11px] text-dark">소개 본문</p>
+                  <TextInput
+                    value={selected.introBody}
+                    onChange={(value) => updateSelected({ introBody: value })}
+                    placeholder="예: 투명한 꽃잎처럼, 은은하게 빛이 스며드는 날의 무드를 담은…"
+                    multiline
+                    rows={6}
+                  />
+                </div>
+              </div>
+            </SectionBlock>
+
+            <SectionBlock
               title="상세 이미지 (행 단위)"
               hint="행마다 1~3개를 선택해 감각적으로 배치하세요. MO는 세로 1열, PC는 행 구성 그대로 노출됩니다."
             >

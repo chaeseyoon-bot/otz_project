@@ -1,6 +1,7 @@
-import type { ArchiveLookbookDetail } from '../../data/archiveLookbookDetails'
+import type { ArchiveLookbookDetail, ArchivePcDetailBlock } from '../../data/archiveLookbookDetails'
 import { ICONS } from '../../constants/icons'
 import { navigateSpa } from '../../lib/spaNavigation'
+import { ArchiveDetailIntroText } from '../molecules/ArchiveDetailIntroText'
 
 const iconPlus = ICONS.common.plus
 
@@ -8,8 +9,63 @@ export interface ArchivePcDetailContentProps {
   detail: ArchiveLookbookDetail
 }
 
+function renderPcBlock(block: ArchivePcDetailBlock, index: number) {
+  if (block.type === 'full') {
+    return (
+      <div className="w-full overflow-hidden">
+        <img
+          src={block.image.src}
+          alt={block.image.alt ?? ''}
+          className="block h-auto w-full px-[200px] pt-[40px] pb-0"
+          loading={index === 0 ? 'eager' : 'lazy'}
+          decoding="async"
+          draggable={false}
+        />
+      </div>
+    )
+  }
+
+  if (block.type === 'triple') {
+    return (
+      <div className="flex w-full gap-2">
+        {[block.left, block.center, block.right].map((image, sideIndex) => (
+          <div key={`${image.src}-${sideIndex}`} className="min-w-0 flex-1 overflow-hidden">
+            <img
+              src={image.src}
+              alt={image.alt ?? ''}
+              className="block h-auto w-full"
+              loading="lazy"
+              decoding="async"
+              draggable={false}
+            />
+          </div>
+        ))}
+      </div>
+    )
+  }
+
+  return (
+    <div className="flex w-full gap-2">
+      {[block.left, block.right].map((image, sideIndex) => (
+        <div key={`${image.src}-${sideIndex}`} className="min-w-0 flex-1 overflow-hidden">
+          <img
+            src={image.src}
+            alt={image.alt ?? ''}
+            className="block h-auto w-full"
+            loading="lazy"
+            decoding="async"
+            draggable={false}
+          />
+        </div>
+      ))}
+    </div>
+  )
+}
+
 /** Figma 2679:10518 — PC ARCHIVE editorial detail within 1400px content. */
 export function ArchivePcDetailContent({ detail }: ArchivePcDetailContentProps) {
+  const showIntro = Boolean(detail.intro && (detail.intro.heading.trim() || detail.intro.body.trim()))
+
   return (
     <div className="mx-auto w-full max-w-[1400px] py-[60px]">
       <div className="flex w-full flex-col items-center gap-2">
@@ -33,58 +89,14 @@ export function ArchivePcDetailContent({ detail }: ArchivePcDetailContentProps) 
       </div>
 
       <div className="flex w-full flex-col gap-2 pt-5">
-        {detail.pcBlocks.map((block, index) => {
-          if (block.type === 'full') {
-            return (
-              <div key={`full-${index}`} className="w-full overflow-hidden">
-                <img
-                  src={block.image.src}
-                  alt={block.image.alt ?? ''}
-                  className="block h-auto w-full px-[200px] pt-[40px] pb-[100px]"
-                  loading={index === 0 ? 'eager' : 'lazy'}
-                  decoding="async"
-                  draggable={false}
-                />
-              </div>
-            )
-          }
-
-          if (block.type === 'triple') {
-            return (
-              <div key={`triple-${index}`} className="flex w-full gap-2">
-                {[block.left, block.center, block.right].map((image, sideIndex) => (
-                  <div key={`${image.src}-${sideIndex}`} className="min-w-0 flex-1 overflow-hidden">
-                    <img
-                      src={image.src}
-                      alt={image.alt ?? ''}
-                      className="block h-auto w-full"
-                      loading="lazy"
-                      decoding="async"
-                      draggable={false}
-                    />
-                  </div>
-                ))}
-              </div>
-            )
-          }
-
-          return (
-            <div key={`split-${index}`} className="flex w-full gap-2">
-              {[block.left, block.right].map((image, sideIndex) => (
-                <div key={`${image.src}-${sideIndex}`} className="min-w-0 flex-1 overflow-hidden">
-                  <img
-                    src={image.src}
-                    alt={image.alt ?? ''}
-                    className="block h-auto w-full"
-                    loading="lazy"
-                    decoding="async"
-                    draggable={false}
-                  />
-                </div>
-              ))}
-            </div>
-          )
-        })}
+        {detail.pcBlocks.map((block, index) => (
+          <div key={`pc-block-${index}`} className="flex w-full flex-col gap-2">
+            {renderPcBlock(block, index)}
+            {index === 0 && showIntro && detail.intro ? (
+              <ArchiveDetailIntroText intro={detail.intro} className="py-16" />
+            ) : null}
+          </div>
+        ))}
       </div>
     </div>
   )

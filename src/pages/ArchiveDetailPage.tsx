@@ -52,7 +52,11 @@ export function ArchiveDetailPage({ lookbookId }: ArchiveDetailPageProps) {
         </section>
 
         <section className="px-[10px] pb-10">
-          <ArchiveDetailImageStack images={detail.mobileImages} />
+          <ArchiveDetailImageStack
+            images={detail.mobileImages}
+            intro={detail.intro}
+            introAfterIndex={detail.firstRowImageCount}
+          />
         </section>
       </main>
 
