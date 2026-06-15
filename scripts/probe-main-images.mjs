@@ -1,5 +1,5 @@
 /**
- * Probes main_images bucket upload (banner admin flow).
+ * Probes home_banners bucket upload (banner admin flow).
  * Run: node scripts/probe-main-images.mjs
  */
 import fs from 'node:fs'
@@ -35,7 +35,7 @@ const png = Buffer.from(
   'base64',
 )
 
-const bucket = 'main_images'
+const bucket = 'home_banners'
 const results = []
 
 function log(entry) {

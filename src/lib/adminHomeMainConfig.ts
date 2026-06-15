@@ -1,3 +1,5 @@
+import { deepRewriteHomeBannerUrls } from './homeBannersAssetUrl'
+
 export type QuickMenuSlotType = 'image' | 'text' | 'cutout' | 'mixed'
 
 export interface AdminMainBannerSlide {
@@ -177,34 +179,14 @@ export const HOME_MAIN_CONFIG_UPDATED_EVENT = 'otz-home-main-config-updated'
 
 const STORAGE_KEY = 'otz-admin-home-main'
 
-/** Figma 2601:22673 — 6 tiles × 160px + 5 gaps × 10px = 1010px row. */
+/** Figma 2601:22673 — 6 tiles; copy/link는 어드민에서 입력 (빈 기본값 + placeholder). */
 const DEFAULT_QUICK_MENU: AdminQuickMenuSlot[] = [
-  { id: 'qm-1', slotType: 'image', label: '봄 Edition', captionLabel: '', imageUrl: null, imageFileName: null, href: '', bgColor: '#F6F6F6', textColor: '#1A1A1A' },
-  {
-    id: 'qm-2',
-    slotType: 'mixed',
-    label: 'Best\nSellers',
-    captionLabel: 'BEST',
-    imageUrl: null,
-    imageFileName: null,
-    href: '/best',
-    bgColor: '#000000',
-    textColor: '#DEDEDE',
-  },
-  {
-    id: 'qm-3',
-    slotType: 'mixed',
-    label: 'New\nArrivals',
-    captionLabel: 'NEW',
-    imageUrl: null,
-    imageFileName: null,
-    href: '/new',
-    bgColor: '#444444',
-    textColor: '#FFFFFF',
-  },
-  { id: 'qm-4', slotType: 'image', label: 'SHOES', captionLabel: '', imageUrl: null, imageFileName: null, href: '/category/shoes', bgColor: '#F1F1F1', textColor: '#1A1A1A' },
-  { id: 'qm-5', slotType: 'image', label: 'BAGS', captionLabel: '', imageUrl: null, imageFileName: null, href: '/category/shoes?main=bag-acc&sub=가방', bgColor: '#F1F1F1', textColor: '#1A1A1A' },
-  { id: 'qm-6', slotType: 'image', label: 'ACC', captionLabel: '', imageUrl: null, imageFileName: null, href: '/category/shoes?main=bag-acc', bgColor: '#F1F1F1', textColor: '#1A1A1A' },
+  { id: 'qm-1', slotType: 'image', label: '', captionLabel: '', imageUrl: null, imageFileName: null, href: '', bgColor: '#F6F6F6', textColor: '#1A1A1A' },
+  { id: 'qm-2', slotType: 'mixed', label: '', captionLabel: '', imageUrl: null, imageFileName: null, href: '', bgColor: '#000000', textColor: '#DEDEDE' },
+  { id: 'qm-3', slotType: 'mixed', label: '', captionLabel: '', imageUrl: null, imageFileName: null, href: '', bgColor: '#444444', textColor: '#FFFFFF' },
+  { id: 'qm-4', slotType: 'image', label: '', captionLabel: '', imageUrl: null, imageFileName: null, href: '', bgColor: '#F1F1F1', textColor: '#1A1A1A' },
+  { id: 'qm-5', slotType: 'image', label: '', captionLabel: '', imageUrl: null, imageFileName: null, href: '', bgColor: '#F1F1F1', textColor: '#1A1A1A' },
+  { id: 'qm-6', slotType: 'image', label: '', captionLabel: '', imageUrl: null, imageFileName: null, href: '', bgColor: '#F1F1F1', textColor: '#1A1A1A' },
 ]
 
 export function createEmptyQuickMenuSlot(suffix = ''): AdminQuickMenuSlot {
@@ -226,27 +208,22 @@ const DEFAULT_PLANNING: AdminPlanningBanner[] = [
     id: 'planning-1',
     imageUrl: null,
     imageFileName: null,
-    badge: '26SS',
-    title: '코지 발레코어 슈즈',
-    subtitle: '오찌x 론론 핑크와 그레이의 세련된 조합',
+    badge: '',
+    title: '',
+    subtitle: '',
   },
 ]
 
 export const MIN_MARKETING_POPUP_SLIDES = 1
 export const MAX_MARKETING_POPUP_SLIDES = 10
 
-const DEFAULT_MARKETING_POPUP_COPY = {
-  title: '코코아모브 에디션',
-  subtitle: '로마리 스웨이드 시즌 한정\n코코아모브 컬러 특별 에디션 소장하세요',
-} as const
-
 const DEFAULT_MARKETING_POPUP_SLIDES: AdminMarketingPopupSlide[] = [
   {
     id: 'promo-1',
     imageUrl: null,
     imageFileName: null,
-    title: DEFAULT_MARKETING_POPUP_COPY.title,
-    subtitle: DEFAULT_MARKETING_POPUP_COPY.subtitle,
+    title: '',
+    subtitle: '',
   },
 ]
 
@@ -318,10 +295,10 @@ export function countFilledPlanningCollectionProducts(productIds: (number | null
 }
 
 const DEFAULT_COLLECTION_TAGS: AdminPlanningCollectionTag[] = [
-  { id: 'pct-1', label: 'COLLECTION' },
-  { id: 'pct-2', label: 'LIMITED EDITION' },
-  { id: 'pct-3', label: 'NEW' },
-  { id: 'pct-4', label: 'COLLABO' },
+  { id: 'pct-1', label: '' },
+  { id: 'pct-2', label: '' },
+  { id: 'pct-3', label: '' },
+  { id: 'pct-4', label: '' },
 ]
 
 const EMPTY_PRODUCT_IDS: (number | null)[] = [null, null, null, null]
@@ -375,9 +352,9 @@ const DEFAULT_COLLECTIONS: AdminPlanningCollection[] = [
     id: 'collection-1',
     imageUrl: null,
     imageFileName: null,
-    title: 'OTZ×UMU\nLove Winter Day',
+    title: '',
     tagId: 'pct-1',
-    linkLabel: '오찌x우무 바로가기',
+    linkLabel: '',
     linkHref: '',
     productIds: [...EMPTY_PRODUCT_IDS],
   },
@@ -385,9 +362,9 @@ const DEFAULT_COLLECTIONS: AdminPlanningCollection[] = [
     id: 'collection-2',
     imageUrl: null,
     imageFileName: null,
-    title: 'OTZ×LOFA Seoul',
+    title: '',
     tagId: 'pct-2',
-    linkLabel: '오찌x로파서울 바로가기',
+    linkLabel: '',
     linkHref: '',
     productIds: [...EMPTY_PRODUCT_IDS],
   },
@@ -438,10 +415,10 @@ function normalizeCurationCategoryFilter(raw: unknown): AdminCurationCategoryFil
 }
 
 const DEFAULT_CURATION_COPY = {
-  badge: 'CURATION',
-  title: 'WINTER ACC\nSTYLING',
-  mobileCtaLabel: '상품 보러 가기',
-  pcLinkLabel: '상품 바로가기',
+  badge: '',
+  title: '',
+  mobileCtaLabel: '',
+  pcLinkLabel: '',
   linkHref: '',
 } as const
 
@@ -460,16 +437,15 @@ const EMPTY_STYLE_BANNER_PRODUCT_IDS: (number | null)[] = [null, null, null, nul
 export const LOOKBOOK_IMAGE_SLOTS = 7
 export const LOOKBOOK_MOBILE_VISIBLE_SLOTS = 3
 
-const DEFAULT_LOOKBOOK_TAGS = ['#OTZ', '#SPRING', '#ROMARI'] as const
+const DEFAULT_LOOKBOOK_TAGS = ['', '', ''] as const
 
 const DEFAULT_LOOKBOOK_COPY = {
-  badge: 'ARCHIVE',
-  title: 'SPRING IN\nOTZ',
-  body:
-    '오찌의 26 스프링 컬렉션은 여유로운 캘리포니아의 휴일을 담았습니다. 캐주얼한 쉐입에 러블리한 포인트를 더한 오찌만의 봄 스타일링 컬렉션을 만나보세요.',
+  badge: '',
+  title: '',
+  body: '',
   tags: [...DEFAULT_LOOKBOOK_TAGS],
-  mobileCtaLabel: '아카이브 바로가기',
-  linkHref: '/archive',
+  mobileCtaLabel: '',
+  linkHref: '',
 } as const
 
 function createEmptyLookbookImageSlots(): AdminLookbookImageSlot[] {
@@ -480,10 +456,9 @@ function createEmptyLookbookImageSlots(): AdminLookbookImageSlot[] {
 }
 
 const DEFAULT_STYLE_BANNER_COPY = {
-  badge: 'CORDINATION',
-  title: "OTZ'S\nSTYLE LOG",
-  body:
-    '오찌가 전하는 편안함 위에 당신만의 색깔을 더해보세요.\n매일의 걸음이 즐거워지는 감각적인 스타일링 가이드를\n제안합니다.',
+  badge: '',
+  title: '',
+  body: '',
 } as const
 
 const DEFAULT_STYLE_BANNER_CARDS: AdminStyleBannerCard[] = [
@@ -491,7 +466,7 @@ const DEFAULT_STYLE_BANNER_CARDS: AdminStyleBannerCard[] = [
     id: 'style-1',
     imageUrl: null,
     imageFileName: null,
-    badge: 'LIMITED EDITION',
+    badge: null,
     productIds: [...EMPTY_STYLE_BANNER_PRODUCT_IDS],
   },
   {
@@ -505,7 +480,7 @@ const DEFAULT_STYLE_BANNER_CARDS: AdminStyleBannerCard[] = [
     id: 'style-3',
     imageUrl: null,
     imageFileName: null,
-    badge: '26SS COLLECTION',
+    badge: null,
     productIds: [...EMPTY_STYLE_BANNER_PRODUCT_IDS],
   },
 ]
@@ -662,38 +637,38 @@ export function normalizeCurationProducts(
 const DEFAULT_SERIES: AdminSeriesBanner[] = [
   {
     id: 'series-lomita',
-    title: 'LOMITA',
-    body: '오찌 아이코닉 LOMITA\n안정적인 플랫폼이 자연스럽게 높이를 더하고\n편안한 균형을 완성합니다.',
+    title: '',
+    body: '',
     imageUrl: null,
     imageFileName: null,
-    ctaLabel: '상품 보러 가기',
+    ctaLabel: '',
     ctaHref: '',
   },
   {
     id: 'series-romari',
-    title: 'ROMARI',
-    body: '오찌의 대표 라인으로 자리 매김한 ROMARI\n낮은 굽에 스니커즈 아웃솔을 더해 날렵하지만,\n편안한 착화감을 선사합니다.',
+    title: '',
+    body: '',
     imageUrl: null,
     imageFileName: null,
-    ctaLabel: '상품 보러 가기',
+    ctaLabel: '',
     ctaHref: '',
   },
   {
     id: 'series-3300',
-    title: '3300',
-    body: '오찌의 헤리티지를 담은 3300.\n넓고 둥근 쉐입으로 편안한 착화감과\n여유로운 실루엣을 완성합니다.',
+    title: '',
+    body: '',
     imageUrl: null,
     imageFileName: null,
-    ctaLabel: '상품 보러 가기',
+    ctaLabel: '',
     ctaHref: '',
   },
   {
     id: 'series-topi',
-    title: 'TOPI',
-    body: '플랫폼 클로그 타입의 감각적인 실루엣, TOPI\n간결한 디자인과 안정적인 착화감으로\n편안한 데일리 스타일을 완성합니다.',
+    title: '',
+    body: '',
     imageUrl: null,
     imageFileName: null,
-    ctaLabel: '상품 보러 가기',
+    ctaLabel: '',
     ctaHref: '',
   },
 ]
@@ -706,18 +681,17 @@ export function createDefaultHomeMainConfig(): AdminHomeMainConfig {
         id: 'main-1',
         imageUrl: null,
         imageFileName: null,
-        title: 'OTZ x LOFA Seoul',
-        subtitle: '감각적인 라이프스타일 브랜드 로파서울과의 만남',
-        ctaLabel: '쇼핑 바로가기',
-        ctaHref: '/new',
+        title: '',
+        subtitle: '',
+        ctaLabel: '',
+        ctaHref: '',
       },
     ],
     quickMenuSlots: DEFAULT_QUICK_MENU.map((slot) => ({ ...slot })),
     brandBanner: {
       imageUrl: null,
       imageFileName: null,
-      body:
-        '미국 캘리포니아주의 말리부에서 탄생한 오찌는\n캘리포니아의 온화한 기후에서 영감 받아\n일상을 여행처럼 향유하는 라이프스타일을 제안합니다',
+      body: '',
     },
     seriesBanners: DEFAULT_SERIES.map((item) => ({ ...item })),
     planningBanners: DEFAULT_PLANNING.map((item) => ({ ...item })),
@@ -837,10 +811,10 @@ export function loadAdminHomeMainConfig(): AdminHomeMainConfig {
       parsed.version !== 7 &&
       parsed.version !== 8
     ) {
-      return migrateLegacyConfig(parsed)
+      return deepRewriteHomeBannerUrls(migrateLegacyConfig(parsed))
     }
 
-    return migrateHomeMainConfig(parsed)
+    return deepRewriteHomeBannerUrls(migrateHomeMainConfig(parsed))
   } catch {
     return createDefaultHomeMainConfig()
   }

@@ -1,16 +1,16 @@
 import type { CSSProperties } from 'react'
 import type { AdminQuickMenuSlot } from '../../lib/adminHomeMainConfig'
 import { getQuickMenuCaptionBelow } from '../../lib/adminHomeMainConfig'
-import { mainImageAsset } from '../../lib/mainImagesAssetUrl'
+import { homeBannerAsset } from '../../lib/homeBannersAssetUrl'
 
 /** Figma 2601:22673 — default quick menu tile images by slot index. */
 export const QUICK_MENU_SLOT_FALLBACK_IMAGES = [
-  mainImageAsset('category_01.png'),
-  mainImageAsset('category_02.png'),
-  mainImageAsset('category_03.png'),
-  mainImageAsset('category_04.png'),
-  mainImageAsset('category_05.png'),
-  mainImageAsset('category_06.png'),
+  homeBannerAsset('category_01.png'),
+  homeBannerAsset('category_02.png'),
+  homeBannerAsset('category_03.png'),
+  homeBannerAsset('category_04.png'),
+  homeBannerAsset('category_05.png'),
+  homeBannerAsset('category_06.png'),
 ] as const
 
 const TILE_CLASS =

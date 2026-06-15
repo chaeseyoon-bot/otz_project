@@ -1,5 +1,5 @@
 /**
- * Generates placeholder raster + SVG files under public/assets/figma/ so <img> and
+ * Generates placeholder raster + SVG files under public/assets/figma/home_banners/ so <img> and
  * tailwind background-image URLs resolve offline. Replace with real exports via
  * `npm run assets:download` (Figma REST API) or `npm run assets:sync` (Dev Mode localhost).
  */
@@ -9,7 +9,7 @@ import { fileURLToPath } from 'node:url'
 import { FROM_REGISTRY_PNG, FROM_REGISTRY_SVG } from './figma-asset-manifest.mjs'
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url))
-const outDir = path.join(__dirname, '..', 'public', 'assets', 'figma')
+const outDir = path.join(__dirname, '..', 'public', 'assets', 'figma', 'home_banners')
 
 const GENERIC_SVG = `<?xml version="1.0" encoding="UTF-8"?>
 <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none">

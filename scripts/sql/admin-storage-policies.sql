@@ -1,5 +1,5 @@
 -- =============================================================================
--- Admin Storage RLS — products + main_images buckets
+-- Admin Storage RLS — products + home_banners buckets
 -- Supabase Dashboard → SQL Editor → New query → Run (전체 선택 후 실행)
 --
 -- upsert: true 덮어쓰기에 필요한 권한:
@@ -26,6 +26,20 @@ ON CONFLICT (id) DO UPDATE SET
 
 INSERT INTO storage.buckets (id, name, public, file_size_limit, allowed_mime_types)
 VALUES (
+  'home_banners',
+  'home_banners',
+  true,
+  52428800,
+  ARRAY['image/png', 'image/jpeg', 'image/webp', 'image/gif']::text[]
+)
+ON CONFLICT (id) DO UPDATE SET
+  public = EXCLUDED.public,
+  file_size_limit = EXCLUDED.file_size_limit,
+  allowed_mime_types = EXCLUDED.allowed_mime_types;
+
+-- legacy bucket name (기존 업로드 호환)
+INSERT INTO storage.buckets (id, name, public, file_size_limit, allowed_mime_types)
+VALUES (
   'main_images',
   'main_images',
   true,
@@ -37,7 +51,7 @@ ON CONFLICT (id) DO UPDATE SET
   file_size_limit = EXCLUDED.file_size_limit,
   allowed_mime_types = EXCLUDED.allowed_mime_types;
 
--- 1) products / main_images 관련 기존 정책 일괄 제거 (이름 충돌 방지)
+-- 1) products / home_banners / main_images 관련 기존 정책 일괄 제거 (이름 충돌 방지)
 DO $$
 DECLARE
   pol RECORD;
@@ -51,6 +65,7 @@ BEGIN
         policyname ILIKE '%products_storage%'
         OR policyname ILIKE '%products_storage_%'
         OR policyname ILIKE '%main_images_storage%'
+        OR policyname ILIKE '%home_banners_storage%'
         OR policyname ILIKE '%product%storage%'
         OR policyname ILIKE '%main_image%'
       )
@@ -83,7 +98,30 @@ ON storage.objects FOR DELETE
 TO public
 USING (bucket_id = 'products');
 
--- ── main_images bucket (홈메인 어드민 배너) ─────────────────────────────────
+-- ── home_banners bucket (홈메인 어드민 배너) ────────────────────────────────
+
+CREATE POLICY "home_banners_storage_select_public"
+ON storage.objects FOR SELECT
+TO public
+USING (bucket_id = 'home_banners');
+
+CREATE POLICY "home_banners_storage_insert_public"
+ON storage.objects FOR INSERT
+TO public
+WITH CHECK (bucket_id = 'home_banners');
+
+CREATE POLICY "home_banners_storage_update_public"
+ON storage.objects FOR UPDATE
+TO public
+USING (bucket_id = 'home_banners')
+WITH CHECK (bucket_id = 'home_banners');
+
+CREATE POLICY "home_banners_storage_delete_public"
+ON storage.objects FOR DELETE
+TO public
+USING (bucket_id = 'home_banners');
+
+-- ── main_images bucket (legacy) ───────────────────────────────────────────
 
 CREATE POLICY "main_images_storage_select_public"
 ON storage.objects FOR SELECT

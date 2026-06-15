@@ -3,12 +3,12 @@ import { createPortal } from 'react-dom'
 import { useMobileGnb } from '../../contexts/MobileGnbContext'
 import { GNB_MEGA_MENU_GROUPS } from '../../data/gnbMegaMenu'
 import { getMobileGnbDrawerItems } from '../../data/categoryMobileMain'
-import { mainImageAsset } from '../../lib/mainImagesAssetUrl'
+import { homeBannerAsset } from '../../lib/homeBannersAssetUrl'
 import { buildCategoryPlpPath, navigateCategoryPlp, resolveGnbDrawerNavigation } from '../../lib/categoryRoutes'
 import { navigateSpa } from '../../lib/spaNavigation'
 
-const imgMoHamburgerBrand = mainImageAsset('mo_hamburger_brandstory.png')
-const imgMembership = mainImageAsset('mo_hamburger_membership.png')
+const imgMoHamburgerBrand = homeBannerAsset('mo_hamburger_brandstory.png')
+const imgMembership = homeBannerAsset('mo_hamburger_membership.png')
 
 /** Global mobile hamburger menu — same layer from every header / tab bar entry point. */
 export function MobileGnbDrawer() {

@@ -30,31 +30,31 @@ import {
   CURATION_PRODUCT_SLOTS,
   PLANNING_COLLECTION_PRODUCT_SLOTS,
 } from './adminHomeMainConfig'
-import { mainImageAsset } from './mainImagesAssetUrl'
+import { homeBannerAsset, rewriteHomeBannerImageUrl } from './homeBannersAssetUrl'
 import { PRODUCT_CARD_CUTS, productCutUrl } from './productImage'
 
 const HERO_FALLBACK_IMAGES = [
-  mainImageAsset('banner_01.png'),
-  mainImageAsset('banner_02.png'),
-  mainImageAsset('banner_03.png'),
+  homeBannerAsset('banner_01.png'),
+  homeBannerAsset('banner_02.png'),
+  homeBannerAsset('banner_03.png'),
 ] as const
 
-const BRAND_INTRO_FALLBACK = mainImageAsset('brand_01.png')
+const BRAND_INTRO_FALLBACK = homeBannerAsset('brand_01.png')
 
 const SERIES_FALLBACK_IMAGES = [
-  mainImageAsset('brand_03.png'),
-  mainImageAsset('brand_02.png'),
-  mainImageAsset('brand_05.png'),
-  mainImageAsset('brand_04.png'),
+  homeBannerAsset('brand_03.png'),
+  homeBannerAsset('brand_02.png'),
+  homeBannerAsset('brand_05.png'),
+  homeBannerAsset('brand_04.png'),
 ] as const
 
 const PLANNING_FALLBACK_IMAGES = [
-  mainImageAsset('promo_03.png'),
-  mainImageAsset('promo_01.png'),
-  mainImageAsset('promo_02.png'),
+  homeBannerAsset('promo_03.png'),
+  homeBannerAsset('promo_01.png'),
+  homeBannerAsset('promo_02.png'),
 ] as const
 
-const MARKETING_POPUP_FALLBACK_IMAGE = mainImageAsset('homemain_pop_banner01.jpg')
+const MARKETING_POPUP_FALLBACK_IMAGE = homeBannerAsset('homemain_pop_banner01.jpg')
 
 const DEFAULT_MARKETING_POPUP_RESOLVED = {
   title: '코코아모브 에디션',
@@ -62,24 +62,24 @@ const DEFAULT_MARKETING_POPUP_RESOLVED = {
 } as const
 
 const COLLECTION_FALLBACK_IMAGES = [
-  mainImageAsset('coll_banner_01.png'),
-  mainImageAsset('coll_banner_02.png'),
+  homeBannerAsset('coll_banner_01.png'),
+  homeBannerAsset('coll_banner_02.png'),
 ] as const
 
 const COLLECTION_FALLBACK_TITLES = ['OTZ×UMU\nLove Winter Day', 'OTZ×LOFA Seoul'] as const
 
 const COLLECTION_FALLBACK_THUMBS = [
   [
-    mainImageAsset('coll_thumb_01.png'),
-    mainImageAsset('coll_thumb_02.png'),
-    mainImageAsset('coll_thumb_03.png'),
-    mainImageAsset('coll_thumb_04.png'),
+    homeBannerAsset('coll_thumb_01.png'),
+    homeBannerAsset('coll_thumb_02.png'),
+    homeBannerAsset('coll_thumb_03.png'),
+    homeBannerAsset('coll_thumb_04.png'),
   ],
   [
-    mainImageAsset('coll_thumb_05.png'),
-    mainImageAsset('coll_thumb_06.png'),
-    mainImageAsset('coll_thumb_07.png'),
-    mainImageAsset('coll_thumb_08.png'),
+    homeBannerAsset('coll_thumb_05.png'),
+    homeBannerAsset('coll_thumb_06.png'),
+    homeBannerAsset('coll_thumb_07.png'),
+    homeBannerAsset('coll_thumb_08.png'),
   ],
 ] as const
 
@@ -116,7 +116,7 @@ export function resolveHeroSlides(mainBanners: AdminMainBannerSlide[]): Resolved
   const fallback = defaultHeroSlides[0]
 
   return mainBanners.map((banner, index) => {
-    const imageUrl = banner.imageUrl?.trim()
+    const imageUrl = rewriteHomeBannerImageUrl(banner.imageUrl?.trim() || null)
     return {
       id: banner.id,
       title: (banner.title ?? '').trim() || fallback?.title || '',
@@ -370,21 +370,21 @@ export function buildCurationEditorialImage(folder: string, productId: number): 
 }
 
 const STYLE_BANNER_FALLBACK_BANNERS = [
-  mainImageAsset('style_01.png'),
-  mainImageAsset('style_04.png'),
-  mainImageAsset('style_07.jpg'),
+  homeBannerAsset('style_01.png'),
+  homeBannerAsset('style_04.png'),
+  homeBannerAsset('style_07.jpg'),
 ] as const
 
 const STYLE_BANNER_FALLBACK_PRODUCTS = [
   [
     {
-      thumb: mainImageAsset('style_02.png'),
+      thumb: homeBannerAsset('style_02.png'),
       name: '스웨이드 숄더백 코코아모브 브라운 FLOTFA3B07',
       discountRate: '10%',
       price: '53,910',
     },
     {
-      thumb: mainImageAsset('style_03.png'),
+      thumb: homeBannerAsset('style_03.png'),
       name: '[오찌x우무] 벌루니 플랫폼 밴딩 슬라이드 FLOTFF4W21',
       discountRate: '20%',
       price: '53,910',
@@ -392,13 +392,13 @@ const STYLE_BANNER_FALLBACK_PRODUCTS = [
   ],
   [
     {
-      thumb: mainImageAsset('style_05.png'),
+      thumb: homeBannerAsset('style_05.png'),
       name: '시스루 테일러드 자켓 MIWJKF1029B',
       discountRate: '10%',
       price: '53,910',
     },
     {
-      thumb: mainImageAsset('style_06.png'),
+      thumb: homeBannerAsset('style_06.png'),
       name: '시스루 테일러드 자켓 MIWJKF1029B',
       discountRate: '10%',
       price: '53,910',
@@ -406,13 +406,13 @@ const STYLE_BANNER_FALLBACK_PRODUCTS = [
   ],
   [
     {
-      thumb: mainImageAsset('style_08.jpg'),
+      thumb: homeBannerAsset('style_08.jpg'),
       name: '스웨이드 숄더백 코코아모브 브라운 FLOTFA3B07',
       discountRate: '10%',
       price: '53,910',
     },
     {
-      thumb: mainImageAsset('style_09.jpg'),
+      thumb: homeBannerAsset('style_09.jpg'),
       name: '스웨이드 숄더백 코코아모브 브라운 FLOTFA3B07',
       discountRate: '10%',
       price: '53,910',
@@ -573,7 +573,7 @@ export function resolveStyleBannerSection(
   }
 }
 
-const LOOKBOOK_FALLBACK_IMAGES = [1, 2, 3, 4, 5, 6, 7].map((n) => mainImageAsset(`lookbook_0${n}.png`))
+const LOOKBOOK_FALLBACK_IMAGES = [1, 2, 3, 4, 5, 6, 7].map((n) => homeBannerAsset(`lookbook_0${n}.png`))
 
 const DEFAULT_LOOKBOOK_COPY = {
   badge: 'ARCHIVE',

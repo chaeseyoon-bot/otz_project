@@ -7,14 +7,14 @@
   },
   {
     "step": "upload_banner_01_upsert_true",
-    "ok": false,
-    "error": "new row violates row-level security policy",
-    "status": "403"
+    "ok": true,
+    "error": null,
+    "status": null
   },
   {
     "step": "upload_versioned_admin_path",
     "ok": true,
-    "path": "admin/main-0_1780971670886.png",
+    "path": "admin/main-0_1781488997951.png",
     "error": null,
     "status": null
   },
@@ -34,13 +34,35 @@
     "step": "remove_banner_01.png",
     "ok": true,
     "error": null,
-    "removed": []
+    "removed": [
+      {
+        "name": "banner_01.png",
+        "bucket_id": "home_banners",
+        "owner": "",
+        "owner_id": "",
+        "version": "8349c51d-6a00-4d39-adff-6fde1bbb3e75",
+        "id": "1c561fe6-50f8-49b9-8265-c6b82fecef7f",
+        "updated_at": "2026-06-15T02:03:17.598Z",
+        "created_at": "2026-06-15T01:29:02.251Z",
+        "last_accessed_at": "2026-06-15T01:29:02.251Z",
+        "metadata": {
+          "eTag": "\"2cd8bde463f5d82aae0f0cec061d6b8f\"",
+          "size": 70,
+          "mimetype": "image/png",
+          "cacheControl": "max-age=3600",
+          "lastModified": "2026-06-15T02:03:18.000Z",
+          "contentLength": 70,
+          "httpStatusCode": 200
+        },
+        "user_metadata": {}
+      }
+    ]
   },
   {
     "step": "reupload_banner_01.png",
-    "ok": false,
-    "error": "The resource already exists",
-    "status": "409"
+    "ok": true,
+    "error": null,
+    "status": null
   },
   {
     "step": "fresh_upload_banner_99.png",
@@ -52,12 +74,34 @@
     "step": "remove_banner_99.png",
     "ok": true,
     "error": null,
-    "removed": []
+    "removed": [
+      {
+        "name": "banner_99.png",
+        "bucket_id": "home_banners",
+        "owner": "",
+        "owner_id": "",
+        "version": "a726b087-0576-47c4-b07c-b670ff5f252d",
+        "id": "e5ad17d4-573e-4ff0-aa5f-751d3a7b2e8a",
+        "updated_at": "2026-06-15T01:29:01.647Z",
+        "created_at": "2026-06-15T01:29:01.647Z",
+        "last_accessed_at": "2026-06-15T01:29:01.647Z",
+        "metadata": {
+          "eTag": "\"b410199d4a0c60c67c3e4e480294aa76-1\"",
+          "size": 70,
+          "mimetype": "image/png",
+          "cacheControl": "max-age=3600",
+          "lastModified": "2026-06-15T01:29:02.000Z",
+          "contentLength": 70,
+          "httpStatusCode": 200
+        },
+        "user_metadata": null
+      }
+    ]
   },
   {
     "step": "reupload_banner_99.png",
-    "ok": false,
-    "error": "The resource already exists",
-    "status": "409"
+    "ok": true,
+    "error": null,
+    "status": null
   }
 ]

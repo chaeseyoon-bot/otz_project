@@ -1,5 +1,5 @@
 /**
- * Downloads raster/SVG exports from the Figma REST API into `public/assets/figma/`
+ * Downloads raster/SVG exports from the Figma REST API into `public/assets/figma/home_banners/`
  * using semantic filenames from `figma-assets.registry.json`.
  *
  * Requires: FIGMA_ACCESS_TOKEN or VITE_FIGMA_ACCESS_TOKEN (Personal Access Token)
@@ -15,7 +15,12 @@ import { fileURLToPath } from 'node:url'
 const __dirname = path.dirname(fileURLToPath(import.meta.url))
 const ROOT = path.join(__dirname, '..')
 const REGISTRY_PATH = path.join(__dirname, 'figma-assets.registry.json')
-const OUT_DIR = path.join(ROOT, 'public', 'assets', 'figma')
+const OUT_DIR = path.join(ROOT, 'public', 'assets', 'figma', 'home_banners')
+const LEGACY_OUT_DIRS = [
+  OUT_DIR,
+  path.join(ROOT, 'public', 'assets', 'figma', 'main_images'),
+  path.join(ROOT, 'public', 'assets', 'figma'),
+]
 
 function loadEnvFile() {
   const envPath = path.join(ROOT, '.env')
@@ -103,15 +108,16 @@ async function figmaImageUrls(fileKey, token, ids, format, scale) {
 }
 
 function copyLegacy(asset) {
-  const ext = path.extname(asset.output)
   const dest = path.join(OUT_DIR, asset.output)
   const legacyNames = asset.legacy || []
-  for (const name of legacyNames) {
-    const src = path.join(OUT_DIR, name)
-    if (fs.existsSync(src)) {
-      fs.mkdirSync(path.dirname(dest), { recursive: true })
-      fs.copyFileSync(src, dest)
-      return { ok: true, via: name }
+  for (const dir of LEGACY_OUT_DIRS) {
+    for (const name of legacyNames) {
+      const src = path.join(dir, name)
+      if (fs.existsSync(src)) {
+        fs.mkdirSync(path.dirname(dest), { recursive: true })
+        fs.copyFileSync(src, dest)
+        return { ok: true, via: path.relative(ROOT, src) }
+      }
     }
   }
   return { ok: false }

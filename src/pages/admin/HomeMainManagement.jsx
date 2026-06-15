@@ -25,6 +25,7 @@ import {
 import { useHomeMainConfigContext } from '../../contexts/HomeMainConfigContext'
 import { useLockBodyScroll } from '../../hooks/useLockBodyScroll'
 import { uploadAdminBannerImage } from '../../lib/adminBannerUpload'
+import { loadHomeMainConfigFromSupabase, upsertHomeBannerSection } from '../../lib/homeBannersApi'
 import { ARCHIVE_LOOKBOOK_ITEMS } from '../../data/archiveLookbooks'
 import {
   clampCurationTitle,
@@ -50,7 +51,7 @@ import {
   STYLE_BANNER_PRODUCT_SLOTS,
 } from '../../lib/adminHomeMainConfig'
 import { getDefaultLookbookSlotUrls, getLatestArchiveLookbookId } from '../../lib/archiveLookbookImages'
-import { mainImageAsset } from '../../lib/mainImagesAssetUrl'
+import { homeBannerAsset } from '../../lib/homeBannersAssetUrl'
 import { resolveLookbookSection, resolveStyleBannerSection } from '../../lib/homeMainContentResolver'
 import { getAdminProductEditPath } from '../../lib/adminRoutes'
 import {
@@ -221,7 +222,7 @@ function FieldLabel({ children, hint }) {
 
 function TextInput({ value, onChange, placeholder, multiline = false, rows = 4 }) {
   const cls =
-    'rounded-sm border border-lightGray bg-white px-3 py-2 text-bodyRegular2 text-dark outline-none focus:border-dark'
+    'rounded-sm border border-lightGray bg-white px-3 py-2 text-bodyRegular2 text-dark outline-none transition-colors placeholder:text-subtleText focus:border-dark'
   if (multiline) {
     return (
       <textarea
@@ -248,7 +249,7 @@ const MAIN_BANNER_MOBILE_WIDTH = 375
 const MARKETING_POPUP_WIDTH = 375
 const MARKETING_POPUP_BANNER_HEIGHT = 340
 const MARKETING_POPUP_FOOTER_HEIGHT = 52
-const MARKETING_POPUP_FALLBACK_IMAGE = mainImageAsset('homemain_pop_banner01.jpg')
+const MARKETING_POPUP_FALLBACK_IMAGE = homeBannerAsset('homemain_pop_banner01.jpg')
 
 function MainBannerPreviewContent({ slide, mobileWidth = MAIN_BANNER_MOBILE_WIDTH }) {
   const mobileHeight = Math.round(mobileWidth * (5 / 4))
@@ -461,7 +462,7 @@ function CurationCopyPanel({ curationProducts, onUpdate }) {
           <TextInput
             value={curationProducts.badge}
             onChange={(value) => onUpdate({ badge: value })}
-            placeholder="CURATION"
+            placeholder="예: CURATION"
           />
         </div>
         <div className="flex flex-col gap-1 sm:col-span-2">
@@ -470,7 +471,7 @@ function CurationCopyPanel({ curationProducts, onUpdate }) {
             rows={2}
             value={curationProducts.title}
             onChange={(e) => onUpdate({ title: clampCurationTitle(e.target.value) })}
-            placeholder={'WINTER ACC\nSTYLING'}
+            placeholder={'예: WINTER ACC\nSTYLING'}
             className="resize-none rounded-sm border border-lightGray bg-white px-3 py-2 text-bodyRegular2 text-dark outline-none focus:border-dark"
           />
         </div>
@@ -479,7 +480,7 @@ function CurationCopyPanel({ curationProducts, onUpdate }) {
           <TextInput
             value={curationProducts.mobileCtaLabel}
             onChange={(value) => onUpdate({ mobileCtaLabel: value })}
-            placeholder="상품 보러 가기"
+            placeholder="예: 상품 보러 가기"
           />
         </div>
         <div className="flex flex-col gap-1">
@@ -487,7 +488,7 @@ function CurationCopyPanel({ curationProducts, onUpdate }) {
           <TextInput
             value={curationProducts.pcLinkLabel}
             onChange={(value) => onUpdate({ pcLinkLabel: value })}
-            placeholder="상품 바로가기"
+            placeholder="예: 상품 바로가기"
           />
         </div>
         <div className="flex flex-col gap-1 sm:col-span-2">
@@ -495,7 +496,7 @@ function CurationCopyPanel({ curationProducts, onUpdate }) {
           <TextInput
             value={curationProducts.linkHref}
             onChange={(value) => onUpdate({ linkHref: value })}
-            placeholder="/category/shoes"
+            placeholder="예: /category/shoes"
           />
         </div>
       </div>
@@ -926,7 +927,7 @@ function StyleBannerCopyPanel({ styleBannerSection, onUpdate }) {
           <TextInput
             value={styleBannerSection.badge}
             onChange={(value) => onUpdate({ badge: value })}
-            placeholder="CORDINATION"
+            placeholder="예: CORDINATION"
           />
         </div>
         <div className="flex flex-col gap-1 sm:col-span-2">
@@ -935,7 +936,7 @@ function StyleBannerCopyPanel({ styleBannerSection, onUpdate }) {
             rows={2}
             value={styleBannerSection.title}
             onChange={(e) => onUpdate({ title: clampStyleBannerTitle(e.target.value) })}
-            placeholder={"OTZ'S\nSTYLE LOG"}
+            placeholder={"예: OTZ'S\nSTYLE LOG"}
             className="resize-none rounded-sm border border-lightGray bg-white px-3 py-2 text-bodyRegular2 text-dark outline-none focus:border-dark"
           />
         </div>
@@ -944,7 +945,7 @@ function StyleBannerCopyPanel({ styleBannerSection, onUpdate }) {
           <TextInput
             value={styleBannerSection.body}
             onChange={(value) => onUpdate({ body: value })}
-            placeholder="스타일링 소개 문구"
+            placeholder="예: 스타일링 소개 문구를 입력하세요"
             multiline
           />
         </div>
@@ -1040,7 +1041,7 @@ function StyleBannerAdminPanel({
                   <TextInput
                     value={card.badge ?? ''}
                     onChange={(value) => onUpdateCard(cardIndex, { badge: value.trim() || null })}
-                    placeholder="LIMITED EDITION"
+                    placeholder="예: LIMITED EDITION"
                   />
                 </div>
 
@@ -1109,7 +1110,7 @@ function LookbookCopyPanel({ lookbookSection, onUpdate }) {
           <TextInput
             value={lookbookSection.badge}
             onChange={(value) => onUpdate({ badge: value })}
-            placeholder="ARCHIVE"
+            placeholder="예: ARCHIVE"
           />
         </div>
         <div className="flex min-w-0 w-full flex-col gap-1">
@@ -1117,7 +1118,7 @@ function LookbookCopyPanel({ lookbookSection, onUpdate }) {
           <TextInput
             value={lookbookSection.mobileCtaLabel}
             onChange={(value) => onUpdate({ mobileCtaLabel: value })}
-            placeholder="아카이브 바로가기"
+            placeholder="예: 아카이브 바로가기"
           />
         </div>
       </div>
@@ -1128,7 +1129,7 @@ function LookbookCopyPanel({ lookbookSection, onUpdate }) {
           rows={2}
           value={lookbookSection.title}
           onChange={(e) => onUpdate({ title: clampLookbookTitle(e.target.value) })}
-          placeholder={'SPRING IN\nOTZ'}
+          placeholder={'예: SPRING IN\nOTZ'}
           className="resize-none rounded-sm border border-lightGray bg-white px-3 py-2 text-bodyRegular2 text-dark outline-none focus:border-dark"
         />
       </div>
@@ -1138,7 +1139,7 @@ function LookbookCopyPanel({ lookbookSection, onUpdate }) {
         <TextInput
           value={lookbookSection.body}
           onChange={(value) => onUpdate({ body: value })}
-          placeholder="룩북 소개 문구"
+          placeholder="예: 룩북 소개 문구를 입력하세요"
           multiline
           rows={2}
         />
@@ -1155,7 +1156,7 @@ function LookbookCopyPanel({ lookbookSection, onUpdate }) {
                 nextTags[index] = value
                 onUpdate({ tags: nextTags })
               }}
-              placeholder="#OTZ"
+              placeholder="예: #OTZ"
             />
           </div>
         ))}
@@ -1166,7 +1167,7 @@ function LookbookCopyPanel({ lookbookSection, onUpdate }) {
         <TextInput
           value={lookbookSection.linkHref}
           onChange={(value) => onUpdate({ linkHref: value })}
-          placeholder="/archive"
+          placeholder="예: /archive"
         />
       </div>
     </article>
@@ -1477,7 +1478,7 @@ function ConfirmDialog({ title, message, confirmLabel = '삭제', cancelLabel = 
 // Main component
 // ─────────────────────────────────────────────
 export function HomeMainManagement() {
-  const { saveConfig } = useHomeMainConfigContext()
+  const { saveConfig, reloadConfig } = useHomeMainConfigContext()
   const [config, setConfig] = useState(createDefaultHomeMainConfig)
   const [activeTab, setActiveTab] = useState('main')
   const [uploadingKey, setUploadingKey] = useState(null)
@@ -1486,7 +1487,9 @@ export function HomeMainManagement() {
   const [mainBannerPreviewIndex, setMainBannerPreviewIndex] = useState(null)
   const [quickSlotDeleteIndex, setQuickSlotDeleteIndex] = useState(null)
   useEffect(() => {
-    setConfig(loadAdminHomeMainConfig())
+    loadHomeMainConfigFromSupabase().then((remote) => {
+      setConfig(remote ?? loadAdminHomeMainConfig())
+    })
   }, [])
 
   useEffect(() => {
@@ -1522,7 +1525,7 @@ export function HomeMainManagement() {
     }
   }
 
-  const handleSave = () => {
+  const handleSave = async () => {
     const validationError = validateHomeMainActiveTab(activeTab, config)
     if (validationError) {
       showMessage(validationError)
@@ -1544,7 +1547,28 @@ export function HomeMainManagement() {
         lookbookSection: config.lookbookSection,
         marketingPopupSlides: config.marketingPopupSlides,
       })
+
+      const supabaseResult = await upsertHomeBannerSection(activeTab, {
+        mainBanners: saved.mainBanners,
+        quickMenuSlots: saved.quickMenuSlots,
+        brandBanner: saved.brandBanner,
+        seriesBanners: saved.seriesBanners,
+        planningBanners: saved.planningBanners,
+        planningCollectionTags: saved.planningCollectionTags,
+        planningCollections: saved.planningCollections,
+        curationProducts: saved.curationProducts,
+        styleBannerSection: saved.styleBannerSection,
+        lookbookSection: saved.lookbookSection,
+        marketingPopupSlides: saved.marketingPopupSlides,
+      })
+
+      if (!supabaseResult.ok) {
+        showMessage(supabaseResult.message)
+        return
+      }
+
       setConfig(saved)
+      await reloadConfig()
       const sectionLabel = SECTION_SAVE_LABELS[activeTab] ?? '홈메인'
       showMessage(`${sectionLabel} 설정이 저장되었습니다. 홈 화면에 반영됩니다.`)
     } catch {
@@ -1571,7 +1595,7 @@ export function HomeMainManagement() {
           imageFileName: null,
           title: '',
           subtitle: '',
-          ctaLabel: '쇼핑 바로가기',
+          ctaLabel: '',
           ctaHref: '',
         },
       ],
@@ -1946,7 +1970,7 @@ export function HomeMainManagement() {
                     <TextInput
                       value={slide.title}
                       onChange={(v) => updateMainBanner(index, { title: v })}
-                      placeholder="OTZ x LOFA Seoul"
+                      placeholder="예: OTZ x LOFA Seoul"
                       multiline
                       rows={2}
                     />
@@ -1956,7 +1980,7 @@ export function HomeMainManagement() {
                     <TextInput
                       value={slide.ctaLabel}
                       onChange={(v) => updateMainBanner(index, { ctaLabel: v })}
-                      placeholder="쇼핑 바로가기"
+                      placeholder="예: 쇼핑 바로가기"
                     />
                   </div>
                   <div className="flex flex-col gap-1">
@@ -1964,7 +1988,7 @@ export function HomeMainManagement() {
                     <TextInput
                       value={slide.subtitle}
                       onChange={(v) => updateMainBanner(index, { subtitle: v })}
-                      placeholder="감각적인 라이프스타일…"
+                      placeholder="예: 감각적인 라이프스타일 브랜드 로파서울과의 만남"
                       multiline
                     />
                   </div>
@@ -1973,7 +1997,7 @@ export function HomeMainManagement() {
                     <TextInput
                       value={slide.ctaHref}
                       onChange={(v) => updateMainBanner(index, { ctaHref: v })}
-                      placeholder="/new"
+                      placeholder="예: /new"
                     />
                   </div>
                 </div>
@@ -2053,7 +2077,7 @@ export function HomeMainManagement() {
                       <TextInput
                         value={slot.label}
                         onChange={(v) => updateQuickSlot(index, { label: v })}
-                        placeholder={'Best\nSellers'}
+                        placeholder={'예: Best\nSellers'}
                         multiline
                       />
                       <FieldLabel hint="타일 아래 13px 캡션 · 홈 퀵메뉴에 그대로 반영됩니다.">
@@ -2062,7 +2086,7 @@ export function HomeMainManagement() {
                       <TextInput
                         value={slot.captionLabel}
                         onChange={(v) => updateQuickSlot(index, { captionLabel: v })}
-                        placeholder="BEST"
+                        placeholder="예: BEST"
                       />
                     </>
                   ) : (
@@ -2075,8 +2099,8 @@ export function HomeMainManagement() {
                         onChange={(v) => updateQuickSlot(index, { label: v })}
                         placeholder={
                           slot.slotType === 'image' || slot.slotType === 'cutout'
-                            ? '봄 Edition'
-                            : '라벨\n줄바꿈 가능'
+                            ? '예: 봄 Edition'
+                            : '예: 라벨 (줄바꿈 가능)'
                         }
                         multiline
                       />
@@ -2085,7 +2109,7 @@ export function HomeMainManagement() {
                   <TextInput
                     value={slot.href}
                     onChange={(v) => updateQuickSlot(index, { href: v })}
-                    placeholder="링크 (/best)"
+                    placeholder="예: /best"
                   />
                   {slot.slotType !== 'image' ? (
                     <>
@@ -2094,15 +2118,15 @@ export function HomeMainManagement() {
                         onChange={(v) => updateQuickSlot(index, { bgColor: v })}
                         placeholder={
                           slot.slotType === 'mixed'
-                            ? '배경색 (이미지 없을 때) #F1F1F1'
-                            : '배경색 #F1F1F1'
+                            ? '예: #F1F1F1'
+                            : '예: #F1F1F1'
                         }
                       />
                       {slot.slotType === 'text' || slot.slotType === 'mixed' ? (
                         <TextInput
                           value={slot.textColor}
                           onChange={(v) => updateQuickSlot(index, { textColor: v })}
-                          placeholder="텍스트색 #FFFFFF"
+                          placeholder="예: #FFFFFF"
                         />
                       ) : null}
                     </>
@@ -2194,6 +2218,7 @@ export function HomeMainManagement() {
                   setConfig((prev) => ({ ...prev, brandBanner: { ...prev.brandBanner, body: v } }))
                 }
                 multiline
+                placeholder="예: 미국 캘리포니아주의 말리부에서 탄생한 오찌는…"
               />
             </div>
           </article>
@@ -2238,23 +2263,23 @@ export function HomeMainManagement() {
                   <TextInput
                     value={series.title}
                     onChange={(v) => updateSeries(index, { title: v })}
-                    placeholder="시리즈명 (LOMITA)"
+                    placeholder="예: LOMITA"
                   />
                   <TextInput
                     value={series.body}
                     onChange={(v) => updateSeries(index, { body: v })}
-                    placeholder="설명 카피"
+                    placeholder="예: 시리즈 소개 문구를 입력하세요"
                     multiline
                   />
                   <TextInput
                     value={series.ctaLabel}
                     onChange={(v) => updateSeries(index, { ctaLabel: v })}
-                    placeholder="상품 보러 가기"
+                    placeholder="예: 상품 보러 가기"
                   />
                   <TextInput
                     value={series.ctaHref}
                     onChange={(v) => updateSeries(index, { ctaHref: v })}
-                    placeholder="링크 URL"
+                    placeholder="예: /category/shoes"
                   />
                 </div>
               </article>
@@ -2318,7 +2343,7 @@ export function HomeMainManagement() {
                     <TextInput
                       value={banner.badge}
                       onChange={(v) => updatePlanning(index, { badge: v })}
-                      placeholder="26SS"
+                      placeholder="예: 26SS"
                     />
                   </div>
                   <div className="flex flex-col gap-1">
@@ -2326,7 +2351,7 @@ export function HomeMainManagement() {
                     <TextInput
                       value={banner.title}
                       onChange={(v) => updatePlanning(index, { title: v })}
-                      placeholder="코지 발레코어 슈즈"
+                      placeholder="예: 코지 발레코어 슈즈"
                     />
                   </div>
                   <div className="flex flex-col gap-1">
@@ -2334,7 +2359,7 @@ export function HomeMainManagement() {
                     <TextInput
                       value={banner.subtitle}
                       onChange={(v) => updatePlanning(index, { subtitle: v })}
-                      placeholder="오찌x 론론 핑크와 그레이의 세련된 조합"
+                      placeholder="예: 오찌x 론론 핑크와 그레이의 세련된 조합"
                     />
                   </div>
                 </div>
@@ -2372,7 +2397,7 @@ export function HomeMainManagement() {
                   <TextInput
                     value={tag.label}
                     onChange={(value) => updateCollectionTag(index, value)}
-                    placeholder="COLLECTION"
+                    placeholder="예: COLLECTION"
                   />
                 </div>
               ))}
@@ -2461,7 +2486,7 @@ export function HomeMainManagement() {
                         onChange={(e) =>
                           updateCollection(index, { title: clampPlanningCollectionTitle(e.target.value) })
                         }
-                        placeholder={'OTZ×UMU\nLove Winter Day'}
+                        placeholder={'예: OTZ×UMU\nLove Winter Day'}
                         className="resize-none rounded-sm border border-lightGray bg-white px-3 py-2 text-bodyRegular2 text-dark outline-none focus:border-dark"
                       />
                     </div>
@@ -2472,7 +2497,7 @@ export function HomeMainManagement() {
                         <TextInput
                           value={collection.linkLabel}
                           onChange={(value) => updateCollection(index, { linkLabel: value })}
-                          placeholder="오찌x우무 바로가기"
+                          placeholder="예: 오찌x우무 바로가기"
                         />
                       </div>
                       <div className="flex flex-col gap-1">
@@ -2480,7 +2505,7 @@ export function HomeMainManagement() {
                         <TextInput
                           value={collection.linkHref}
                           onChange={(value) => updateCollection(index, { linkHref: value })}
-                          placeholder="/collection/umu"
+                          placeholder="예: /collection/umu"
                         />
                       </div>
                     </div>
@@ -2643,7 +2668,7 @@ export function HomeMainManagement() {
                     <TextInput
                       value={slide.title}
                       onChange={(v) => updateMarketingPopup(index, { title: v })}
-                      placeholder="코코아모브 에디션"
+                      placeholder="예: 코코아모브 에디션"
                       multiline
                       rows={2}
                     />
@@ -2653,7 +2678,7 @@ export function HomeMainManagement() {
                     <TextInput
                       value={slide.subtitle}
                       onChange={(v) => updateMarketingPopup(index, { subtitle: v })}
-                      placeholder="로마리 스웨이드 시즌 한정…"
+                      placeholder="예: 로마리 스웨이드 시즌 한정…"
                       multiline
                       rows={3}
                     />

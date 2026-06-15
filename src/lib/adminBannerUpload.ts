@@ -1,4 +1,4 @@
-import { MAIN_IMAGES_BUCKET, mainImageAsset } from './mainImagesAssetUrl'
+import { HOME_BANNERS_BUCKET, homeBannerAsset } from './homeBannersAssetUrl'
 import { supabase } from './supabase'
 
 function resolveExtension(file: File): string {
@@ -18,6 +18,13 @@ function isDuplicateStorageObjectError(message: string, statusCode?: string | nu
 }
 
 function formatBannerUploadError(message: string): Error {
+  if (/bucket not found/i.test(message)) {
+    return new Error(
+      'Storage 버킷 "home_banners"를 찾을 수 없습니다. Supabase Dashboard → Storage에서 ' +
+        'public 버킷 이름이 정확히 home_banners 인지 확인하고, ' +
+        'SQL Editor에서 `scripts/sql/admin-storage-policies.sql`을 실행해 주세요.',
+    )
+  }
   if (/row-level security/i.test(message)) {
     return new Error(
       '이미지 업로드 권한이 없습니다. Supabase → SQL Editor에서 ' +
@@ -27,13 +34,13 @@ function formatBannerUploadError(message: string): Error {
   if (isDuplicateStorageObjectError(message)) {
     return new Error(
       '같은 위치에 이미지가 이미 있습니다. Supabase Storage DELETE 정책이 없으면 ' +
-        '기존 파일을 교체할 수 없습니다. SQL Editor에서 main_images DELETE 정책을 추가해 주세요.',
+        '기존 파일을 교체할 수 없습니다. SQL Editor에서 home_banners DELETE 정책을 추가해 주세요.',
     )
   }
   return new Error(`이미지 업로드 실패: ${message}`)
 }
 
-/** Maps admin upload slot keys to versioned `main_images/admin/` paths (no overwrite of seed assets). */
+/** Maps admin upload slot keys to versioned `home_banners/admin/` paths (no overwrite of seed assets). */
 export function resolveAdminBannerObjectPath(folder: string, file: File): string {
   const ext = resolveExtension(file)
   const safeFolder = folder.replace(/[^a-zA-Z0-9-_]/g, '_')
@@ -41,7 +48,7 @@ export function resolveAdminBannerObjectPath(folder: string, file: File): string
 }
 
 async function uploadMainImageObject(objectPath: string, file: File, contentType: string): Promise<void> {
-  const bucket = supabase.storage.from(MAIN_IMAGES_BUCKET)
+  const bucket = supabase.storage.from(HOME_BANNERS_BUCKET)
 
   const uploadOnce = (upsert: boolean) =>
     bucket.upload(objectPath, file, { upsert, contentType })
@@ -74,7 +81,7 @@ async function uploadMainImageObject(objectPath: string, file: File, contentType
   throw formatBannerUploadError(first.error.message)
 }
 
-/** Uploads a home main image to Supabase Storage (`main_images` bucket). */
+/** Uploads a home main image to Supabase Storage (`home_banners` bucket). */
 export async function uploadAdminBannerImage(
   file: File,
   folder: string,
@@ -83,6 +90,6 @@ export async function uploadAdminBannerImage(
   const contentType = file.type || `image/${resolveExtension(file)}`
 
   await uploadMainImageObject(objectPath, file, contentType)
-  const url = `${mainImageAsset(objectPath)}?v=${Date.now()}`
+  const url = `${homeBannerAsset(objectPath)}?v=${Date.now()}`
   return { url, fileName: file.name, usedLocalFallback: false }
 }

@@ -48,7 +48,7 @@ const png = Buffer.from(
   'base64',
 )
 
-for (const bucket of ['products', 'main_images']) {
+for (const bucket of ['products', 'home_banners']) {
   const probePath = bucket === 'products' ? objectPath : `product_detail_${testId}_03.png`
   const { error: bucketError } = await supabase.storage.from(bucket).upload(probePath, png, {
     upsert: true,

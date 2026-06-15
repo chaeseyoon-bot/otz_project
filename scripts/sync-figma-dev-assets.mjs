@@ -11,7 +11,7 @@ import { fileURLToPath } from 'node:url'
 import { FIGMA_RASTER_NAMES, FIGMA_SVG_NAMES } from './figma-asset-manifest.mjs'
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url))
-const outDir = path.join(__dirname, '..', 'public', 'assets', 'figma')
+const outDir = path.join(__dirname, '..', 'public', 'assets', 'figma', 'home_banners')
 const origin = (process.env.FIGMA_DEV_ORIGIN || 'http://127.0.0.1:3845').replace(/\/$/, '')
 
 const names = [...new Set([...FIGMA_RASTER_NAMES, ...FIGMA_SVG_NAMES])]
