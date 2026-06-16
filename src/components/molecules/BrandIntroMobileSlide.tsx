@@ -43,6 +43,23 @@ export function BrandIntroSubtractOverlay({ layout = 'mobile' }: { layout?: 'mob
   )
 }
 
+/** Figma 2601:23102 / 3964:62079 — OTZ wordmark centered in intro circle hole */
+const BRAND_INTRO_LOGO_SRC = '/assets/figma/home_banners/brand_01.svg'
+
+export function BrandIntroLogoOverlay({ layout = 'mobile' }: { layout?: 'mobile' | 'desktop' }) {
+  const widthClass = layout === 'desktop' ? 'w-[204px]' : 'w-[102px]'
+
+  return (
+    <img
+      src={BRAND_INTRO_LOGO_SRC}
+      alt=""
+      aria-hidden
+      draggable={false}
+      className={`pointer-events-none absolute left-1/2 top-[37.01%] z-[2] h-auto -translate-x-1/2 ${widthClass}`}
+    />
+  )
+}
+
 export interface BrandIntroMobileSlideProps {
   imageUrl: string | null
   body: string
@@ -76,6 +93,7 @@ export function BrandIntroMobileSlide({
     <div className="relative size-full overflow-hidden" data-figma-node="102:3477">
       <img src={imageUrl} alt="" className="h-full w-full object-cover" draggable={false} />
       <BrandIntroSubtractOverlay />
+      <BrandIntroLogoOverlay />
       <div className="absolute inset-x-0 bottom-0 z-10 flex h-[431px] flex-col items-center justify-end px-5 pb-[25px] text-center text-[13px] font-normal leading-[1.4] tracking-[-0.02em] text-white">
         {copy.split('\n').map((line, lineIndex) => (
           <p key={`${line}-${lineIndex}`} className="mb-0 [word-break:break-word] last:mb-0">

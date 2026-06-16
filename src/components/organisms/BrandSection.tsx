@@ -2,6 +2,7 @@ import type { KeyboardEvent, MouseEvent } from 'react'
 import { useCallback, useMemo, useRef, useState } from 'react'
 import {
   BrandIntroMobileSlide,
+  BrandIntroLogoOverlay,
   BrandIntroSubtractOverlay,
 } from '../molecules/BrandIntroMobileSlide'
 import { BRAND_SERIES_DIM_OVERLAY, BrandSeriesMobileSlide } from '../molecules/BrandSeriesMobileSlide'
@@ -271,6 +272,7 @@ export function BrandSection() {
                 draggable={false}
               />
               <BrandIntroSubtractOverlay layout="desktop" />
+              <BrandIntroLogoOverlay layout="desktop" />
               <div className="absolute inset-x-0 bottom-0 z-10 flex flex-col justify-end px-10 pb-10 text-center text-bodyMedium1 text-white">
                 {brandIntro.body.split('\n').map((line, lineIndex) => (
                   <p key={lineIndex} className="mb-0 last:mb-0">
