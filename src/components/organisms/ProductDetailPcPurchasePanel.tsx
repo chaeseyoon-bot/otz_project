@@ -4,6 +4,10 @@ import { PdpSizeOptionButton } from '../molecules/PdpSizeOptionButton'
 import type { PdpColorVariant } from '../../data/productColorVariants'
 import { getProductHeartIconDataUri } from '../../lib/productHeartIcon'
 
+function formatPrice(value: number) {
+  return value.toLocaleString('ko-KR')
+}
+
 export interface ProductDetailPcPurchasePanelProps {
   colorVariants: PdpColorVariant[] | null
   productId: string
@@ -12,6 +16,8 @@ export interface ProductDetailPcPurchasePanelProps {
   selectedSize: string | null
   soldOutSizes: Set<string>
   onSizeSelect: (size: string) => void
+  unitPrice: number
+  quantity?: number
   liked: boolean
   onToggleLike: () => void
   onAddToCart: () => void
@@ -31,6 +37,8 @@ export function ProductDetailPcPurchasePanel({
   selectedSize,
   soldOutSizes,
   onSizeSelect,
+  unitPrice,
+  quantity = 1,
   liked,
   onToggleLike,
   onAddToCart,
@@ -39,6 +47,9 @@ export function ProductDetailPcPurchasePanel({
   showOptionRequiredHint = false,
   isShoesProduct = true,
 }: ProductDetailPcPurchasePanelProps) {
+  const displayQuantity = selectedSize ? quantity : 0
+  const displayTotal = selectedSize ? unitPrice * displayQuantity : 0
+
   return (
     <div className="sticky top-[70px] z-10 bg-white">
       {colorVariants ? (
@@ -88,8 +99,8 @@ export function ProductDetailPcPurchasePanel({
       <div className="flex items-center justify-between py-6">
         <p className="m-0 text-bodyRegular2 text-dark">총 상품금액 (수량)</p>
         <div className="flex items-center gap-1">
-          <span className="text-titleBold text-dark">0</span>
-          <span className="text-bodyRegular2 text-textDefault">(0개)</span>
+          <span className="text-titleBold text-dark">{formatPrice(displayTotal)}</span>
+          <span className="text-bodyRegular2 text-textDefault">({displayQuantity}개)</span>
         </div>
       </div>
 

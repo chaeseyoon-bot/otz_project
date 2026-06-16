@@ -5,7 +5,7 @@ import { CouponNoticePopup } from '../components/atoms/CouponNoticePopup'
 import { ProductCouponBenefitsModal } from '../components/product/ProductCouponBenefitsModal'
 import { useCart } from '../contexts/CartContext'
 import { usePdpOptionGate } from '../hooks/usePdpOptionGate'
-import { buildCartItemFromProduct } from '../lib/buildCartItemFromProduct'
+import { buildCartItemFromProduct, parseProductPrice } from '../lib/buildCartItemFromProduct'
 import { CART_PATH } from '../lib/cartRoutes'
 import { ProductDetailPcGallery } from '../components/organisms/ProductDetailPcGallery'
 import { AdaptiveProductImage } from '../components/molecules/AdaptiveProductImage'
@@ -182,6 +182,7 @@ export function PcProductDetailPage({ productId }: PcProductDetailPageProps) {
   const originalPrice = isFigmaDemoProduct ? '89,000' : product.originalPrice ?? '89,000'
   const discountRate = isFigmaDemoProduct ? '5%' : product.discountRate
   const price = isFigmaDemoProduct ? '85,000' : product.price
+  const unitPrice = parseProductPrice(price)
   const reviewCount = DEMO_PRODUCT_REVIEW_SUMMARY.totalCount
 
   const handleColorVariantSelect = (nextProductId: string) => {
@@ -384,6 +385,7 @@ export function PcProductDetailPage({ productId }: PcProductDetailPageProps) {
             selectedSize={selectedSize}
             soldOutSizes={soldOutSizeSet}
             onSizeSelect={setSelectedSize}
+            unitPrice={unitPrice}
             isShoesProduct={isShoesProduct}
             liked={liked}
             onToggleLike={() => setLiked((value) => !value)}

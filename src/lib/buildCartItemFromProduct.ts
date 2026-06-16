@@ -5,6 +5,21 @@ export function parseProductPrice(price: string): number {
   return Number(price.replace(/,/g, '')) || 0
 }
 
+/** Resolve catalog id from cart line (supports legacy rows without `productId`). */
+export function getProductIdFromCartItem(item: CartItem): string | null {
+  if (item.productId) return item.productId
+
+  const sizeMatch = item.optionLabel.match(/:\s*([^\]]+)\]/)
+  const size = sizeMatch?.[1]?.trim()
+  if (!size) return null
+
+  const suffix = `-${size}`
+  if (!item.id.endsWith(suffix)) return null
+
+  const productId = item.id.slice(0, -suffix.length)
+  return productId || null
+}
+
 function resolveCartThumbnailImage(product: ProductCardItem): string {
   const squareSlide = product.multiCutSlides?.find((slide) => slide.variant === 'square')
   return squareSlide?.image ?? product.image
@@ -23,6 +38,7 @@ export function buildCartItemFromProduct(
 
   return {
     id: `${product.id}-${options.size}`,
+    productId: product.id,
     productName: options.productName ?? product.title,
     price,
     quantity: 1,

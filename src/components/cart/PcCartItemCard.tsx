@@ -1,7 +1,10 @@
 import { useState } from 'react'
 import { ProductThumbFrame } from '../atoms/ProductThumbFrame'
 import { figmaAsset, resolveAssetUrl } from '../../lib/figmaAssetUrl'
+import { getProductIdFromCartItem } from '../../lib/buildCartItemFromProduct'
 import { getProductHeartIconDataUri } from '../../lib/productHeartIcon'
+import { getProductDetailPath } from '../../lib/productRoutes'
+import { navigateSpa } from '../../lib/spaNavigation'
 import type { CartItem } from '../../data/cartContent'
 
 const iconClose = figmaAsset('icons/search_close.svg')
@@ -24,15 +27,29 @@ export interface PcCartItemCardProps {
 /** Figma 51:2455 — PC cart line item row. */
 export function PcCartItemCard({ item, onRemove, onOptionChange }: PcCartItemCardProps) {
   const [liked, setLiked] = useState(false)
+  const productId = getProductIdFromCartItem(item)
+
+  const handleGoToProductDetail = () => {
+    if (!productId) return
+    navigateSpa(getProductDetailPath(productId))
+  }
 
   return (
     <div className="flex min-w-0 flex-1 gap-6 py-6">
       <div className="relative w-[120px] shrink-0">
-        <ProductThumbFrame
-          src={resolveAssetUrl(item.image)}
-          alt=""
-          className="w-full [&>div]:bg-[var(--otz-color-surface-subtle)]"
-        />
+        <button
+          type="button"
+          className={`block w-full border-0 bg-transparent p-0 ${productId ? 'cursor-pointer' : 'cursor-default'}`}
+          aria-label={productId ? `${item.productName} 상품 상세 보기` : undefined}
+          disabled={!productId}
+          onClick={handleGoToProductDetail}
+        >
+          <ProductThumbFrame
+            src={resolveAssetUrl(item.image)}
+            alt=""
+            className="w-full [&>div]:bg-[var(--otz-color-surface-subtle)]"
+          />
+        </button>
         <button
           type="button"
           className="absolute right-0 top-0 flex size-9 items-center justify-center border-0 bg-transparent p-1.5"
@@ -48,7 +65,16 @@ export function PcCartItemCard({ item, onRemove, onOptionChange }: PcCartItemCar
 
       <div className="flex min-w-0 flex-1 flex-col gap-4">
         <div className="flex flex-col gap-1">
-          <p className="m-0 text-bodyRegular1 text-textDefault">{item.productName}</p>
+          <button
+            type="button"
+            className={`m-0 border-0 bg-transparent p-0 text-left text-bodyRegular1 text-textDefault ${
+              productId ? 'cursor-pointer hover:underline' : 'cursor-default'
+            }`}
+            disabled={!productId}
+            onClick={handleGoToProductDetail}
+          >
+            {item.productName}
+          </button>
           <div className="flex items-center gap-1.5 text-bodyRegular1 text-subtleText">
             <span>{parseOptionSize(item.optionLabel)}</span>
             <span className="text-lightGray" aria-hidden>
