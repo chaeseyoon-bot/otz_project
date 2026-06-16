@@ -1,5 +1,5 @@
 import { createContext, useCallback, useContext, useMemo, useState, type ReactNode } from 'react'
-import { DEMO_CART_ITEMS, type CartItem } from '../data/cartContent'
+import { DEMO_CART_ITEMS_EMPTY, type CartItem } from '../data/cartContent'
 
 interface CartContextValue {
   items: CartItem[]
@@ -21,7 +21,7 @@ function sumQuantities(items: CartItem[]) {
 }
 
 export function CartProvider({ children }: { children: ReactNode }) {
-  const [items, setItems] = useState<CartItem[]>(DEMO_CART_ITEMS)
+  const [items, setItems] = useState<CartItem[]>(DEMO_CART_ITEMS_EMPTY)
 
   const addItem = useCallback((item: CartItem) => {
     setItems((current) => {
