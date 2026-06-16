@@ -14,13 +14,25 @@ export interface ArchiveDetailPageProps {
 /** Figma 2679:10237 (MO) / 2679:10518 (PC) */
 export function ArchiveDetailPage({ lookbookId }: ArchiveDetailPageProps) {
   const [detailVersion, setDetailVersion] = useState(0)
+  const [isLoading, setIsLoading] = useState(true)
   const detail = useMemo(
     () => getArchiveLookbookDetail(lookbookId),
     [lookbookId, detailVersion],
   )
 
   useEffect(() => {
-    void hydrateArchiveDetailConfig()
+    let cancelled = false
+    void (async () => {
+      setIsLoading(true)
+      await hydrateArchiveDetailConfig()
+      if (!cancelled) {
+        setDetailVersion((version) => version + 1)
+        setIsLoading(false)
+      }
+    })()
+    return () => {
+      cancelled = true
+    }
   }, [])
 
   useEffect(() => {
@@ -34,12 +46,21 @@ export function ArchiveDetailPage({ lookbookId }: ArchiveDetailPageProps) {
   }, [])
 
   useEffect(() => {
+    if (isLoading) return
     if (!detail) {
       navigateSpa('/archive')
       return
     }
     window.scrollTo(0, 0)
-  }, [detail, lookbookId])
+  }, [detail, isLoading, lookbookId])
+
+  if (isLoading) {
+    return (
+      <main className="bg-white px-5 py-20 text-center text-bodyRegular2 text-subtleText lg:w-full">
+        불러오는 중…
+      </main>
+    )
+  }
 
   if (!detail) {
     return null

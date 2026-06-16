@@ -1,10 +1,11 @@
-import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
+import { useCallback, useEffect, useMemo, useRef, useState, type KeyboardEvent } from 'react'
 import { PLANNING_BANNER_DIM_OVERLAY } from '../molecules/PlanningBannerMobileSlide'
 import { useAdminHomeMainConfig } from '../../hooks/useAdminHomeMainConfig'
 import { useHorizontalMouseDragScroll } from '../../hooks/useHorizontalMouseDragScroll'
 import { usePlanningCollectionsContent } from '../../hooks/usePlanningCollectionsContent'
 import { resolvePlanningBanners } from '../../lib/homeMainContentResolver'
 import { getProductHeartIconDataUri } from '../../lib/productHeartIcon'
+import { navigateExternalOrSpa } from '../../lib/spaNavigation'
 import { HomeProductDetailLink } from '../molecules/HomeProductDetailLink'
 
 /** Link row chevron — 6×12px. */
@@ -156,6 +157,14 @@ export function PlanningDesktopMerchSection() {
     }))
   }
 
+  const handlePlanningBannerKeyDown = useCallback((href: string | undefined, event: KeyboardEvent<HTMLElement>) => {
+    if (!href?.trim()) return
+    if (event.key === 'Enter' || event.key === ' ') {
+      event.preventDefault()
+      navigateExternalOrSpa(href)
+    }
+  }, [])
+
   if (!planningSlides.length || !card) return null
 
   const collectionLikes = likedByCollection[card.id] ?? card.products.map(() => false)
@@ -174,11 +183,18 @@ export function PlanningDesktopMerchSection() {
             style={{ WebkitOverflowScrolling: 'touch' }}
           >
             <div className="flex h-full w-max">
-              {planningSlides.map((slide, index) => (
+              {planningSlides.map((slide, index) => {
+                const linkHref = slide.linkHref?.trim()
+                return (
                 <article
                   key={slide.id}
                   data-planning-slide-index={index}
-                  className="relative h-[524px] w-[420px] shrink-0 snap-start overflow-hidden"
+                  className={`relative h-[524px] w-[420px] shrink-0 snap-start overflow-hidden ${linkHref ? 'cursor-pointer' : ''}`}
+                  role={linkHref ? 'link' : undefined}
+                  tabIndex={linkHref ? 0 : undefined}
+                  aria-label={linkHref ? `${slide.title} 기획전으로 이동` : undefined}
+                  onClick={linkHref ? () => navigateExternalOrSpa(linkHref) : undefined}
+                  onKeyDown={linkHref ? (event) => handlePlanningBannerKeyDown(linkHref, event) : undefined}
                 >
                   <img
                     src={slide.imageUrl}
@@ -191,7 +207,7 @@ export function PlanningDesktopMerchSection() {
                     style={{ backgroundImage: PLANNING_BANNER_DIM_OVERLAY }}
                     aria-hidden
                   />
-                  <div className="absolute inset-x-[30px] bottom-10 flex flex-col items-center gap-4 text-center text-white">
+                  <div className="pointer-events-none absolute inset-x-[30px] bottom-10 flex flex-col items-center gap-4 text-center text-white">
                     <span className="rounded-[5px] bg-black px-[18px] py-[6px] text-[15px] font-bold leading-[1.4] tracking-[-0.02em]">
                       {slide.badge}
                     </span>
@@ -201,7 +217,8 @@ export function PlanningDesktopMerchSection() {
                     </div>
                   </div>
                 </article>
-              ))}
+                )
+              })}
             </div>
           </div>
 

@@ -80,12 +80,26 @@ export async function hydrateArchiveDetailConfig(): Promise<AdminArchiveDetailCo
   const remote = await loadArchiveDetailConfigFromSupabase()
   if (remote) {
     setArchiveDetailConfigCache(remote)
+    window.dispatchEvent(new CustomEvent(ARCHIVE_DETAIL_CONFIG_UPDATED_EVENT))
     return remote
   }
 
   const { loadAdminArchiveDetailConfig } = await import('./adminArchiveDetailConfig')
   const local = loadAdminArchiveDetailConfig()
-  setArchiveDetailConfigCache(remote ?? local)
+
+  if (local.lookbooks.length > 0) {
+    const migrated = await upsertArchiveDetailConfig(local)
+    if (migrated.ok) {
+      const migratedRemote = await loadArchiveDetailConfigFromSupabase()
+      if (migratedRemote) {
+        setArchiveDetailConfigCache(migratedRemote)
+        window.dispatchEvent(new CustomEvent(ARCHIVE_DETAIL_CONFIG_UPDATED_EVENT))
+        return migratedRemote
+      }
+    }
+  }
+
+  setArchiveDetailConfigCache(local)
   window.dispatchEvent(new CustomEvent(ARCHIVE_DETAIL_CONFIG_UPDATED_EVENT))
-  return remote ?? local
+  return local
 }

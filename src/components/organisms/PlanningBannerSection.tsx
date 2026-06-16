@@ -1,8 +1,9 @@
-import { useCallback, useMemo, useRef, useState } from 'react'
+import { useCallback, useMemo, useRef, useState, type KeyboardEvent } from 'react'
 import { PlanningBannerMobileSlide } from '../molecules/PlanningBannerMobileSlide'
 import { useAdminHomeMainConfig } from '../../hooks/useAdminHomeMainConfig'
 import { useHorizontalMouseDragScroll } from '../../hooks/useHorizontalMouseDragScroll'
 import { resolvePlanningBanners } from '../../lib/homeMainContentResolver'
+import { navigateExternalOrSpa } from '../../lib/spaNavigation'
 
 export function PlanningBannerSection() {
   const { planningBanners, updatedAt } = useAdminHomeMainConfig()
@@ -51,6 +52,14 @@ export function PlanningBannerSection() {
     })
   }, [])
 
+  const handleBannerKeyDown = useCallback((href: string | undefined, event: KeyboardEvent<HTMLElement>) => {
+    if (!href?.trim()) return
+    if (event.key === 'Enter' || event.key === ' ') {
+      event.preventDefault()
+      navigateExternalOrSpa(href)
+    }
+  }, [])
+
   if (!slides.length) return null
 
   return (
@@ -64,11 +73,18 @@ export function PlanningBannerSection() {
             style={{ WebkitOverflowScrolling: 'touch' }}
           >
             <div className="flex w-max gap-0 pr-[15px]">
-              {slides.map((slide, index) => (
+              {slides.map((slide, index) => {
+                const linkHref = slide.linkHref?.trim()
+                return (
                 <article
                   key={slide.id}
                   data-planning-slide-index={index}
-                  className="relative h-[431px] w-[345px] shrink-0 snap-start overflow-hidden"
+                  className={`relative h-[431px] w-[345px] shrink-0 snap-start overflow-hidden ${linkHref ? 'cursor-pointer' : ''}`}
+                  role={linkHref ? 'link' : undefined}
+                  tabIndex={linkHref ? 0 : undefined}
+                  aria-label={linkHref ? `${slide.title} 기획전으로 이동` : undefined}
+                  onClick={linkHref ? () => navigateExternalOrSpa(linkHref) : undefined}
+                  onKeyDown={linkHref ? (event) => handleBannerKeyDown(linkHref, event) : undefined}
                 >
                   <PlanningBannerMobileSlide
                     imageUrl={slide.imageUrl}
@@ -77,7 +93,8 @@ export function PlanningBannerSection() {
                     subtitle={slide.subtitle}
                   />
                 </article>
-              ))}
+                )
+              })}
             </div>
           </div>
 

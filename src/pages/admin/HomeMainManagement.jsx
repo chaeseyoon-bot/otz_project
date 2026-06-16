@@ -205,7 +205,7 @@ function ScaledMobilePreview({
 // ─────────────────────────────────────────────
 function SpecNote({ children }) {
   return (
-    <p className="m-0 rounded-sm border border-lightGray bg-light3 px-3 py-2 text-bodySmall text-subtleText">
+    <p className="mx-0 mt-0 mb-5 rounded-sm border border-lightGray bg-light3 px-3 py-2 text-bodySmall text-subtleText">
       {children}
     </p>
   )
@@ -968,6 +968,16 @@ function StyleBannerAdminPanel({
     <div className="space-y-6">
       <StyleBannerCopyPanel styleBannerSection={styleBannerSection} onUpdate={onUpdateSection} />
 
+      {styleBannerSection.cards.length < MAX_STYLE_BANNER_CARDS ? (
+        <button
+          type="button"
+          className="rounded-sm border border-lightGray bg-white px-4 py-3 text-bodyRegular2 text-dark hover:border-dark"
+          onClick={() => onUpdateCard(null, null, 'add')}
+        >
+          + 스타일 카드 추가 ({styleBannerSection.cards.length}/{MAX_STYLE_BANNER_CARDS})
+        </button>
+      ) : null}
+
       <div className="grid gap-6 lg:grid-cols-2">
         {styleBannerSection.cards.map((card, cardIndex) => {
           const resolvedCard = resolved.cards[cardIndex]
@@ -1061,16 +1071,6 @@ function StyleBannerAdminPanel({
           )
         })}
       </div>
-
-      {styleBannerSection.cards.length < MAX_STYLE_BANNER_CARDS ? (
-        <button
-          type="button"
-          className="rounded-sm border border-lightGray bg-white px-4 py-3 text-bodyRegular2 text-dark hover:border-dark"
-          onClick={() => onUpdateCard(null, null, 'add')}
-        >
-          + 스타일 카드 추가 ({styleBannerSection.cards.length}/{MAX_STYLE_BANNER_CARDS})
-        </button>
-      ) : null}
     </div>
   )
 }
@@ -1588,11 +1588,11 @@ export function HomeMainManagement() {
       mainBanners: prev.mainBanners.map((item, i) => (i === index ? { ...item, ...patch } : item)),
     }))
 
-  const addMainBanner = () =>
+  const addMainBanner = () => {
+    setMainBannerPreviewIndex((prev) => (prev === null ? null : prev + 1))
     setConfig((prev) => ({
       ...prev,
       mainBanners: [
-        ...prev.mainBanners,
         {
           id: `main-${Date.now()}`,
           imageUrl: null,
@@ -1602,8 +1602,10 @@ export function HomeMainManagement() {
           ctaLabel: '',
           ctaHref: '',
         },
+        ...prev.mainBanners,
       ],
     }))
+  }
 
   const removeMainBanner = (index) => {
     setMainBannerPreviewIndex((prev) => {
@@ -1655,7 +1657,7 @@ export function HomeMainManagement() {
       if (prev.planningBanners.length >= MAX_PLANNING_BANNERS) return prev
       return {
         ...prev,
-        planningBanners: [...prev.planningBanners, createEmptyPlanningBanner()],
+        planningBanners: [createEmptyPlanningBanner(), ...prev.planningBanners],
       }
     })
 
@@ -1682,7 +1684,7 @@ export function HomeMainManagement() {
       if (prev.marketingPopupSlides.length >= MAX_MARKETING_POPUP_SLIDES) return prev
       return {
         ...prev,
-        marketingPopupSlides: [...prev.marketingPopupSlides, createEmptyMarketingPopupSlide()],
+        marketingPopupSlides: [createEmptyMarketingPopupSlide(), ...prev.marketingPopupSlides],
       }
     })
 
@@ -1728,7 +1730,7 @@ export function HomeMainManagement() {
       if (prev.planningCollections.length >= MAX_PLANNING_COLLECTIONS) return prev
       return {
         ...prev,
-        planningCollections: [...prev.planningCollections, createEmptyPlanningCollection()],
+        planningCollections: [createEmptyPlanningCollection(), ...prev.planningCollections],
       }
     })
 
@@ -1764,7 +1766,7 @@ export function HomeMainManagement() {
           ...prev,
           styleBannerSection: {
             ...prev.styleBannerSection,
-            cards: [...prev.styleBannerSection.cards, createEmptyStyleBannerCard()],
+            cards: [createEmptyStyleBannerCard(), ...prev.styleBannerSection.cards],
           },
         }
       })
@@ -1925,8 +1927,16 @@ export function HomeMainManagement() {
         <section className="space-y-6">
           <SpecNote>
             제작 이미지 864×1080 또는 1200×1500 (비율 4:5) · jpg/png/gif · 모바일/PC 공통 사용 (좌우
-            크롭 주의, 핵심 요소는 중앙 배치) · 라운드/테두리는 CSS 처리
+            크롭 주의, 핵심 요소는 중앙 배치) · 라운드/테두리는 CSS 처리 · 최신 등록이 위 · 홈 첫 슬라이드부터 노출
           </SpecNote>
+
+          <button
+            type="button"
+            className="rounded-sm border border-lightGray bg-white px-4 py-3 text-bodyRegular2 text-dark hover:border-dark"
+            onClick={addMainBanner}
+          >
+            + 메인 배너 슬라이드 추가
+          </button>
 
           <div className="grid grid-cols-1 gap-6 xl:grid-cols-2">
             {config.mainBanners.map((slide, index) => (
@@ -2008,14 +2018,6 @@ export function HomeMainManagement() {
               </article>
             ))}
           </div>
-
-          <button
-            type="button"
-            className="rounded-sm border border-lightGray bg-white px-4 py-3 text-bodyRegular2 text-dark hover:border-dark"
-            onClick={addMainBanner}
-          >
-            + 메인 배너 슬라이드 추가
-          </button>
 
           {mainBannerPreviewIndex !== null && config.mainBanners[mainBannerPreviewIndex] ? (
             <MainBannerPreviewModal
@@ -2297,8 +2299,18 @@ export function HomeMainManagement() {
         <section className="space-y-4">
           <SpecNote>
             제작 이미지 690×862 또는 1200×1500 (비율 4:5) · jpg/png · 모바일/PC 공통 사용 · Dimmed
-            영역은 CSS 처리 · 최소 1개, 최대 5개 등록 · 배너 2개 이상일 때만 인디케이터 노출
+            영역은 CSS 처리 · 최소 1개, 최대 5개 등록 · 배너 2개 이상일 때만 인디케이터 노출 · 최신 등록이 위
           </SpecNote>
+
+          {config.planningBanners.length < MAX_PLANNING_BANNERS ? (
+            <button
+              type="button"
+              className="rounded-sm border border-lightGray bg-white px-4 py-3 text-bodyRegular2 text-dark hover:border-dark"
+              onClick={addPlanningBanner}
+            >
+              + 기획전 배너 추가 ({config.planningBanners.length}/{MAX_PLANNING_BANNERS})
+            </button>
+          ) : null}
 
           <div className="grid gap-6 lg:grid-cols-2">
             {config.planningBanners.map((banner, index) => (
@@ -2366,20 +2378,18 @@ export function HomeMainManagement() {
                       placeholder="예: 오찌x 론론 핑크와 그레이의 세련된 조합"
                     />
                   </div>
+                  <div className="flex flex-col gap-1">
+                    <FieldLabel>링크 URL</FieldLabel>
+                    <TextInput
+                      value={banner.linkHref ?? ''}
+                      onChange={(v) => updatePlanning(index, { linkHref: v })}
+                      placeholder="예: /editorial"
+                    />
+                  </div>
                 </div>
               </article>
             ))}
           </div>
-
-          {config.planningBanners.length < MAX_PLANNING_BANNERS ? (
-            <button
-              type="button"
-              className="rounded-sm border border-lightGray bg-white px-4 py-3 text-bodyRegular2 text-dark hover:border-dark"
-              onClick={addPlanningBanner}
-            >
-              + 기획전 배너 추가 ({config.planningBanners.length}/{MAX_PLANNING_BANNERS})
-            </button>
-          ) : null}
         </section>
       ) : null}
 
@@ -2389,7 +2399,7 @@ export function HomeMainManagement() {
           <SpecNote>
             제작 이미지 640×800 또는 1280×1600 (비율 4:5) · jpg/png · 모바일/PC 공통 · 메인 타이틀 최대 2줄 ·
             배너당 관련 상품 1~4개 등록 · 썸네일은 4열 기준 고정 크기(개수가 줄어도 타일이 커지지 않음) · 태그 4종
-            라벨 편집 가능
+            라벨 편집 가능 · 최신 등록이 위
           </SpecNote>
 
           <article className="rounded-sm border border-lightGray bg-white p-5">
@@ -2407,6 +2417,16 @@ export function HomeMainManagement() {
               ))}
             </div>
           </article>
+
+          {config.planningCollections.length < MAX_PLANNING_COLLECTIONS ? (
+            <button
+              type="button"
+              className="rounded-sm border border-lightGray bg-white px-4 py-3 text-bodyRegular2 text-dark hover:border-dark"
+              onClick={addPlanningCollection}
+            >
+              + 기획전 컬렉션 추가 ({config.planningCollections.length}/{MAX_PLANNING_COLLECTIONS})
+            </button>
+          ) : null}
 
           <div className="grid gap-6 lg:grid-cols-2">
             {config.planningCollections.map((collection, index) => {
@@ -2542,16 +2562,6 @@ export function HomeMainManagement() {
               )
             })}
           </div>
-
-          {config.planningCollections.length < MAX_PLANNING_COLLECTIONS ? (
-            <button
-              type="button"
-              className="rounded-sm border border-lightGray bg-white px-4 py-3 text-bodyRegular2 text-dark hover:border-dark"
-              onClick={addPlanningCollection}
-            >
-              + 기획전 컬렉션 추가 ({config.planningCollections.length}/{MAX_PLANNING_COLLECTIONS})
-            </button>
-          ) : null}
         </section>
       ) : null}
 
@@ -2577,7 +2587,7 @@ export function HomeMainManagement() {
         <section className="space-y-4">
           <SpecNote>
             Figma 2384:7536 / 2601:23377 · 카드 최대 4개 · 카드당 상품 2~4개(03 누끼컷 썸네일) · 배너 이미지 관리자
-            업로드 · 배너 클릭 시 첫 번째 등록 상품 상세 이동
+            업로드 · 배너 클릭 시 첫 번째 등록 상품 상세 이동 · 최신 등록이 위
           </SpecNote>
 
           <StyleBannerAdminPanel
@@ -2613,8 +2623,18 @@ export function HomeMainManagement() {
           <SpecNote>
             Figma 2786:7841 · 홈 메인 마케팅 레이어 팝업 (MO 하단 시트 / PC 우하단 플로팅) · 배너 이미지 750×680 또는
             375×340 비율 권장 · jpg/png · 대타이틀·서브텍스트 줄바꿈 지원 · 링크 URL 입력 시 배너 탭으로 이동 · 최소 1개,
-            최대 10개 · 2개 이상일 때 슬라이드 인디케이터 노출
+            최대 10개 · 2개 이상일 때 슬라이드 인디케이터 노출 · 최신 등록이 위
           </SpecNote>
+
+          {config.marketingPopupSlides.length < MAX_MARKETING_POPUP_SLIDES ? (
+            <button
+              type="button"
+              className="rounded-sm border border-lightGray bg-white px-4 py-3 text-bodyRegular2 text-dark hover:border-dark"
+              onClick={addMarketingPopupSlide}
+            >
+              + 마케팅 팝업 추가 ({config.marketingPopupSlides.length}/{MAX_MARKETING_POPUP_SLIDES})
+            </button>
+          ) : null}
 
           <div className="grid gap-6 lg:grid-cols-2">
             {config.marketingPopupSlides.map((slide, index) => (
@@ -2699,16 +2719,6 @@ export function HomeMainManagement() {
               </article>
             ))}
           </div>
-
-          {config.marketingPopupSlides.length < MAX_MARKETING_POPUP_SLIDES ? (
-            <button
-              type="button"
-              className="rounded-sm border border-lightGray bg-white px-4 py-3 text-bodyRegular2 text-dark hover:border-dark"
-              onClick={addMarketingPopupSlide}
-            >
-              + 마케팅 팝업 추가 ({config.marketingPopupSlides.length}/{MAX_MARKETING_POPUP_SLIDES})
-            </button>
-          ) : null}
         </section>
       ) : null}
 

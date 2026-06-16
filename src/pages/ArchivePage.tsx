@@ -14,9 +14,21 @@ import { getArchiveDetailPath, navigateSpa } from '../lib/spaNavigation'
 export function ArchivePage() {
   const [activeSeason, setActiveSeason] = useState<ArchiveSeasonId>('all')
   const [listVersion, setListVersion] = useState(0)
+  const [isLoading, setIsLoading] = useState(true)
 
   useEffect(() => {
-    void hydrateArchiveDetailConfig()
+    let cancelled = false
+    void (async () => {
+      setIsLoading(true)
+      await hydrateArchiveDetailConfig()
+      if (!cancelled) {
+        setListVersion((version) => version + 1)
+        setIsLoading(false)
+      }
+    })()
+    return () => {
+      cancelled = true
+    }
   }, [])
 
   useEffect(() => {
@@ -101,16 +113,32 @@ export function ArchivePage() {
 
       {/* Mobile masonry — Figma 2624:12588 */}
       <section className="px-[10px] pb-10 pt-[10px] lg:hidden">
-        <ArchiveMasonryGrid
-          items={lookbooks}
-          variant="mobile"
-          onItemClick={handleLookbookClick}
-        />
+        {isLoading ? (
+          <p className="m-0 py-16 text-center text-bodyRegular2 text-subtleText">불러오는 중…</p>
+        ) : lookbooks.length === 0 ? (
+          <p className="m-0 py-16 text-center text-bodyRegular2 text-subtleText">
+            등록된 룩북이 없습니다.
+          </p>
+        ) : (
+          <ArchiveMasonryGrid
+            items={lookbooks}
+            variant="mobile"
+            onItemClick={handleLookbookClick}
+          />
+        )}
       </section>
 
       {/* PC masonry — Figma 2474:3521 (3열) */}
       <section className="hidden lg:mx-auto lg:block lg:max-w-[1400px] lg:px-0 lg:pb-20 lg:pt-5">
-        <ArchiveMasonryGrid items={lookbooks} variant="pc" onItemClick={handleLookbookClick} />
+        {isLoading ? (
+          <p className="m-0 py-20 text-center text-bodyRegular2 text-subtleText">불러오는 중…</p>
+        ) : lookbooks.length === 0 ? (
+          <p className="m-0 py-20 text-center text-bodyRegular2 text-subtleText">
+            등록된 룩북이 없습니다.
+          </p>
+        ) : (
+          <ArchiveMasonryGrid items={lookbooks} variant="pc" onItemClick={handleLookbookClick} />
+        )}
       </section>
     </main>
   )

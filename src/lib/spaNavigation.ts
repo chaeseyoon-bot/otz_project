@@ -108,5 +108,16 @@ export function navigateSpa(path: SpaPath) {
   scrollSpaToTop()
 }
 
+/** Internal SPA path or external URL — used by home banner taps. */
+export function navigateExternalOrSpa(href: string | undefined | null): void {
+  const trimmed = href?.trim()
+  if (!trimmed || trimmed === '#') return
+  if (isSpaPath(trimmed)) {
+    navigateSpa(trimmed)
+    return
+  }
+  window.location.assign(trimmed)
+}
+
 export { getArchiveDetailPath } from './archiveRoutes'
 export { getEditorialDetailPath } from './editorialRoutes'

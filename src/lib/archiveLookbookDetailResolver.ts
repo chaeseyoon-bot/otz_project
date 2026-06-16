@@ -8,12 +8,14 @@ import { ARCHIVE_LOOKBOOK_ITEMS } from '../data/archiveLookbooks'
 import {
   type AdminArchiveLookbookEntry,
   archiveEntryHasDetailData,
+  archiveEntryHasPublishableListData,
   getEffectiveArchiveDetailConfig,
+  isPublishableArchiveImageUrl,
 } from './adminArchiveDetailConfig'
 
 function toDetailImage(ref: { imageUrl: string | null }): ArchiveLookbookDetailImage | null {
   const src = ref.imageUrl?.trim()
-  if (!src) return null
+  if (!src || !isPublishableArchiveImageUrl(src)) return null
   return { src }
 }
 
@@ -79,7 +81,7 @@ export function getArchiveLookbookDetail(lookbookId: string): ArchiveLookbookDet
   const admin = getEffectiveArchiveDetailConfig()
   const entry = admin.lookbooks.find((item) => item.id === lookbookId)
 
-  if (entry && archiveEntryHasDetailData(entry)) {
+  if (entry && archiveEntryHasDetailData(entry) && archiveEntryHasPublishableListData(entry)) {
     return resolveFromAdminEntry(entry)
   }
 

@@ -4,7 +4,7 @@ import {
   type ArchiveSeasonId,
 } from '../data/archiveLookbooks'
 import {
-  archiveEntryHasListData,
+  archiveEntryHasPublishableListData,
   getEffectiveArchiveDetailConfig,
   sortArchiveLookbooksNewestFirst,
 } from './adminArchiveDetailConfig'
@@ -46,7 +46,7 @@ function adminEntryToListItem(entry: {
 export function resolveArchiveLookbookItems(): ArchiveLookbookItem[] {
   const admin = getEffectiveArchiveDetailConfig()
   const fromAdmin = sortArchiveLookbooksNewestFirst(admin.lookbooks)
-    .filter(archiveEntryHasListData)
+    .filter(archiveEntryHasPublishableListData)
     .map(adminEntryToListItem)
     .filter((item): item is ArchiveLookbookItem => item != null)
 

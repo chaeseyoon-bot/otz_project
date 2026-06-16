@@ -1,6 +1,6 @@
 import type { ArchiveLookbookDetail } from '../data/archiveLookbookDetails'
 import { getArchiveLookbookDetail } from './archiveLookbookDetailResolver'
-import { getLatestArchiveLookbookIdFromConfig, getEffectiveArchiveDetailConfig } from './adminArchiveDetailConfig'
+import { getLatestArchiveLookbookIdFromConfig, getEffectiveArchiveDetailConfig, archiveEntryHasPublishableListData } from './adminArchiveDetailConfig'
 import { resolveArchiveLookbookItems } from './archiveLookbooksResolver'
 
 export const LOOKBOOK_HOME_IMAGE_SLOTS = 7

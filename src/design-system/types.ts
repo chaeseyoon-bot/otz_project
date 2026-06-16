@@ -17,6 +17,8 @@ export interface PromotionalBanner {
   title: string
   subtitle: string
   imageUrl: string
+  /** Banner tap destination — internal SPA path or external URL. */
+  linkHref?: string
 }
 
 export interface CurationItem {

@@ -168,20 +168,20 @@ export function ArchiveDetailManagement() {
 
   useEffect(() => {
     void (async () => {
-      const remote = await loadArchiveDetailConfigFromSupabase()
+      let remote = await loadArchiveDetailConfigFromSupabase()
       const local = loadAdminArchiveDetailConfig()
-
-      let next = remote ?? local
 
       if (!remote && local.lookbooks.length > 0) {
         const migrated = await upsertArchiveDetailConfig(local)
-        if (!migrated.ok) {
+        if (migrated.ok) {
+          remote = await loadArchiveDetailConfigFromSupabase()
+        } else {
           console.warn('[ArchiveDetailManagement] Supabase migrate failed:', migrated.message)
         }
       }
 
-      await hydrateArchiveDetailConfig()
-      next = remote ?? local
+      const hydrated = await hydrateArchiveDetailConfig()
+      const next = remote ?? hydrated ?? local
       setConfig(next)
       const first = sortArchiveLookbooksNewestFirst(next.lookbooks)[0]
       setSelectedId(first?.id ?? null)

@@ -49,6 +49,8 @@ export interface AdminPlanningBanner {
   badge: string
   title: string
   subtitle: string
+  /** Banner tap destination — internal path or external URL. */
+  linkHref: string
 }
 
 /** Figma 2354:4592 — collection card top tag (exactly 4 labels in admin). */
@@ -213,6 +215,7 @@ const DEFAULT_PLANNING: AdminPlanningBanner[] = [
     badge: '',
     title: '',
     subtitle: '',
+    linkHref: '',
   },
 ]
 
@@ -286,6 +289,27 @@ export function createEmptyPlanningBanner(suffix = ''): AdminPlanningBanner {
     badge: '',
     title: '',
     subtitle: '',
+    linkHref: '',
+  }
+}
+
+function normalizePlanningBanner(
+  raw: Partial<AdminPlanningBanner>,
+  fallback: AdminPlanningBanner,
+): AdminPlanningBanner {
+  return {
+    id: typeof raw.id === 'string' && raw.id.trim() ? raw.id : fallback.id,
+    imageUrl: typeof raw.imageUrl === 'string' ? raw.imageUrl : raw.imageUrl === null ? null : fallback.imageUrl,
+    imageFileName:
+      typeof raw.imageFileName === 'string'
+        ? raw.imageFileName
+        : raw.imageFileName === null
+          ? null
+          : fallback.imageFileName,
+    badge: typeof raw.badge === 'string' ? raw.badge : fallback.badge,
+    title: typeof raw.title === 'string' ? raw.title : fallback.title,
+    subtitle: typeof raw.subtitle === 'string' ? raw.subtitle : fallback.subtitle,
+    linkHref: typeof raw.linkHref === 'string' ? raw.linkHref : fallback.linkHref,
   }
 }
 
@@ -753,7 +777,14 @@ function migrateHomeMainConfig(parsed: Partial<AdminHomeMainConfig>): AdminHomeM
   const defaults = createDefaultHomeMainConfig()
   const planningBanners =
     Array.isArray(parsed.planningBanners) && parsed.planningBanners.length >= 1
-      ? parsed.planningBanners.slice(0, 5)
+      ? parsed.planningBanners
+          .slice(0, 5)
+          .map((item, index) =>
+            normalizePlanningBanner(
+              item as Partial<AdminPlanningBanner>,
+              defaults.planningBanners[index] ?? createEmptyPlanningBanner(`-${index}`),
+            ),
+          )
       : defaults.planningBanners
 
   return {

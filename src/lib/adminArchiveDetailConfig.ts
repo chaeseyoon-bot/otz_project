@@ -110,6 +110,18 @@ export function archiveEntryHasListData(entry: AdminArchiveLookbookEntry): boole
   return Boolean(entry.thumbnailUrl?.trim())
 }
 
+/** Thumbnail must be a durable URL (not blob/data) for storefront list/detail. */
+export function isPublishableArchiveImageUrl(url: string | null | undefined): boolean {
+  const normalized = url?.trim()
+  if (!normalized) return false
+  if (normalized.startsWith('blob:') || normalized.startsWith('data:')) return false
+  return normalized.startsWith('http') || normalized.startsWith('/')
+}
+
+export function archiveEntryHasPublishableListData(entry: AdminArchiveLookbookEntry): boolean {
+  return isPublishableArchiveImageUrl(entry.thumbnailUrl)
+}
+
 export function archiveEntryHasDetailData(entry: AdminArchiveLookbookEntry): boolean {
   if (entry.introHeading?.trim() || entry.introBody?.trim()) return true
   if (entry.thumbnailUrl?.trim()) return true
@@ -149,7 +161,7 @@ export function getNextArchiveLookbookId(lookbooks: AdminArchiveLookbookEntry[])
 export function getLatestArchiveLookbookIdFromConfig(
   config: AdminArchiveDetailConfig = getEffectiveArchiveDetailConfig(),
 ): string | null {
-  const published = sortArchiveLookbooksNewestFirst(config.lookbooks).filter(archiveEntryHasListData)
+  const published = sortArchiveLookbooksNewestFirst(config.lookbooks).filter(archiveEntryHasPublishableListData)
   return published[0]?.id ?? null
 }
 

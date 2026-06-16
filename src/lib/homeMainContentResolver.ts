@@ -647,12 +647,14 @@ export function resolvePlanningBanners(planningBanners: AdminPlanningBanner[] = 
 
   return planningBanners.map((banner, index) => {
     const imageUrl = banner.imageUrl?.trim()
+    const linkHref = (banner.linkHref ?? '').trim()
     return {
       id: banner.id,
       badge: (banner.badge ?? '').trim() || defaultPlanningBanner.badge,
       title: (banner.title ?? '').trim() || defaultPlanningBanner.title,
       subtitle: (banner.subtitle ?? '').trim() || defaultPlanningBanner.subtitle,
       imageUrl: imageUrl || PLANNING_FALLBACK_IMAGES[index % PLANNING_FALLBACK_IMAGES.length],
+      linkHref: linkHref || undefined,
     }
   })
 }
