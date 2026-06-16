@@ -1,6 +1,6 @@
 import type { ArchiveLookbookDetail } from '../data/archiveLookbookDetails'
 import { getArchiveLookbookDetail } from './archiveLookbookDetailResolver'
-import { getLatestArchiveLookbookIdFromConfig, loadAdminArchiveDetailConfig } from './adminArchiveDetailConfig'
+import { getLatestArchiveLookbookIdFromConfig, getEffectiveArchiveDetailConfig } from './adminArchiveDetailConfig'
 import { resolveArchiveLookbookItems } from './archiveLookbooksResolver'
 
 export const LOOKBOOK_HOME_IMAGE_SLOTS = 7
@@ -68,7 +68,7 @@ export function resolveArchiveLookbookId(lookbookId: string | null | undefined):
   if (lookbookId && items.some((item) => item.id === lookbookId)) {
     return lookbookId
   }
-  if (lookbookId && loadAdminArchiveDetailConfig().lookbooks.some((entry) => entry.id === lookbookId)) {
+  if (lookbookId && getEffectiveArchiveDetailConfig().lookbooks.some((entry) => entry.id === lookbookId)) {
     return lookbookId
   }
   return getLatestArchiveLookbookId()

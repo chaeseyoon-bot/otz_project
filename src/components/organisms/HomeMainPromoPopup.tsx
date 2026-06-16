@@ -3,7 +3,7 @@ import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { createPortal } from 'react-dom'
 import { useMobileGnb } from '../../contexts/MobileGnbContext'
 import { useAdminHomeMainConfig } from '../../hooks/useAdminHomeMainConfig'
-import { useLockBodyScroll } from '../../hooks/useLockBodyScroll'
+import { SCROLL_LOCK_ALLOW_ATTR, useLockBodyScroll } from '../../hooks/useLockBodyScroll'
 import { tokens } from '../../design-system/tokens'
 import { resolveMarketingPopupSlides } from '../../lib/homeMainContentResolver'
 import { isSpaPath, navigateSpa, type SpaPath } from '../../lib/spaNavigation'
@@ -271,8 +271,13 @@ export function HomeMainPromoPopup() {
       aria-modal="true"
       aria-labelledby={popupTitleId}
       style={styles.backdrop}
+      onClick={closeForSession}
     >
-      <div style={mobileSheetWrapStyle}>
+      <div
+        style={mobileSheetWrapStyle}
+        onClick={(event) => event.stopPropagation()}
+        {...{ [SCROLL_LOCK_ALLOW_ATTR]: '' }}
+      >
         <div style={styles.sheet}>{inner}</div>
       </div>
     </div>,
@@ -310,7 +315,6 @@ const styles: Record<string, CSSProperties> = {
     display: 'flex',
     alignItems: 'flex-end',
     justifyContent: 'flex-start',
-    touchAction: 'none',
   },
   sheetWrap: {
     flexShrink: 0,

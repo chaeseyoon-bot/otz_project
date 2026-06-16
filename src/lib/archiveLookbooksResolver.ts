@@ -5,7 +5,7 @@ import {
 } from '../data/archiveLookbooks'
 import {
   archiveEntryHasListData,
-  loadAdminArchiveDetailConfig,
+  getEffectiveArchiveDetailConfig,
   sortArchiveLookbooksNewestFirst,
 } from './adminArchiveDetailConfig'
 import { archiveItemMatchesSeason, parseArchiveSeasonFromTitle } from './archiveSeasonFilters'
@@ -44,7 +44,7 @@ function adminEntryToListItem(entry: {
 
 /** List thumbnails — admin entries (newest first), else static Figma manifest. */
 export function resolveArchiveLookbookItems(): ArchiveLookbookItem[] {
-  const admin = loadAdminArchiveDetailConfig()
+  const admin = getEffectiveArchiveDetailConfig()
   const fromAdmin = sortArchiveLookbooksNewestFirst(admin.lookbooks)
     .filter(archiveEntryHasListData)
     .map(adminEntryToListItem)

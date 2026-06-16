@@ -85,6 +85,12 @@ function releaseLock() {
   saved = null
 }
 
+/** Clears any active document scroll lock — use on SPA route changes. */
+export function forceReleaseBodyScrollLock() {
+  lockCount = 0
+  releaseLock()
+}
+
 /**
  * Locks document scroll while a dimmed overlay is open.
  * Required for all modal / bottom-sheet / dropdown-backdrop UI — never rely on overflow:hidden alone.

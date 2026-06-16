@@ -260,7 +260,7 @@ export function ForYouSection() {
         {/* MO — horizontal swipe with black gutters at rest */}
         <div
           ref={mobileScrollerRef}
-          className="mt-[10px] w-full min-w-0 max-w-full cursor-grab overflow-x-auto overscroll-x-contain scroll-smooth touch-pan-x snap-x snap-proximity [scrollbar-width:none] [-ms-overflow-style:none] [&::-webkit-scrollbar]:hidden active:cursor-grabbing lg:hidden"
+          className="mt-[10px] w-full min-w-0 max-w-full cursor-grab overflow-x-auto overscroll-x-contain scroll-smooth snap-x snap-proximity [scrollbar-width:none] [-ms-overflow-style:none] [&::-webkit-scrollbar]:hidden active:cursor-grabbing lg:hidden"
           style={{
             WebkitOverflowScrolling: 'touch',
           }}

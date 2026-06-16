@@ -12,7 +12,7 @@ export function PlanningCollectionSection() {
     <section className="bg-white pt-10 lg:hidden">
       <div
         ref={scrollerRef}
-        className="cursor-grab overflow-x-auto overscroll-x-contain scroll-smooth scroll-pl-[15px] scroll-pr-[15px] touch-pan-x snap-x snap-mandatory [scrollbar-width:none] [-ms-overflow-style:none] [&::-webkit-scrollbar]:hidden active:cursor-grabbing"
+        className="cursor-grab overflow-x-auto overscroll-x-contain scroll-smooth scroll-pl-[15px] scroll-pr-[15px] snap-x snap-mandatory [scrollbar-width:none] [-ms-overflow-style:none] [&::-webkit-scrollbar]:hidden active:cursor-grabbing"
         style={{ WebkitOverflowScrolling: 'touch' }}
       >
         <div className="flex w-max snap-x snap-mandatory gap-1">
@@ -23,7 +23,7 @@ export function PlanningCollectionSection() {
                 bannerImage={card.bannerImage}
                 tagLabel={card.tagLabel}
                 title={card.title}
-                productImages={card.mobileProductImages}
+                products={card.products}
               />
             </article>
           ))}

@@ -34,7 +34,7 @@ export function CategorySection() {
     <section className="ml-0 pb-[30px] pt-[20px] lg:mx-auto lg:max-w-[1400px]">
       <div
         ref={scrollerRef}
-        className="cursor-grab overflow-x-auto overscroll-x-contain scroll-smooth scroll-pl-[15px] scroll-pr-[15px] touch-pan-x snap-x snap-mandatory [scrollbar-width:none] [-ms-overflow-style:none] [&::-webkit-scrollbar]:hidden active:cursor-grabbing lg:cursor-default lg:overflow-visible lg:scroll-pl-0 lg:scroll-pr-0"
+        className="cursor-grab overflow-x-auto overscroll-x-contain scroll-smooth scroll-pl-[15px] scroll-pr-[15px] snap-x snap-mandatory [scrollbar-width:none] [-ms-overflow-style:none] [&::-webkit-scrollbar]:hidden active:cursor-grabbing lg:cursor-default lg:overflow-visible lg:scroll-pl-0 lg:scroll-pr-0"
         style={{ WebkitOverflowScrolling: 'touch' }}
       >
         <div className="flex h-[128px] w-max snap-x snap-mandatory gap-[5px] lg:mx-auto lg:w-[1010px] lg:max-w-full lg:justify-center lg:gap-[10px]">

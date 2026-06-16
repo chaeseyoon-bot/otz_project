@@ -2,6 +2,7 @@ import { useCallback, useEffect, useMemo, useState } from 'react'
 import { ArchiveMasonryGrid } from '../components/organisms/ArchiveMasonryGrid'
 import type { ArchiveLookbookItem, ArchiveSeasonId } from '../data/archiveLookbooks'
 import { ARCHIVE_DETAIL_CONFIG_UPDATED_EVENT } from '../lib/adminArchiveDetailConfig'
+import { hydrateArchiveDetailConfig } from '../lib/archiveLookbooksApi'
 import {
   filterResolvedArchiveLookbooks,
   resolveArchiveLookbookItems,
@@ -13,6 +14,10 @@ import { getArchiveDetailPath, navigateSpa } from '../lib/spaNavigation'
 export function ArchivePage() {
   const [activeSeason, setActiveSeason] = useState<ArchiveSeasonId>('all')
   const [listVersion, setListVersion] = useState(0)
+
+  useEffect(() => {
+    void hydrateArchiveDetailConfig()
+  }, [])
 
   useEffect(() => {
     const refresh = () => setListVersion((version) => version + 1)

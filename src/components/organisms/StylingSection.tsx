@@ -1,6 +1,7 @@
 import { useRef, useState } from 'react'
 import { Swiper, SwiperSlide } from 'swiper/react'
 import { ProductEditorialThumbnail } from '../molecules/ProductEditorialThumbnail'
+import { HomeProductDetailLink } from '../molecules/HomeProductDetailLink'
 import { useHorizontalMouseDragScroll } from '../../hooks/useHorizontalMouseDragScroll'
 import { useStyleBannerContent } from '../../hooks/useStyleBannerContent'
 import type { ResolvedStyleBannerCard, ResolvedStyleBannerProduct } from '../../lib/homeMainContentResolver'
@@ -64,7 +65,7 @@ function StylingCardProductSlider({ products }: StylingCardProductSliderProps) {
         speed={320}
         touchRatio={1}
         watchOverflow
-        className="styling-card-product-swiper !m-0 h-[75px] w-full max-w-none touch-pan-x"
+        className="styling-card-product-swiper !m-0 h-[75px] w-full max-w-none"
       >
         {products.map((product, productIndex) => (
           <SwiperSlide
@@ -72,16 +73,22 @@ function StylingCardProductSlider({ products }: StylingCardProductSliderProps) {
             className="!box-border shrink-0"
             style={{ width: STYLING_PRODUCT_SLIDE_WIDTH_PX }}
           >
-            <div className="box-border flex h-[75px] w-full gap-[10px] pr-[10px]">
-              <StylingProductThumb product={product} rounded />
-              <div className="min-w-0 flex-1 pt-[8px] text-white">
-                <p className="line-clamp-2 w-full max-w-[172px] text-[13px] text-bodySmall">{product.name}</p>
-                <p className="pt-[2px] text-bodyBold2">
-                  <span className="text-[15px] font-bold text-primary">{product.discountRate}</span>
-                  <span className="pl-[6px] text-[15px] font-bold text-white">{product.price}</span>
-                </p>
+            <HomeProductDetailLink
+              productId={product.productId}
+              href={product.detailHref}
+              className="box-border block h-[75px] w-full"
+            >
+              <div className="box-border flex h-[75px] w-full gap-[10px] pr-[10px]">
+                <StylingProductThumb product={product} rounded />
+                <div className="min-w-0 flex-1 pt-[8px] text-white">
+                  <p className="line-clamp-2 w-full max-w-[172px] text-[13px] text-bodySmall">{product.name}</p>
+                  <p className="pt-[2px] text-bodyBold2">
+                    <span className="text-[15px] font-bold text-primary">{product.discountRate}</span>
+                    <span className="pl-[6px] text-[15px] font-bold text-white">{product.price}</span>
+                  </p>
+                </div>
               </div>
-            </div>
+            </HomeProductDetailLink>
           </SwiperSlide>
         ))}
       </Swiper>
@@ -140,18 +147,24 @@ function StylingDesktopProductRow({
 }: StylingDesktopProductRowProps) {
   return (
     <div className="flex min-h-[75px] w-full items-center gap-2 pr-[5px]">
-      <StylingProductThumb product={product} />
-      <div className="flex min-w-0 flex-1 flex-col justify-center gap-[5px]">
-        <p className="line-clamp-2 text-[13px] font-normal leading-[1.4] tracking-[-0.02em] text-textDefault">
-          {product.name}
-        </p>
-        <div className="flex items-center gap-2.5">
-          <span className="text-[15px] font-bold leading-[1.4] tracking-[-0.02em] text-primary">
-            {product.discountRate}
-          </span>
-          <span className="text-[15px] font-bold leading-[1.4] tracking-[-0.02em] text-black">{product.price}</span>
+      <HomeProductDetailLink
+        productId={product.productId}
+        href={product.detailHref}
+        className="flex min-w-0 flex-1 items-center gap-2"
+      >
+        <StylingProductThumb product={product} />
+        <div className="flex min-w-0 flex-1 flex-col justify-center gap-[5px]">
+          <p className="line-clamp-2 text-[13px] font-normal leading-[1.4] tracking-[-0.02em] text-textDefault">
+            {product.name}
+          </p>
+          <div className="flex items-center gap-2.5">
+            <span className="text-[15px] font-bold leading-[1.4] tracking-[-0.02em] text-primary">
+              {product.discountRate}
+            </span>
+            <span className="text-[15px] font-bold leading-[1.4] tracking-[-0.02em] text-black">{product.price}</span>
+          </div>
         </div>
-      </div>
+      </HomeProductDetailLink>
       <button
         type="button"
         aria-label={liked ? '찜 해제' : '찜하기'}
@@ -227,7 +240,7 @@ export function StylingSection() {
       <div className="pt-10 lg:hidden">
         <div
           ref={scrollerRef}
-          className="cursor-grab overflow-x-auto overscroll-x-contain scroll-smooth scroll-pl-[15px] scroll-pr-[15px] touch-pan-x snap-x snap-mandatory [scrollbar-width:none] [-ms-overflow-style:none] [&::-webkit-scrollbar]:hidden active:cursor-grabbing"
+          className="cursor-grab overflow-x-auto overscroll-x-contain scroll-smooth scroll-pl-[15px] scroll-pr-[15px] snap-x snap-mandatory [scrollbar-width:none] [-ms-overflow-style:none] [&::-webkit-scrollbar]:hidden active:cursor-grabbing"
           style={{ WebkitOverflowScrolling: 'touch' }}
         >
           <div className="flex w-max snap-x snap-mandatory gap-1">

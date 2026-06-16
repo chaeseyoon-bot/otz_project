@@ -8,7 +8,7 @@ import { ARCHIVE_LOOKBOOK_ITEMS } from '../data/archiveLookbooks'
 import {
   type AdminArchiveLookbookEntry,
   archiveEntryHasDetailData,
-  loadAdminArchiveDetailConfig,
+  getEffectiveArchiveDetailConfig,
 } from './adminArchiveDetailConfig'
 
 function toDetailImage(ref: { imageUrl: string | null }): ArchiveLookbookDetailImage | null {
@@ -76,7 +76,7 @@ function resolveFromAdminEntry(entry: AdminArchiveLookbookEntry): ArchiveLookboo
 
 /** Resolves archive lookbook detail — admin overrides merged over static presets. */
 export function getArchiveLookbookDetail(lookbookId: string): ArchiveLookbookDetail | undefined {
-  const admin = loadAdminArchiveDetailConfig()
+  const admin = getEffectiveArchiveDetailConfig()
   const entry = admin.lookbooks.find((item) => item.id === lookbookId)
 
   if (entry && archiveEntryHasDetailData(entry)) {

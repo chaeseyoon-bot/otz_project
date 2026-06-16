@@ -6,6 +6,17 @@ export const ARCHIVE_DETAIL_CONFIG_UPDATED_EVENT = 'otz-archive-detail-config-up
 
 const STORAGE_KEY = 'otz-admin-archive-detail'
 
+let remoteConfigCache: AdminArchiveDetailConfig | null = null
+
+export function setArchiveDetailConfigCache(config: AdminArchiveDetailConfig | null): void {
+  remoteConfigCache = config
+}
+
+/** Remote (Supabase) cache when hydrated; otherwise browser localStorage. */
+export function getEffectiveArchiveDetailConfig(): AdminArchiveDetailConfig {
+  return remoteConfigCache ?? loadAdminArchiveDetailConfig()
+}
+
 export const MAX_ARCHIVE_DETAIL_IMAGES = 30
 export const MAX_ARCHIVE_DETAIL_ROWS = 20
 export const MAX_ARCHIVE_LOOKBOOKS = 50
@@ -136,7 +147,7 @@ export function getNextArchiveLookbookId(lookbooks: AdminArchiveLookbookEntry[])
 }
 
 export function getLatestArchiveLookbookIdFromConfig(
-  config: AdminArchiveDetailConfig = loadAdminArchiveDetailConfig(),
+  config: AdminArchiveDetailConfig = getEffectiveArchiveDetailConfig(),
 ): string | null {
   const published = sortArchiveLookbooksNewestFirst(config.lookbooks).filter(archiveEntryHasListData)
   return published[0]?.id ?? null
@@ -321,6 +332,7 @@ export function saveAdminArchiveDetailConfig(
     throw new Error('ARCHIVE_DETAIL_CONFIG_STORAGE_FAILED')
   }
 
+  setArchiveDetailConfigCache(next)
   window.dispatchEvent(new CustomEvent(ARCHIVE_DETAIL_CONFIG_UPDATED_EVENT))
   return next
 }

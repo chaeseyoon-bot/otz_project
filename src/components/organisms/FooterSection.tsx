@@ -37,7 +37,7 @@ export function FooterSection() {
           <div className="flex flex-col items-center gap-[12px]">
             <div
               ref={topLinksRef}
-              className="flex w-full max-w-full cursor-grab flex-nowrap justify-center gap-[8.333px] overflow-x-auto scroll-smooth touch-pan-x snap-x snap-mandatory text-[13px] font-normal leading-[1.4] tracking-[-0.02em] [-ms-overflow-style:none] [scrollbar-width:none] [&::-webkit-scrollbar]:hidden active:cursor-grabbing"
+              className="flex w-full max-w-full cursor-grab flex-nowrap justify-center gap-[8.333px] overflow-x-auto scroll-smooth snap-x snap-mandatory text-[13px] font-normal leading-[1.4] tracking-[-0.02em] [-ms-overflow-style:none] [scrollbar-width:none] [&::-webkit-scrollbar]:hidden active:cursor-grabbing"
               style={{ WebkitOverflowScrolling: 'touch' }}
             >
               {LINKS_TOP.map((item, index) => (
@@ -54,7 +54,7 @@ export function FooterSection() {
 
             <div
               ref={bottomLinksRef}
-              className="flex w-full max-w-full cursor-grab flex-nowrap justify-center gap-[8.333px] overflow-x-auto scroll-smooth touch-pan-x snap-x snap-mandatory text-[13px] font-normal leading-[1.4] tracking-[-0.02em] [-ms-overflow-style:none] [scrollbar-width:none] [&::-webkit-scrollbar]:hidden active:cursor-grabbing"
+              className="flex w-full max-w-full cursor-grab flex-nowrap justify-center gap-[8.333px] overflow-x-auto scroll-smooth snap-x snap-mandatory text-[13px] font-normal leading-[1.4] tracking-[-0.02em] [-ms-overflow-style:none] [scrollbar-width:none] [&::-webkit-scrollbar]:hidden active:cursor-grabbing"
               style={{ WebkitOverflowScrolling: 'touch' }}
             >
               {LINKS_BOTTOM.map((item, index) => (

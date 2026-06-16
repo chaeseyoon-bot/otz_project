@@ -5,6 +5,7 @@ import { useHorizontalMouseDragScroll } from '../../hooks/useHorizontalMouseDrag
 import { usePlanningCollectionsContent } from '../../hooks/usePlanningCollectionsContent'
 import { resolvePlanningBanners } from '../../lib/homeMainContentResolver'
 import { getProductHeartIconDataUri } from '../../lib/productHeartIcon'
+import { HomeProductDetailLink } from '../molecules/HomeProductDetailLink'
 
 /** Link row chevron — 6×12px. */
 function CollectionLinkChevron({ className }: { className?: string }) {
@@ -253,43 +254,49 @@ export function PlanningDesktopMerchSection() {
                 {card.products.map((product, index) => {
                   const liked = collectionLikes[index] ?? false
                   return (
-                    <article
+                    <HomeProductDetailLink
                       key={`${card.id}-${product.productId ?? index}`}
+                      productId={product.productId}
                       className="flex min-w-0 flex-col self-stretch"
                     >
-                      {/* Same tile as ForYouSection (PC) — Figma 2601:22727 */}
-                      <div className="relative w-full shrink-0 overflow-hidden">
-                        <div className="relative flex w-full shrink-0 items-center gap-[10px] bg-light aspect-[4/5]">
-                          <div className="relative aspect-square min-h-0 min-w-0 flex-1 mix-blend-multiply">
-                            <img
-                              src={product.image}
-                              alt={`${product.name} 누끼컷`}
-                              className="pointer-events-none absolute inset-0 size-full max-w-none object-cover"
-                              draggable={false}
-                            />
+                      <article className="flex min-w-0 flex-col self-stretch">
+                        {/* Same tile as ForYouSection (PC) — Figma 2601:22727 */}
+                        <div className="relative w-full shrink-0 overflow-hidden">
+                          <div className="relative flex w-full shrink-0 items-center gap-[10px] bg-light aspect-[4/5]">
+                            <div className="relative aspect-square min-h-0 min-w-0 flex-1 mix-blend-multiply">
+                              <img
+                                src={product.image}
+                                alt={`${product.name} 누끼컷`}
+                                className="pointer-events-none absolute inset-0 size-full max-w-none object-cover"
+                                draggable={false}
+                              />
+                            </div>
+                          </div>
+                          <div className="absolute right-0 top-0 z-10 flex flex-col items-end p-[6px]">
+                            <button
+                              type="button"
+                              aria-label={liked ? '찜 해제' : '찜하기'}
+                              onClick={(event) => {
+                                event.stopPropagation()
+                                toggleLike(card.id, index)
+                              }}
+                            >
+                              <span
+                                className="block h-4 w-[17px] bg-contain bg-center bg-no-repeat"
+                                style={{ backgroundImage: getProductHeartIconDataUri(liked) }}
+                              />
+                            </button>
                           </div>
                         </div>
-                        <div className="absolute right-0 top-0 z-10 flex flex-col items-end p-[6px]">
-                          <button
-                            type="button"
-                            aria-label={liked ? '찜 해제' : '찜하기'}
-                            onClick={() => toggleLike(card.id, index)}
-                          >
-                            <span
-                              className="block h-4 w-[17px] bg-contain bg-center bg-no-repeat"
-                              style={{ backgroundImage: getProductHeartIconDataUri(liked) }}
-                            />
-                          </button>
+                        <p className="truncate pt-3 text-[13px] font-normal leading-[1.4] tracking-[-0.02em] text-textDefault">
+                          {product.name}
+                        </p>
+                        <div className="flex items-center pt-1">
+                          <span className="text-[15px] font-bold text-primary">{product.discount}</span>
+                          <span className="pl-[6px] text-[15px] font-bold text-black">{product.price}</span>
                         </div>
-                      </div>
-                      <p className="truncate pt-3 text-[13px] font-normal leading-[1.4] tracking-[-0.02em] text-textDefault">
-                        {product.name}
-                      </p>
-                      <div className="flex items-center pt-1">
-                        <span className="text-[15px] font-bold text-primary">{product.discount}</span>
-                        <span className="pl-[6px] text-[15px] font-bold text-black">{product.price}</span>
-                      </div>
-                    </article>
+                      </article>
+                    </HomeProductDetailLink>
                   )
                 })}
               </div>

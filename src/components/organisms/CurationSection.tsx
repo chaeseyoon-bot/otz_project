@@ -4,6 +4,7 @@ import {
   CurationMobileSlide,
 } from '../molecules/CurationMobileSlide'
 import { ProductEditorialThumbnail } from '../molecules/ProductEditorialThumbnail'
+import { HomeProductDetailLink } from '../molecules/HomeProductDetailLink'
 import { useAdminHomeMainConfig } from '../../hooks/useAdminHomeMainConfig'
 import { useCurationProductsContent } from '../../hooks/useCurationProductsContent'
 import { resolveCurationCopy } from '../../lib/homeMainContentResolver'
@@ -69,6 +70,7 @@ export function CurationSection() {
       <div className="px-[15px] pb-0 pt-10 lg:hidden">
         <CurationMobileSlide
           tiles={mobileTiles}
+          productIds={products.map((item) => item.productId)}
           badge={copy.badge}
           title={copy.title}
           ctaLabel={copy.mobileCtaLabel}
@@ -104,44 +106,53 @@ export function CurationSection() {
 
             <div className="flex min-h-0 min-w-0 flex-1 items-center gap-[10px]">
               {products.map((item, index) => (
-                <article key={item.id} className="flex min-w-0 flex-1 flex-col self-stretch">
-                  <div className="relative w-full shrink-0 overflow-hidden">
-                    <div className="relative flex w-full shrink-0 items-center gap-[10px] bg-light aspect-[4/5]">
-                      <div className="relative aspect-[1200/1500] min-h-0 min-w-0 flex-1">
-                        <ProductEditorialThumbnail
-                          candidates={item.imageCandidates}
-                          className="pointer-events-none absolute inset-0 size-full"
-                          imageClassName="pointer-events-none absolute inset-0 size-full max-w-none object-cover"
-                        />
+                <HomeProductDetailLink
+                  key={item.id}
+                  productId={item.productId}
+                  className="flex min-w-0 flex-1 flex-col self-stretch"
+                >
+                  <article className="flex min-w-0 flex-1 flex-col self-stretch">
+                    <div className="relative w-full shrink-0 overflow-hidden">
+                      <div className="relative flex w-full shrink-0 items-center gap-[10px] bg-light aspect-[4/5]">
+                        <div className="relative aspect-[1200/1500] min-h-0 min-w-0 flex-1">
+                          <ProductEditorialThumbnail
+                            candidates={item.imageCandidates}
+                            className="pointer-events-none absolute inset-0 size-full"
+                            imageClassName="pointer-events-none absolute inset-0 size-full max-w-none object-cover"
+                          />
+                        </div>
+                      </div>
+                      <div className="absolute right-0 top-0 z-10 flex flex-col items-end p-[6px]">
+                        <button
+                          type="button"
+                          aria-label={likedItems[index] ? '찜 해제' : '찜하기'}
+                          onClick={(event) => {
+                            event.stopPropagation()
+                            toggleLike(index)
+                          }}
+                        >
+                          <span
+                            className="block h-4 w-[17px] bg-contain bg-center bg-no-repeat"
+                            style={{ backgroundImage: getProductHeartIconDataUri(likedItems[index]) }}
+                          />
+                        </button>
                       </div>
                     </div>
-                    <div className="absolute right-0 top-0 z-10 flex flex-col items-end p-[6px]">
-                      <button
-                        type="button"
-                        aria-label={likedItems[index] ? '찜 해제' : '찜하기'}
-                        onClick={() => toggleLike(index)}
-                      >
-                        <span
-                          className="block h-4 w-[17px] bg-contain bg-center bg-no-repeat"
-                          style={{ backgroundImage: getProductHeartIconDataUri(likedItems[index]) }}
-                        />
-                      </button>
+                    <div className="w-full shrink-0 pr-1.5">
+                      <p className="m-0 truncate pt-3 text-[14px] font-normal leading-[1.4] tracking-[-0.02em] text-textDefault">
+                        {item.productName}
+                      </p>
+                      <div className="flex items-center pt-1">
+                        <span className="text-[15px] font-bold leading-[1.4] tracking-[-0.02em] text-primary">
+                          {item.discount}
+                        </span>
+                        <span className="pl-1.5 text-[15px] font-bold leading-[1.4] tracking-[-0.02em] text-black">
+                          {item.price}
+                        </span>
+                      </div>
                     </div>
-                  </div>
-                  <div className="w-full shrink-0 pr-1.5">
-                    <p className="m-0 truncate pt-3 text-[14px] font-normal leading-[1.4] tracking-[-0.02em] text-textDefault">
-                      {item.productName}
-                    </p>
-                    <div className="flex items-center pt-1">
-                      <span className="text-[15px] font-bold leading-[1.4] tracking-[-0.02em] text-primary">
-                        {item.discount}
-                      </span>
-                      <span className="pl-1.5 text-[15px] font-bold leading-[1.4] tracking-[-0.02em] text-black">
-                        {item.price}
-                      </span>
-                    </div>
-                  </div>
-                </article>
+                  </article>
+                </HomeProductDetailLink>
               ))}
             </div>
           </div>

@@ -205,7 +205,7 @@ export function HeaderSection() {
 
           <nav
             ref={navRef}
-            className="flex h-[42px] cursor-grab items-start justify-start gap-[18px] overflow-x-auto scroll-smooth border-b border-light2 px-[10px] text-[14px] text-[rgba(26,26,26,1)] touch-pan-x snap-x snap-mandatory scroll-pl-[10px] [scrollbar-width:none] [-ms-overflow-style:none] [&::-webkit-scrollbar]:hidden active:cursor-grabbing"
+            className="flex h-[42px] cursor-grab items-start justify-start gap-[18px] overflow-x-auto scroll-smooth border-b border-light2 px-[10px] text-[14px] text-[rgba(26,26,26,1)] snap-x snap-mandatory scroll-pl-[10px] [scrollbar-width:none] [-ms-overflow-style:none] [&::-webkit-scrollbar]:hidden active:cursor-grabbing"
             style={{ WebkitOverflowScrolling: 'touch' }}
           >
             {MAIN_TABS.map((tab, index) => (

@@ -1,5 +1,6 @@
 import { useState } from 'react'
 import { swapImageExtension } from '../../lib/productImage'
+import { HomeProductDetailLink } from './HomeProductDetailLink'
 
 /** Figma 2424:16202 — mobile curation banner (345×480). */
 export const CURATION_MOBILE_WIDTH = 345
@@ -11,6 +12,7 @@ const BUTTON_ARROW = '/assets/figma/icons/button_arrow.svg'
 export interface CurationMobileSlideProps {
   /** Per-tile image URL candidates (07 editorial first). */
   tiles: string[][]
+  productIds?: (number | null)[]
   badge: string
   title: string
   ctaLabel: string
@@ -46,6 +48,7 @@ function CurationMobileTile({ candidates }: { candidates: string[] }) {
 
 export function CurationMobileSlide({
   tiles,
+  productIds = [],
   badge,
   title,
   ctaLabel,
@@ -66,7 +69,13 @@ export function CurationMobileSlide({
     >
       <div className="absolute inset-0 z-0 grid h-full w-full grid-cols-2 grid-rows-2">
         {tileSlots.map((candidates, index) => (
-          <CurationMobileTile key={index} candidates={candidates} />
+          <HomeProductDetailLink
+            key={index}
+            productId={productIds[index]}
+            className="relative block h-full w-full"
+          >
+            <CurationMobileTile candidates={candidates} />
+          </HomeProductDetailLink>
         ))}
       </div>
 

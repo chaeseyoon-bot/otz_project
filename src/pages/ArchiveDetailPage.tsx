@@ -3,6 +3,7 @@ import { ArchiveDetailImageStack } from '../components/molecules/ArchiveDetailIm
 import { ArchiveMobileDetailHeader } from '../components/organisms/ArchiveMobileDetailHeader'
 import { ArchivePcDetailContent } from '../components/organisms/ArchivePcDetailContent'
 import { ARCHIVE_DETAIL_CONFIG_UPDATED_EVENT } from '../lib/adminArchiveDetailConfig'
+import { hydrateArchiveDetailConfig } from '../lib/archiveLookbooksApi'
 import { getArchiveLookbookDetail } from '../lib/archiveLookbookDetailResolver'
 import { navigateSpa } from '../lib/spaNavigation'
 
@@ -17,6 +18,10 @@ export function ArchiveDetailPage({ lookbookId }: ArchiveDetailPageProps) {
     () => getArchiveLookbookDetail(lookbookId),
     [lookbookId, detailVersion],
   )
+
+  useEffect(() => {
+    void hydrateArchiveDetailConfig()
+  }, [])
 
   useEffect(() => {
     const refresh = () => setDetailVersion((version) => version + 1)

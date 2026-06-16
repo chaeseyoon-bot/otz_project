@@ -1,4 +1,6 @@
 import { PLANNING_COLLECTION_PRODUCT_SLOTS } from '../../lib/adminHomeMainConfig'
+import type { ResolvedPlanningCollectionProduct } from '../../lib/homeMainContentResolver'
+import { HomeProductDetailLink } from './HomeProductDetailLink'
 
 /** Figma 2354:4592 — mobile planning collection card (335px wide). */
 export const PLANNING_COLLECTION_CARD_WIDTH = 335
@@ -8,8 +10,10 @@ export interface PlanningCollectionMobileSlideProps {
   bannerImage: string | null
   tagLabel: string
   title: string
-  /** Thumbnail URLs — 1–4 registered products at fixed 4-column tile size. */
-  productImages: string[]
+  /** Registered products — 1–4 tiles at fixed 4-column size. */
+  products?: ResolvedPlanningCollectionProduct[]
+  /** @deprecated Use `products`. */
+  productImages?: string[]
   emptyLabel?: string
 }
 
@@ -17,12 +21,22 @@ export function PlanningCollectionMobileSlide({
   bannerImage,
   tagLabel,
   title,
-  productImages,
+  products = [],
+  productImages = [],
   emptyLabel = '이미지 없음',
 }: PlanningCollectionMobileSlideProps) {
   const displayTag = tagLabel.trim() || 'COLLECTION'
   const displayTitle = title.trim() || '기획전 타이틀'
-  const thumbs = productImages.slice(0, PLANNING_COLLECTION_PRODUCT_SLOTS)
+  const thumbs =
+    products.length > 0
+      ? products.slice(0, PLANNING_COLLECTION_PRODUCT_SLOTS)
+      : productImages.slice(0, PLANNING_COLLECTION_PRODUCT_SLOTS).map((image) => ({
+          productId: null,
+          image,
+          name: '',
+          discount: '',
+          price: '',
+        }))
 
   return (
     <div className="w-full" data-figma-node="2354:4592">
@@ -50,22 +64,23 @@ export function PlanningCollectionMobileSlide({
 
       {thumbs.length > 0 ? (
         <div className="mt-[2px] grid grid-cols-4 gap-[2px]">
-          {thumbs.map((image, index) => (
-            <div
-              key={index}
+          {thumbs.map((product, index) => (
+            <HomeProductDetailLink
+              key={`${product.productId ?? 'slot'}-${index}`}
+              productId={product.productId}
               className="aspect-[4/5] overflow-hidden bg-[var(--otz-color-surface-subtle)]"
             >
               <div className="flex h-full w-full items-center justify-center bg-[var(--otz-color-surface-subtle)]">
                 <div className="aspect-square w-full">
                   <img
-                    src={image}
+                    src={product.image}
                     alt=""
                     className="h-full w-full object-contain object-center mix-blend-multiply"
                     draggable={false}
                   />
                 </div>
               </div>
-            </div>
+            </HomeProductDetailLink>
           ))}
         </div>
       ) : null}

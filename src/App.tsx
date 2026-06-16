@@ -1,5 +1,6 @@
 import { useEffect, useLayoutEffect, useState, type CSSProperties } from 'react'
 import { useSpaPathname, useSpaRouteKey } from './hooks/useSpaPathname'
+import { forceReleaseBodyScrollLock } from './hooks/useLockBodyScroll'
 import { scrollSpaToTop } from './lib/spaNavigation'
 import { BottomTabBar } from './components/organisms/BottomTabBar'
 import { FooterSection } from './components/organisms/FooterSection'
@@ -10,6 +11,7 @@ import { MobileGnbProvider } from './contexts/MobileGnbContext'
 import { CartProvider } from './contexts/CartContext'
 import { EditorialConfigProvider } from './contexts/EditorialConfigContext'
 import { HomeMainConfigProvider } from './contexts/HomeMainConfigContext'
+import { hydrateArchiveDetailConfig } from './lib/archiveLookbooksApi'
 import { tokens } from './design-system/tokens'
 import { CategoryShoesPage } from './pages/CategoryShoesPage'
 import { HomePage } from './pages/HomePage'
@@ -95,6 +97,10 @@ export default function App() {
     }
   }, [])
 
+  useEffect(() => {
+    void hydrateArchiveDetailConfig()
+  }, [])
+
   const isNew = pathname.startsWith('/new')
   const isBest = pathname.startsWith('/best')
   const archiveDetailId = parseArchiveDetailId(pathname)
@@ -117,9 +123,10 @@ export default function App() {
   const isAdmin = isAdminPath(pathname)
   const isHome = pathname === '/' || pathname === ''
 
-  /** SPA route change — always open at document top (admin uses inner panel scroll). */
+  /** SPA route change — reset scroll lock leftovers and open at document top. */
   useLayoutEffect(() => {
     if (isAdmin) return
+    forceReleaseBodyScrollLock()
     scrollSpaToTop()
   }, [routeKey, isAdmin])
 
