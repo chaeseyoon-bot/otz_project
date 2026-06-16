@@ -16,7 +16,7 @@ function renderPcBlock(block: ArchivePcDetailBlock, index: number) {
         <img
           src={block.image.src}
           alt={block.image.alt ?? ''}
-          className="block h-auto w-full px-[200px] pt-[40px] pb-0"
+          className="block h-auto w-full px-[200px] pt-[40px] pb-[40px]"
           loading={index === 0 ? 'eager' : 'lazy'}
           decoding="async"
           draggable={false}
