@@ -1,10 +1,13 @@
 import { useCallback, useEffect, useMemo, useState } from 'react'
 import { ArchiveMasonryGrid } from '../components/organisms/ArchiveMasonryGrid'
-import type { ArchiveLookbookItem } from '../data/archiveLookbooks'
+import type { ArchiveLookbookItem, ArchiveSeasonId } from '../data/archiveLookbooks'
 import { ARCHIVE_DETAIL_CONFIG_UPDATED_EVENT } from '../lib/adminArchiveDetailConfig'
-import { filterResolvedArchiveLookbooks } from '../lib/archiveLookbooksResolver'
+import {
+  filterResolvedArchiveLookbooks,
+  resolveArchiveLookbookItems,
+} from '../lib/archiveLookbooksResolver'
+import { buildArchiveSeasonFilters } from '../lib/archiveSeasonFilters'
 import { getArchiveDetailPath, navigateSpa } from '../lib/spaNavigation'
-import { ARCHIVE_SEASON_FILTERS, type ArchiveSeasonId } from '../data/archiveLookbooks'
 
 /** Figma 2624:12205 (MO) / 2474:3469 (PC) */
 export function ArchivePage() {
@@ -21,9 +24,19 @@ export function ArchivePage() {
     }
   }, [])
 
+  const allLookbooks = useMemo(() => resolveArchiveLookbookItems(), [listVersion])
+
+  const seasonFilters = useMemo(() => buildArchiveSeasonFilters(allLookbooks), [allLookbooks])
+
+  useEffect(() => {
+    if (activeSeason !== 'all' && !seasonFilters.some((filter) => filter.id === activeSeason)) {
+      setActiveSeason('all')
+    }
+  }, [activeSeason, seasonFilters])
+
   const lookbooks = useMemo(
-    () => filterResolvedArchiveLookbooks(activeSeason),
-    [activeSeason, listVersion],
+    () => filterResolvedArchiveLookbooks(activeSeason, allLookbooks),
+    [activeSeason, allLookbooks],
   )
 
   const handleLookbookClick = useCallback((item: ArchiveLookbookItem) => {
@@ -35,7 +48,7 @@ export function ArchivePage() {
       {/* Mobile — season chips */}
       <section className="h-[45px] bg-[#f8f8f8] px-[15px] py-[14px] lg:hidden">
         <div className="flex h-[17px] gap-3 overflow-x-auto [scrollbar-width:none] [-ms-overflow-style:none] [&::-webkit-scrollbar]:hidden">
-          {ARCHIVE_SEASON_FILTERS.map((filter) => {
+          {seasonFilters.map((filter) => {
             const isActive = filter.id === activeSeason
             return (
               <button
@@ -61,7 +74,7 @@ export function ArchivePage() {
           ARCHIVE
         </h1>
         <div className="mt-5 flex flex-wrap items-center justify-center gap-3 pt-5">
-          {ARCHIVE_SEASON_FILTERS.map((filter) => {
+          {seasonFilters.map((filter) => {
             const isActive = filter.id === activeSeason
             return (
               <button

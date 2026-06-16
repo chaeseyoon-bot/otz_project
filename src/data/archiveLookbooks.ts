@@ -1,6 +1,11 @@
 import { archiveAsset } from '../lib/archiveAssetUrl'
 
-export type ArchiveSeasonId = 'all' | '26ss' | '25fw' | '25ss' | '24fw' | '24ss' | '23fw'
+export type ArchiveSeasonId = 'all' | (string & {})
+
+export interface ArchiveSeasonFilter {
+  id: ArchiveSeasonId
+  label: string
+}
 
 export interface ArchiveLookbookItem {
   id: string
@@ -10,17 +15,6 @@ export interface ArchiveLookbookItem {
   seasons: ArchiveSeasonId[]
   title?: string
 }
-
-/** Figma 2624:12205 — mobile archive list mock (173px-wide cells, variable height). */
-export const ARCHIVE_SEASON_FILTERS: { id: ArchiveSeasonId; label: string }[] = [
-  { id: 'all', label: 'ALL SEASON' },
-  { id: '26ss', label: '26SS' },
-  { id: '25fw', label: '25FW' },
-  { id: '25ss', label: '25SS' },
-  { id: '24fw', label: '24FW' },
-  { id: '24ss', label: '24SS' },
-  { id: '23fw', label: '23FW' },
-]
 
 const ar = (width: number, height: number) => width / height
 
@@ -69,7 +63,10 @@ export const ARCHIVE_LOOKBOOK_ITEMS: ArchiveLookbookItem[] = ARCHIVE_IMAGE_MANIF
   }),
 )
 
-export function filterArchiveLookbooks(season: ArchiveSeasonId): ArchiveLookbookItem[] {
-  if (season === 'all') return ARCHIVE_LOOKBOOK_ITEMS
-  return ARCHIVE_LOOKBOOK_ITEMS.filter((item) => item.seasons.includes(season))
+export function filterArchiveLookbooks(
+  season: ArchiveSeasonId,
+  items: ArchiveLookbookItem[] = ARCHIVE_LOOKBOOK_ITEMS,
+): ArchiveLookbookItem[] {
+  if (season === 'all') return items
+  return items.filter((item) => item.seasons.includes(season))
 }

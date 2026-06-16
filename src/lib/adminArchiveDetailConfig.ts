@@ -1,5 +1,6 @@
 import { buildPcBlocksFromImages } from '../data/archiveLookbookDetails'
 import type { ArchiveSeasonId } from '../data/archiveLookbooks'
+import { parseArchiveSeasonFromTitle } from './archiveSeasonFilters'
 
 export const ARCHIVE_DETAIL_CONFIG_UPDATED_EVENT = 'otz-archive-detail-config-updated'
 
@@ -238,10 +239,16 @@ function inferLegacyCreatedAt(id: string): string {
   return new Date(Date.UTC(2020, 0, index)).toISOString()
 }
 
-function normalizeSeasons(value: unknown): ArchiveSeasonId[] {
+function normalizeSeasons(value: unknown, title = ''): ArchiveSeasonId[] {
+  const fromTitle = title.trim() ? parseArchiveSeasonFromTitle(title) : null
+  if (fromTitle) return ['all', fromTitle.id]
+
   if (!Array.isArray(value)) return ['all']
-  const allowed = new Set<ArchiveSeasonId>(['all', '26ss', '25fw', '25ss', '24fw', '24ss', '23fw'])
-  const seasons = value.filter((item): item is ArchiveSeasonId => typeof item === 'string' && allowed.has(item as ArchiveSeasonId))
+  const seasonPattern = /^\d{2}(ss|fw)$/
+  const seasons = value.filter(
+    (item): item is ArchiveSeasonId =>
+      typeof item === 'string' && (item === 'all' || seasonPattern.test(item)),
+  )
   return seasons.length ? seasons : ['all']
 }
 
@@ -254,7 +261,7 @@ function normalizeLookbookEntry(raw: LegacyAdminArchiveLookbookEntry | undefined
   return {
     ...entry,
     title: typeof raw.title === 'string' ? raw.title : entry.title,
-    seasons: normalizeSeasons(raw.seasons),
+    seasons: normalizeSeasons(raw.seasons, typeof raw.title === 'string' ? raw.title : ''),
     aspectRatio:
       typeof raw.aspectRatio === 'number' && Number.isFinite(raw.aspectRatio) && raw.aspectRatio > 0
         ? raw.aspectRatio

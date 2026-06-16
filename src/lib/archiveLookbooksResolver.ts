@@ -8,6 +8,7 @@ import {
   loadAdminArchiveDetailConfig,
   sortArchiveLookbooksNewestFirst,
 } from './adminArchiveDetailConfig'
+import { archiveItemMatchesSeason, parseArchiveSeasonFromTitle } from './archiveSeasonFilters'
 
 function staticItemForId(id: string): ArchiveLookbookItem | undefined {
   return ARCHIVE_LOOKBOOK_ITEMS.find((item) => item.id === id)
@@ -24,12 +25,20 @@ function adminEntryToListItem(entry: {
   if (!thumbnail) return null
 
   const staticItem = staticItemForId(entry.id)
+  const title = entry.title.trim() || staticItem?.title || ''
+  const fromTitle = title ? parseArchiveSeasonFromTitle(title) : null
+  const seasons: ArchiveSeasonId[] = fromTitle
+    ? ['all', fromTitle.id]
+    : entry.seasons.length
+      ? entry.seasons
+      : (staticItem?.seasons ?? ['all'])
+
   return {
     id: entry.id,
     image: thumbnail,
     aspectRatio: entry.aspectRatio || staticItem?.aspectRatio || 460 / 575,
-    seasons: entry.seasons.length ? entry.seasons : (staticItem?.seasons ?? ['all']),
-    title: entry.title.trim() || staticItem?.title,
+    seasons,
+    title: title || undefined,
   }
 }
 
@@ -45,8 +54,10 @@ export function resolveArchiveLookbookItems(): ArchiveLookbookItem[] {
   return ARCHIVE_LOOKBOOK_ITEMS
 }
 
-export function filterResolvedArchiveLookbooks(season: ArchiveSeasonId): ArchiveLookbookItem[] {
-  const items = resolveArchiveLookbookItems()
+export function filterResolvedArchiveLookbooks(
+  season: ArchiveSeasonId,
+  items: ArchiveLookbookItem[] = resolveArchiveLookbookItems(),
+): ArchiveLookbookItem[] {
   if (season === 'all') return items
-  return items.filter((item) => item.seasons.includes(season))
+  return items.filter((item) => archiveItemMatchesSeason(item, season))
 }

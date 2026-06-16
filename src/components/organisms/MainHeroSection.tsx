@@ -13,11 +13,9 @@ const LOOP_REPEAT = 3
 /** Figma BigBanner slide gap (550 − 530) */
 const HERO_SLIDE_GAP_LG_PX = 20
 
+/** Figma 2601:22615 — 1st/3rd/… banners: top 30px; 2nd/4th/…: bottom 30px. */
 function getHeroSlideRadiusClass(slidePosition: number): string {
-  if (slidePosition === 0) return 'lg:rounded-t-[30px]'
-  if (slidePosition === 1) return 'lg:rounded-b-[30px]'
-  if (slidePosition === 2) return 'lg:rounded-tr-[30px]'
-  return ''
+  return slidePosition % 2 === 0 ? 'lg:rounded-t-[30px]' : 'lg:rounded-b-[30px]'
 }
 
 function getHeroSlideStep(el: HTMLDivElement | null): number {
