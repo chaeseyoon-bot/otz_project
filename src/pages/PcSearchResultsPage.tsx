@@ -13,14 +13,19 @@ import {
 import { addRecentSearch } from '../lib/recentSearchStorage'
 import { getSearchResultsFallbackProducts, resolveSearchResultCount } from '../lib/searchResultsCatalog'
 import { buildSearchResultsPath } from '../lib/searchRoutes'
-import { sortSearchProducts, toSearchFilterableProduct } from '../lib/storefrontSearch'
+import {
+  DEFAULT_STOREFRONT_SORT_INDEX,
+  sortSearchProducts,
+  STOREFRONT_SORT_OPTIONS,
+  toSearchFilterableProduct,
+} from '../lib/storefrontSearch'
 import { getProductDetailPath } from '../lib/productRoutes'
 import { useSearchProducts } from '../hooks/useSearchProducts'
 import { useSearchResultsQuery } from '../hooks/useSearchResultsQuery'
 import { useSpaPathname } from '../hooks/useSpaPathname'
 import { navigateSpa, type SpaPath } from '../lib/spaNavigation'
 
-const SORT_OPTIONS = ['인기상품순', '낮은가격순', '높은가격순', '신상품순'] as const
+const SORT_OPTIONS = STOREFRONT_SORT_OPTIONS
 
 const iconListChevron = figmaAsset('icons/list_chevron.svg')
 const iconSortCheck = figmaAsset('icons/sort_check_outline.svg')
@@ -94,7 +99,7 @@ export function PcSearchResultsPage() {
   const [appliedPcFilters, setAppliedPcFilters] = useState(() => clonePcFilters(EMPTY_PC_FILTERS))
   const [likedIds, setLikedIds] = useState<Set<string>>(() => new Set())
   const [sortOpen, setSortOpen] = useState(false)
-  const [sortIndex, setSortIndex] = useState(0)
+  const [sortIndex, setSortIndex] = useState(DEFAULT_STOREFRONT_SORT_INDEX)
   const [fallbackProducts, setFallbackProducts] = useState({
     recentlyViewed: [] as ReturnType<typeof toSearchFilterableProduct>[],
     recommended: [] as ReturnType<typeof toSearchFilterableProduct>[],

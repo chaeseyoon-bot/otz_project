@@ -2612,8 +2612,8 @@ export function HomeMainManagement() {
         <section className="space-y-4">
           <SpecNote>
             Figma 2786:7841 · 홈 메인 마케팅 레이어 팝업 (MO 하단 시트 / PC 우하단 플로팅) · 배너 이미지 750×680 또는
-            375×340 비율 권장 · jpg/png · 대타이틀·서브텍스트 줄바꿈 지원 · 최소 1개, 최대 10개 · 2개 이상일 때
-            슬라이드 인디케이터 노출
+            375×340 비율 권장 · jpg/png · 대타이틀·서브텍스트 줄바꿈 지원 · 링크 URL 입력 시 배너 탭으로 이동 · 최소 1개,
+            최대 10개 · 2개 이상일 때 슬라이드 인디케이터 노출
           </SpecNote>
 
           <div className="grid gap-6 lg:grid-cols-2">
@@ -2685,6 +2685,14 @@ export function HomeMainManagement() {
                       placeholder="예: 로마리 스웨이드 시즌 한정…"
                       multiline
                       rows={3}
+                    />
+                  </div>
+                  <div className="flex flex-col gap-1">
+                    <FieldLabel>링크 URL</FieldLabel>
+                    <TextInput
+                      value={slide.linkHref ?? ''}
+                      onChange={(v) => updateMarketingPopup(index, { linkHref: v })}
+                      placeholder="예: /new"
                     />
                   </div>
                 </div>

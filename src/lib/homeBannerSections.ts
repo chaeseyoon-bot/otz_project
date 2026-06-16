@@ -2,7 +2,7 @@ import type {
   AdminHomeMainConfig,
   AdminMainBannerSlide,
 } from './adminHomeMainConfig'
-import { normalizeLookbookSection } from './adminHomeMainConfig'
+import { normalizeLookbookSection, normalizeMarketingPopupSlides } from './adminHomeMainConfig'
 import { deepRewriteHomeBannerUrls, rewriteHomeBannerImageUrl } from './homeBannersAssetUrl'
 
 /** Admin tab id → Supabase `home_banners.section_id` */
@@ -231,8 +231,10 @@ export function mergeHomeBannerRowsIntoConfig(
         break
       case 'marketing_popup':
         if (Array.isArray(meta.marketingPopupSlides) && meta.marketingPopupSlides.length > 0) {
-          next.marketingPopupSlides =
-            meta.marketingPopupSlides as AdminHomeMainConfig['marketingPopupSlides']
+          next.marketingPopupSlides = normalizeMarketingPopupSlides(
+            meta.marketingPopupSlides,
+            next.marketingPopupSlides,
+          )
         }
         break
       default:

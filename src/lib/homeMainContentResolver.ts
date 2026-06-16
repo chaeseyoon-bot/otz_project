@@ -106,6 +106,7 @@ export interface ResolvedMarketingPopupSlide {
   imageUrl: string
   title: string
   subtitle: string
+  linkHref?: string
 }
 
 export function resolveHeroSlides(mainBanners: AdminMainBannerSlide[]): ResolvedHeroSlide[] {
@@ -672,11 +673,13 @@ export function resolveMarketingPopupSlides(
 
   return slides.map((slide) => {
     const imageUrl = slide.imageUrl?.trim()
+    const linkHref = (slide.linkHref ?? '').trim()
     return {
       id: slide.id,
       imageUrl: imageUrl || MARKETING_POPUP_FALLBACK_IMAGE,
       title: (slide.title ?? '').trim() || DEFAULT_MARKETING_POPUP_RESOLVED.title,
       subtitle: (slide.subtitle ?? '').trim(),
+      linkHref: linkHref || undefined,
     }
   })
 }

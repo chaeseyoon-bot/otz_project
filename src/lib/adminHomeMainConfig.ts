@@ -122,6 +122,8 @@ export interface AdminMarketingPopupSlide {
   title: string
   /** Sub copy — newline-supported. */
   subtitle: string
+  /** Banner tap destination — internal path or external URL. */
+  linkHref: string
 }
 
 /** Figma 2366:5794 — home lookbook (MO 3 / PC 7 images from archive lookbook). */
@@ -224,6 +226,7 @@ const DEFAULT_MARKETING_POPUP_SLIDES: AdminMarketingPopupSlide[] = [
     imageFileName: null,
     title: '',
     subtitle: '',
+    linkHref: '',
   },
 ]
 
@@ -242,6 +245,7 @@ function normalizeMarketingPopupSlide(
           : fallback.imageFileName,
     title: typeof raw.title === 'string' ? raw.title : fallback.title,
     subtitle: typeof raw.subtitle === 'string' ? raw.subtitle : fallback.subtitle,
+    linkHref: typeof raw.linkHref === 'string' ? raw.linkHref : fallback.linkHref,
   }
 }
 
@@ -270,6 +274,7 @@ export function createEmptyMarketingPopupSlide(suffix = ''): AdminMarketingPopup
     imageFileName: null,
     title: '',
     subtitle: '',
+    linkHref: '',
   }
 }
 

@@ -30,8 +30,13 @@ import { useMobileGnb } from '../contexts/MobileGnbContext'
 import { useLockBodyScroll } from '../hooks/useLockBodyScroll'
 import { useMobileShellFixedPin } from '../hooks/useMobileShellFixedPin'
 import { figmaAsset } from '../lib/figmaAssetUrl'
+import {
+  DEFAULT_STOREFRONT_SORT_INDEX,
+  sortStorefrontProducts,
+  STOREFRONT_SORT_OPTIONS,
+} from '../lib/storefrontSearch'
 
-const SORT_OPTIONS = ['인기상품순', '낮은가격순', '높은가격순', '신상품순'] as const
+const SORT_OPTIONS = STOREFRONT_SORT_OPTIONS
 
 /** Adapts a CSV-backed product into the PLP's filterable shape. */
 function toFilterableProduct(item: UiProduct): CategoryShoeProduct {
@@ -138,7 +143,7 @@ export function CategoryShoesPage() {
   const [mainMenuOpen, setMainMenuOpen] = useState(false)
   const [filterOpen, setFilterOpen] = useState(false)
   const [sortOpen, setSortOpen] = useState(false)
-  const [sortIndex, setSortIndex] = useState(0)
+  const [sortIndex, setSortIndex] = useState(DEFAULT_STOREFRONT_SORT_INDEX)
   const sortRef = useRef<HTMLDivElement>(null)
   const { isOpen: gnbOpen } = useMobileGnb()
   const { sentinelRef, barRef, pinned, shellLeft, shellWidth, barHeight } = useMobileShellFixedPin()
@@ -236,6 +241,11 @@ export function CategoryShoesPage() {
   const filteredProducts = useMemo(
     () => filterCategoryProducts(categoryProducts, appliedPcFilters),
     [categoryProducts, appliedPcFilters],
+  )
+
+  const sortedProducts = useMemo(
+    () => sortStorefrontProducts(filteredProducts, sortIndex),
+    [filteredProducts, sortIndex],
   )
 
   const displayProductCount = filteredProducts.length.toLocaleString('ko-KR')
@@ -367,7 +377,7 @@ export function CategoryShoesPage() {
               <p className="py-20 text-center text-[13px] text-light4">표시할 상품이 없습니다.</p>
             ) : (
               <div className="mt-0 grid grid-cols-2 gap-x-[6px] gap-y-[50px] lg:mt-0 lg:grid-cols-4 lg:gap-x-[10px] lg:gap-y-14">
-                {filteredProducts.map((product) => (
+                {sortedProducts.map((product) => (
                   <div
                     key={product.id}
                     className="cursor-pointer p-0"

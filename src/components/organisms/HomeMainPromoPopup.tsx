@@ -6,6 +6,17 @@ import { useAdminHomeMainConfig } from '../../hooks/useAdminHomeMainConfig'
 import { useLockBodyScroll } from '../../hooks/useLockBodyScroll'
 import { tokens } from '../../design-system/tokens'
 import { resolveMarketingPopupSlides } from '../../lib/homeMainContentResolver'
+import { isSpaPath, navigateSpa, type SpaPath } from '../../lib/spaNavigation'
+
+function navigatePromoPopupHref(href: string) {
+  const trimmed = href.trim()
+  if (!trimmed) return
+  if (isSpaPath(trimmed)) {
+    navigateSpa(trimmed as SpaPath)
+    return
+  }
+  window.location.assign(trimmed)
+}
 
 const STORAGE_HIDE_TODAY = 'otz_home_promo_hide_day'
 const STORAGE_SESSION_CLOSED = 'otz_home_promo_session_closed'
@@ -127,6 +138,15 @@ export function HomeMainPromoPopup() {
     setShow(false)
   }, [])
 
+  const handleBannerLinkClick = useCallback(
+    (href?: string) => {
+      if (!href) return
+      closeForSession()
+      navigatePromoPopupHref(href)
+    },
+    [closeForSession],
+  )
+
   if (!show) return null
 
   const popupTitleId = 'home-promo-popup-title'
@@ -153,25 +173,55 @@ export function HomeMainPromoPopup() {
     <>
       <div style={bannerStyle}>
         <div ref={bannerScrollerRef} style={bannerTrackStyle} onScroll={syncSlideFromScroll}>
-          {slides.map((slide) => (
-            <div key={slide.id} style={styles.bannerSlide}>
-              <img
-                src={slide.imageUrl}
-                alt=""
-                aria-hidden
-                style={styles.bannerImg}
-                decoding="async"
-              />
-              <div style={styles.bannerText}>
-                <h2 id={popupTitleId} style={styles.bannerTitle}>
-                  {slide.title}
-                </h2>
-                {slide.subtitle ? (
-                  <p style={styles.bannerBodyLine}>{slide.subtitle}</p>
-                ) : null}
+          {slides.map((slide) => {
+            const hasLink = Boolean(slide.linkHref)
+            return (
+              <div key={slide.id} style={styles.bannerSlide}>
+                {hasLink ? (
+                  <button
+                    type="button"
+                    style={styles.bannerLinkButton}
+                    aria-label={`${slide.title} 바로가기`}
+                    onClick={() => handleBannerLinkClick(slide.linkHref)}
+                  >
+                    <img
+                      src={slide.imageUrl}
+                      alt=""
+                      aria-hidden
+                      style={styles.bannerImg}
+                      decoding="async"
+                    />
+                    <div style={styles.bannerText}>
+                      <h2 id={popupTitleId} style={styles.bannerTitle}>
+                        {slide.title}
+                      </h2>
+                      {slide.subtitle ? (
+                        <p style={styles.bannerBodyLine}>{slide.subtitle}</p>
+                      ) : null}
+                    </div>
+                  </button>
+                ) : (
+                  <>
+                    <img
+                      src={slide.imageUrl}
+                      alt=""
+                      aria-hidden
+                      style={styles.bannerImg}
+                      decoding="async"
+                    />
+                    <div style={styles.bannerText}>
+                      <h2 id={popupTitleId} style={styles.bannerTitle}>
+                        {slide.title}
+                      </h2>
+                      {slide.subtitle ? (
+                        <p style={styles.bannerBodyLine}>{slide.subtitle}</p>
+                      ) : null}
+                    </div>
+                  </>
+                )}
               </div>
-            </div>
-          ))}
+            )
+          })}
         </div>
         {slideCount >= 2 ? (
           <div style={styles.counterRow} aria-hidden>
@@ -291,6 +341,19 @@ const styles: Record<string, CSSProperties> = {
     height: '100%',
     scrollSnapAlign: 'start',
     backgroundColor: tokens.color.black,
+  },
+  bannerLinkButton: {
+    position: 'relative',
+    display: 'block',
+    width: '100%',
+    height: '100%',
+    border: 'none',
+    padding: 0,
+    margin: 0,
+    background: 'none',
+    cursor: 'pointer',
+    textAlign: 'left',
+    fontFamily: 'inherit',
   },
   /** Banner sits inside rounded PC card; radii come from outer shell. */
   bannerAsDesktopCardSlice: {

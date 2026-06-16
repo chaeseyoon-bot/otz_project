@@ -256,6 +256,8 @@ export type MappedProduct = ProductCardItem & {
   /** @deprecated Legacy preset ids until all rows use color_hex. */
   filterColors: string[]
   freeShipping: boolean
+  /** Admin registration timestamp — PLP 최근등록순. */
+  createdAt?: string | null
 }
 
 /** Maps a DB row to the UI card model, applying id-based cut image mapping (03/07). */
@@ -281,6 +283,7 @@ export function mapProductRow(row: ProductRow): MappedProduct {
     colorSwatchUrl: row.color_swatch_url?.trim() || null,
     filterColors: parseProductFilterColors(row.filter_colors),
     freeShipping: row.free_shipping == null ? true : coerceProductFlag(row.free_shipping),
+    createdAt: row.created_at ?? null,
     badges:
       getTotalProductStock(parseProductStock(row.stock)) === 0 && row.stock != null
         ? [{ id: 'sold-out', label: '품절' }]
@@ -546,10 +549,11 @@ export async function fetchAllProductsFromSupabase(): Promise<ProductRow[]> {
   const { data, error } = await supabase
     .from('products')
     .select(ADMIN_PRODUCT_SELECT)
-    .order('id', { ascending: true })
+    .order('created_at', { ascending: false, nullsFirst: false })
 
   if (error) throw new Error(error.message)
-  return (data ?? []) as ProductRow[]
+  const rows = (data ?? []) as ProductRow[]
+  return [...rows].sort(compareProductsByRegistrationDesc)
 }
 
 export interface AdminProductExposurePatch {

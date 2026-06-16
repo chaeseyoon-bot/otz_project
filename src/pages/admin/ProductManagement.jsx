@@ -9,6 +9,7 @@ import {
   coerceProductFlag,
   canRegisterMoreForYouProducts,
   compareProductsByForuSortAsc,
+  compareProductsByRegistrationDesc,
   deleteAdminProduct,
   fetchAllProductsFromSupabase,
   formatAdminDiscountRate,
@@ -318,13 +319,15 @@ export function ProductManagement() {
 
   const filteredProducts = useMemo(() => {
     const q = searchQuery.trim().toLowerCase()
-    return products.filter((product) => {
-      const categoryOk =
-        categoryFilter === 'all' || resolveProductCategory(product) === categoryFilter
-      const title = adminProductTitle(product).toLowerCase()
-      const searchOk = !q || title.includes(q) || String(product.id).includes(q)
-      return categoryOk && searchOk
-    })
+    return products
+      .filter((product) => {
+        const categoryOk =
+          categoryFilter === 'all' || resolveProductCategory(product) === categoryFilter
+        const title = adminProductTitle(product).toLowerCase()
+        const searchOk = !q || title.includes(q) || String(product.id).includes(q)
+        return categoryOk && searchOk
+      })
+      .sort(compareProductsByRegistrationDesc)
   }, [products, categoryFilter, searchQuery])
 
   const forYouProducts = useMemo(

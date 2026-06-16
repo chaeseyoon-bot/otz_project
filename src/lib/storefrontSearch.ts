@@ -28,11 +28,39 @@ export function toSearchFilterableProduct(item: MappedProduct): CategoryShoeProd
   }
 }
 
-const SORT_OPTIONS = ['인기상품순', '낮은가격순', '높은가격순', '신상품순'] as const
+export const STOREFRONT_SORT_OPTIONS = [
+  '인기상품순',
+  '낮은가격순',
+  '높은가격순',
+  '최근등록순',
+] as const
 
-export function sortSearchProducts(products: readonly MappedProduct[], sortIndex: number): MappedProduct[] {
+export type StorefrontSortOption = (typeof STOREFRONT_SORT_OPTIONS)[number]
+
+/** Default PLP sort — 최근등록순. */
+export const DEFAULT_STOREFRONT_SORT_INDEX = STOREFRONT_SORT_OPTIONS.indexOf('최근등록순')
+
+export interface StorefrontSortableProduct {
+  id: string
+  price: string
+  createdAt?: string | null
+}
+
+function storefrontProductRegisteredAtMs(product: StorefrontSortableProduct): number {
+  const raw = product.createdAt
+  if (typeof raw === 'string' && raw.trim()) {
+    const parsed = Date.parse(raw)
+    if (Number.isFinite(parsed)) return parsed
+  }
+  return Number(product.id) || 0
+}
+
+export function sortStorefrontProducts<T extends StorefrontSortableProduct>(
+  products: readonly T[],
+  sortIndex: number,
+): T[] {
   const sorted = [...products]
-  const option = SORT_OPTIONS[sortIndex] ?? SORT_OPTIONS[0]
+  const option = STOREFRONT_SORT_OPTIONS[sortIndex] ?? STOREFRONT_SORT_OPTIONS[DEFAULT_STOREFRONT_SORT_INDEX]
 
   if (option === '낮은가격순') {
     return sorted.sort((a, b) => parseDisplayPrice(a.price) - parseDisplayPrice(b.price))
@@ -40,10 +68,20 @@ export function sortSearchProducts(products: readonly MappedProduct[], sortIndex
   if (option === '높은가격순') {
     return sorted.sort((a, b) => parseDisplayPrice(b.price) - parseDisplayPrice(a.price))
   }
-  if (option === '신상품순') {
-    return sorted.sort((a, b) => Number(b.id) - Number(a.id))
+  if (option === '최근등록순') {
+    return sorted.sort((a, b) => {
+      const aMs = storefrontProductRegisteredAtMs(a)
+      const bMs = storefrontProductRegisteredAtMs(b)
+      if (aMs !== bMs) return bMs - aMs
+      return Number(b.id) - Number(a.id)
+    })
   }
   return sorted.sort((a, b) => Number(a.id) - Number(b.id))
+}
+
+/** @deprecated Use `sortStorefrontProducts`. */
+export function sortSearchProducts(products: readonly MappedProduct[], sortIndex: number): MappedProduct[] {
+  return sortStorefrontProducts(products, sortIndex)
 }
 
 /** Filters the live catalog by name, tags, subcategory, collection, and id. */
