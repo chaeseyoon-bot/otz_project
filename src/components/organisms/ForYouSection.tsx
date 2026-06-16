@@ -85,7 +85,7 @@ function ForYouPagerArrow({ direction, disabled, onClick }: ForYouPagerArrowProp
       disabled={disabled}
       aria-label={isLeft ? '이전 상품 목록' : '다음 상품 목록'}
       onClick={onClick}
-      className={`absolute top-1/2 z-10 flex size-10 -translate-y-1/2 items-center justify-center rounded-[8px] border-0 p-0 text-white transition-opacity disabled:cursor-default disabled:opacity-40 ${
+      className={`absolute top-1/2 z-10 flex size-10 -translate-y-1/2 items-center justify-center rounded-[8px] border-0 p-0 text-white opacity-0 pointer-events-none transition-opacity duration-200 ease-out group-hover:pointer-events-auto group-hover:opacity-100 group-hover:disabled:opacity-40 group-focus-within:pointer-events-auto group-focus-within:opacity-100 group-focus-within:disabled:opacity-40 disabled:cursor-default ${
         isLeft ? 'left-6 bg-black/25 hover:enabled:bg-black/35' : 'right-6 bg-black/55 hover:enabled:bg-black/65'
       }`}
     >
@@ -291,7 +291,7 @@ export function ForYouSection() {
         {/* PC — Figma 2601:22727; 5 tiles per page + side arrows when > 5 */}
         <div className="relative mt-6 hidden lg:block">
           <div
-            className="relative overflow-hidden rounded-[20px] px-6 py-4"
+            className="group relative overflow-hidden rounded-[20px] px-6 py-4"
             style={{
               backgroundColor: tokens.color.surfaceSubtle,
               color: 'rgba(26, 26, 26, 1)',

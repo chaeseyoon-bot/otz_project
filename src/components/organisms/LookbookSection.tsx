@@ -47,7 +47,7 @@ function LookbookCopyBlock({
   return (
     <div className={`flex flex-col ${gapClassName}`}>
       <div className="flex flex-col gap-3">
-        <h2 className="m-0 text-[34px] font-extrabold leading-[1.2] tracking-[-0.02em] text-dark">
+        <h2 className="m-0 text-[30px] font-extrabold leading-[1.2] tracking-[-0.02em] text-dark">
           {titleLines.map((line, index) => (
             <span key={index} className="block">
               {line}

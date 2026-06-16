@@ -2,6 +2,7 @@ import type {
   AdminHomeMainConfig,
   AdminMainBannerSlide,
 } from './adminHomeMainConfig'
+import { normalizeLookbookSection } from './adminHomeMainConfig'
 import { deepRewriteHomeBannerUrls, rewriteHomeBannerImageUrl } from './homeBannersAssetUrl'
 
 /** Admin tab id → Supabase `home_banners.section_id` */
@@ -222,7 +223,10 @@ export function mergeHomeBannerRowsIntoConfig(
         break
       case 'lookbook':
         if (meta.lookbookSection && typeof meta.lookbookSection === 'object') {
-          next.lookbookSection = meta.lookbookSection as AdminHomeMainConfig['lookbookSection']
+          next.lookbookSection = normalizeLookbookSection(
+            meta.lookbookSection as AdminHomeMainConfig['lookbookSection'],
+            next.lookbookSection,
+          )
         }
         break
       case 'marketing_popup':

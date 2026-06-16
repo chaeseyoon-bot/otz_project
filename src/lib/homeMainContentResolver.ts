@@ -602,12 +602,15 @@ export interface ResolvedLookbookSection {
 }
 
 export function resolveLookbookSection(lookbook?: AdminLookbookSection): ResolvedLookbookSection {
+  const usesLatestArchive = lookbook?.archiveLookbookId == null
   const archiveLookbookId = resolveArchiveLookbookId(lookbook?.archiveLookbookId)
   const archiveDefaults = getDefaultLookbookSlotUrls(archiveLookbookId)
 
   const imageUrls = Array.from({ length: LOOKBOOK_HOME_IMAGE_SLOTS }, (_, index) => {
-    const override = lookbook?.imageSlots?.[index]?.imageUrl?.trim()
-    if (override) return override
+    if (!usesLatestArchive) {
+      const override = lookbook?.imageSlots?.[index]?.imageUrl?.trim()
+      if (override) return override
+    }
     return archiveDefaults[index] ?? LOOKBOOK_FALLBACK_IMAGES[index % LOOKBOOK_FALLBACK_IMAGES.length]
   })
 

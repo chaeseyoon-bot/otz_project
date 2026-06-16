@@ -1,5 +1,6 @@
 import { useEffect, useLayoutEffect, useState, type CSSProperties } from 'react'
-import { useSpaPathname } from './hooks/useSpaPathname'
+import { useSpaPathname, useSpaRouteKey } from './hooks/useSpaPathname'
+import { scrollSpaToTop } from './lib/spaNavigation'
 import { BottomTabBar } from './components/organisms/BottomTabBar'
 import { FooterSection } from './components/organisms/FooterSection'
 import { HeaderSection } from './components/organisms/HeaderSection'
@@ -67,6 +68,7 @@ const shellStyles: Record<string, CSSProperties> = {
 
 export default function App() {
   const pathname = useSpaPathname()
+  const routeKey = useSpaRouteKey()
   const [mobileScale, setMobileScale] = useState(1)
   const [isMobileViewport, setIsMobileViewport] = useState(false)
 
@@ -85,6 +87,12 @@ export default function App() {
     updateViewportScale()
     window.addEventListener('resize', updateViewportScale)
     return () => window.removeEventListener('resize', updateViewportScale)
+  }, [])
+
+  useEffect(() => {
+    if ('scrollRestoration' in window.history) {
+      window.history.scrollRestoration = 'manual'
+    }
   }, [])
 
   const isNew = pathname.startsWith('/new')
@@ -109,26 +117,11 @@ export default function App() {
   const isAdmin = isAdminPath(pathname)
   const isHome = pathname === '/' || pathname === ''
 
-  /** PDP entry / product switch — always start at top (SPA keeps window scroll otherwise). */
+  /** SPA route change — always open at document top (admin uses inner panel scroll). */
   useLayoutEffect(() => {
-    if (productId != null) {
-      window.scrollTo(0, 0)
-      return
-    }
-
-    if (isAdmin) {
-      window.scrollTo(0, 0)
-      return
-    }
-
-    /** Shorter route body can leave scrollY past max — browser clamps async; sync before paint to avoid header scroll glitches. */
-    const root = document.documentElement
-    const maxScroll = Math.max(0, root.scrollHeight - window.innerHeight)
-    const y = window.scrollY
-    if (y > maxScroll) {
-      window.scrollTo(0, maxScroll)
-    }
-  }, [pathname, productId, isAdmin])
+    if (isAdmin) return
+    scrollSpaToTop()
+  }, [routeKey, isAdmin])
 
   /** Admin pages manage scroll inside panels — lock document scroll to avoid empty tail space. */
   useLayoutEffect(() => {
@@ -153,7 +146,7 @@ export default function App() {
       root.style.height = '100%'
       root.style.overflow = 'hidden'
     }
-    window.scrollTo(0, 0)
+    scrollSpaToTop()
 
     return () => {
       html.style.overflow = prevHtmlOverflow

@@ -597,13 +597,15 @@ export function normalizeLookbookSection(
     ...DEFAULT_LOOKBOOK_COPY,
     imageSlots: createEmptyLookbookImageSlots(),
   }
-  return {
-    archiveLookbookId:
-      typeof raw?.archiveLookbookId === 'string'
-        ? raw.archiveLookbookId
-        : raw?.archiveLookbookId === null
-          ? null
-          : base.archiveLookbookId,
+  const archiveLookbookId =
+    typeof raw?.archiveLookbookId === 'string'
+      ? raw.archiveLookbookId
+      : raw?.archiveLookbookId === null
+        ? null
+        : base.archiveLookbookId
+
+  const section: AdminLookbookSection = {
+    archiveLookbookId,
     badge: typeof raw?.badge === 'string' ? raw.badge : base.badge,
     title: typeof raw?.title === 'string' ? raw.title : base.title,
     body: typeof raw?.body === 'string' ? raw.body : base.body,
@@ -612,6 +614,13 @@ export function normalizeLookbookSection(
     linkHref: typeof raw?.linkHref === 'string' ? raw.linkHref : base.linkHref,
     imageSlots: normalizeLookbookImageSlots(raw?.imageSlots ?? base.imageSlots),
   }
+
+  // Latest archive mode always pulls MO 3 / PC 7 from archive detail — ignore stale slot uploads.
+  if (section.archiveLookbookId == null) {
+    section.imageSlots = createEmptyLookbookImageSlots()
+  }
+
+  return section
 }
 
 export function normalizeCurationProducts(

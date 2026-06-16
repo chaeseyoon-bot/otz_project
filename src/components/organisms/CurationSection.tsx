@@ -87,7 +87,7 @@ export function CurationSection() {
                 </span>
               </div>
               <div className="flex flex-col gap-[30px]">
-                <h2 className="m-0 whitespace-pre-line text-[34px] font-extrabold leading-[1.2] tracking-[-0.02em] text-dark">
+                <h2 className="m-0 whitespace-pre-line text-[30px] font-extrabold leading-[1.2] tracking-[-0.02em] text-dark">
                   {copy.title}
                 </h2>
                 <a

@@ -195,7 +195,7 @@ export function PlanningDesktopMerchSection() {
                       {slide.badge}
                     </span>
                     <div className="flex flex-col gap-1.5">
-                      <h3 className="m-0 text-[24px] font-extrabold leading-[1.2] tracking-[-0.02em]">{slide.title}</h3>
+                      <h3 className="m-0 text-[24px] font-bold leading-[1.2] tracking-[-0.02em]">{slide.title}</h3>
                       <p className="m-0 text-[14px] font-normal leading-[1.4] tracking-[-0.02em]">{slide.subtitle}</p>
                     </div>
                   </div>

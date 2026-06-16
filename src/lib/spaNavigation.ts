@@ -95,14 +95,17 @@ export function isAlreadyOnSpaPath(path: SpaPath) {
   return p === path
 }
 
+/** Scroll document to top after SPA navigation. */
+export function scrollSpaToTop() {
+  window.scrollTo(0, 0)
+}
+
 export function navigateSpa(path: SpaPath) {
   if (getSpaHref() !== path) {
     window.history.pushState({}, '', path)
   }
   notifySpaNavigation()
-  if (path === '/' || path === '/brand-story') {
-    window.scrollTo(0, 0)
-  }
+  scrollSpaToTop()
 }
 
 export { getArchiveDetailPath } from './archiveRoutes'

@@ -4,7 +4,7 @@ import {
   getLnbSubItems,
   type CategoryMobileMainId,
 } from '../data/categoryMobileMain'
-import { notifySpaNavigation } from './spaNavigation'
+import { notifySpaNavigation, scrollSpaToTop } from './spaNavigation'
 
 export const CATEGORY_PLP_PATH = '/category/shoes'
 
@@ -118,7 +118,7 @@ export function navigateCategoryPlp(
 
   if (currentPath === nextPath) {
     notifySpaNavigation()
-    window.scrollTo(0, 0)
+    scrollSpaToTop()
     return
   }
 
@@ -130,7 +130,7 @@ export function navigateCategoryPlp(
 
   notifySpaNavigation()
   if (!options?.replace) {
-    window.scrollTo(0, 0)
+    scrollSpaToTop()
   }
 }
 
@@ -149,7 +149,7 @@ export function navigateBrandSeriesHref(href: string): void {
   if (trimmed.startsWith('/') && !trimmed.startsWith('//')) {
     window.history.pushState({}, '', trimmed)
     notifySpaNavigation()
-    window.scrollTo(0, 0)
+    scrollSpaToTop()
     return
   }
 

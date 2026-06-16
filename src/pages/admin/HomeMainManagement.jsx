@@ -1087,6 +1087,10 @@ function LookbookCopyPanel({ lookbookSection, onUpdate }) {
           onChange={(event) =>
             onUpdate({
               archiveLookbookId: event.target.value ? event.target.value : null,
+              imageSlots: Array.from({ length: LOOKBOOK_IMAGE_SLOTS }, () => ({
+                imageUrl: null,
+                imageFileName: null,
+              })),
             })
           }
           className="h-9 w-full rounded-sm border border-lightGray bg-white px-3 text-bodyRegular2 text-dark outline-none focus:border-dark"
@@ -1101,7 +1105,7 @@ function LookbookCopyPanel({ lookbookSection, onUpdate }) {
         </select>
       </div>
       <p className="m-0 text-[11px] text-subtleText">
-        슬롯에 직접 업로드한 이미지가 없으면 선택한 아카이브 룩북에서 MO 3장 · PC 7장을 불러옵니다.
+        최신 룩북 선택 시 아카이브 상세 이미지 MO 3장 · PC 7장이 자동 사용됩니다. 특정 룩북을 고른 뒤 슬롯별로 업로드하면 해당 슬롯만 교체됩니다.
       </p>
 
       <div className="flex w-full flex-col gap-3">

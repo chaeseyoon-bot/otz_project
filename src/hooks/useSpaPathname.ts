@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react'
-import { getSpaPathname, subscribeSpaPathname } from '../lib/spaNavigation'
+import { getSpaHref, getSpaPathname, subscribeSpaPathname } from '../lib/spaNavigation'
 
 /** Shared pathname for client-side routes (`/`, `/new`, `/best`, …). */
 export function useSpaPathname() {
@@ -16,4 +16,21 @@ export function useSpaPathname() {
   }, [])
 
   return pathname
+}
+
+/** Pathname + search — use for scroll reset when query-only navigation changes the view. */
+export function useSpaRouteKey() {
+  const [routeKey, setRouteKey] = useState(getSpaHref)
+
+  useEffect(() => {
+    const sync = () => setRouteKey(getSpaHref())
+    window.addEventListener('popstate', sync)
+    const unsubscribe = subscribeSpaPathname(sync)
+    return () => {
+      window.removeEventListener('popstate', sync)
+      unsubscribe()
+    }
+  }, [])
+
+  return routeKey
 }
