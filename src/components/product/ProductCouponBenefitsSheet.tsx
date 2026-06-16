@@ -20,7 +20,7 @@ export interface ProductCouponBenefitsSheetProps {
   onClaimAll: () => void
 }
 
-function CouponDownloadCompleteLabel() {
+export function CouponDownloadCompleteLabel() {
   return (
     <div
       aria-label="다운완료"
@@ -32,7 +32,7 @@ function CouponDownloadCompleteLabel() {
   )
 }
 
-function ProductCouponCard({
+export function ProductCouponCard({
   coupon,
   claimedIds,
   onClaimOne,

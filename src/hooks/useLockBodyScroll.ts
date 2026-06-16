@@ -13,10 +13,52 @@ type SavedStyles = {
   bodyLeft: string
   bodyRight: string
   bodyWidth: string
+  bodyPaddingRight: string
+}
+
+type CompensatedFixedElement = {
+  el: HTMLElement
+  paddingRight: string
 }
 
 let lockCount = 0
 let saved: SavedStyles | null = null
+let compensatedFixedElements: CompensatedFixedElement[] = []
+
+function getScrollbarWidth(): number {
+  return Math.max(0, window.innerWidth - document.documentElement.clientWidth)
+}
+
+function isScrollLockOverlayElement(element: HTMLElement): boolean {
+  return element.closest('[role="dialog"], [role="presentation"]') !== null
+}
+
+function compensateFixedElements(scrollbarWidth: number) {
+  if (scrollbarWidth <= 0) return
+
+  compensatedFixedElements = []
+  document.querySelectorAll<HTMLElement>('body *').forEach((element) => {
+    if (isScrollLockOverlayElement(element)) return
+
+    const style = getComputedStyle(element)
+    if (style.position !== 'fixed') return
+    if (style.left !== '0px' || style.right !== '0px') return
+
+    compensatedFixedElements.push({
+      el: element,
+      paddingRight: element.style.paddingRight,
+    })
+    const currentPaddingRight = Number.parseFloat(style.paddingRight) || 0
+    element.style.paddingRight = `${currentPaddingRight + scrollbarWidth}px`
+  })
+}
+
+function restoreFixedElementCompensation() {
+  compensatedFixedElements.forEach(({ el, paddingRight }) => {
+    el.style.paddingRight = paddingRight
+  })
+  compensatedFixedElements = []
+}
 
 function isAllowedTouchTarget(target: EventTarget | null): boolean {
   return target instanceof Element && target.closest(`[${SCROLL_LOCK_ALLOW_ATTR}]`) !== null
@@ -36,6 +78,7 @@ function applyLock() {
   const html = document.documentElement
   const body = document.body
   const scrollY = window.scrollY
+  const scrollbarWidth = getScrollbarWidth()
 
   saved = {
     scrollY,
@@ -47,6 +90,14 @@ function applyLock() {
     bodyLeft: body.style.left,
     bodyRight: body.style.right,
     bodyWidth: body.style.width,
+    bodyPaddingRight: body.style.paddingRight,
+  }
+
+  html.classList.add('otz-scroll-locked')
+  html.style.setProperty('--otz-scrollbar-width', `${scrollbarWidth}px`)
+  if (scrollbarWidth > 0) {
+    body.style.paddingRight = `${scrollbarWidth}px`
+    compensateFixedElements(scrollbarWidth)
   }
 
   html.style.overflow = 'hidden'
@@ -72,6 +123,10 @@ function releaseLock() {
   document.removeEventListener('touchmove', preventBackgroundTouchMove)
   document.removeEventListener('wheel', preventBackgroundWheel)
 
+  restoreFixedElementCompensation()
+
+  html.classList.remove('otz-scroll-locked')
+  html.style.removeProperty('--otz-scrollbar-width')
   html.style.overflow = saved.htmlOverflow
   html.style.overscrollBehavior = saved.htmlOverscroll
   body.style.overflow = saved.bodyOverflow
@@ -80,6 +135,7 @@ function releaseLock() {
   body.style.left = saved.bodyLeft
   body.style.right = saved.bodyRight
   body.style.width = saved.bodyWidth
+  body.style.paddingRight = saved.bodyPaddingRight
 
   window.scrollTo(0, scrollY)
   saved = null
@@ -88,6 +144,7 @@ function releaseLock() {
 /** Clears any active document scroll lock — use on SPA route changes. */
 export function forceReleaseBodyScrollLock() {
   lockCount = 0
+  restoreFixedElementCompensation()
   releaseLock()
 }
 

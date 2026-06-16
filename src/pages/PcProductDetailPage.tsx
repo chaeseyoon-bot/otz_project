@@ -1,6 +1,8 @@
-import { useEffect, useMemo, useRef, useState } from 'react'
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { CartAddedPopup } from '../components/cart/CartAddedPopup'
 import { ProductOptionRequiredPopup } from '../components/cart/ProductOptionRequiredPopup'
+import { CouponNoticePopup } from '../components/atoms/CouponNoticePopup'
+import { ProductCouponBenefitsModal } from '../components/product/ProductCouponBenefitsModal'
 import { useCart } from '../contexts/CartContext'
 import { usePdpOptionGate } from '../hooks/usePdpOptionGate'
 import { buildCartItemFromProduct } from '../lib/buildCartItemFromProduct'
@@ -11,6 +13,11 @@ import { ProductDetailReviewSummary } from '../components/molecules/ProductDetai
 import { ProductDetailPcReviewSection } from '../components/organisms/ProductDetailPcReviewSection'
 import { ProductDetailPcPurchasePanel } from '../components/organisms/ProductDetailPcPurchasePanel'
 import { DEMO_PRODUCT_REVIEW_SUMMARY } from '../data/productReviews'
+import {
+  areAllLimitedCouponsClaimed,
+  getUnclaimedLimitedCoupons,
+  PRODUCT_DETAIL_COUPONS,
+} from '../data/productCouponContent'
 import { getPdpColorVariantsForProduct } from '../data/productColorVariants'
 import { PRODUCT_DETAIL_TABS, type ProductDetailTabId } from '../data/productDetailTabs'
 import { useAvailableProductSlides } from '../hooks/useAvailableProductSlides'
@@ -49,6 +56,10 @@ export function PcProductDetailPage({ productId }: PcProductDetailPageProps) {
   const { addItem } = useCart()
   const [liked, setLiked] = useState(false)
   const [cartPopupOpen, setCartPopupOpen] = useState(false)
+  const [couponModalOpen, setCouponModalOpen] = useState(false)
+  const [claimedCouponIds, setClaimedCouponIds] = useState<Set<string>>(() => new Set())
+  const [couponNoticeOpen, setCouponNoticeOpen] = useState(false)
+  const [couponNoticeMessage, setCouponNoticeMessage] = useState('')
   const [benefitsOpen, setBenefitsOpen] = useState(true)
   const [selectedSize, setSelectedSize] = useState<string | null>(null)
   const [activeTab, setActiveTab] = useState<ProductDetailTabId>('detail')
@@ -105,6 +116,54 @@ export function PcProductDetailPage({ productId }: PcProductDetailPageProps) {
     () => gallerySlides.map((slide) => slide.image).slice(0, 6),
     [gallerySlides],
   )
+
+  const showCouponNotice = useCallback((message: string) => {
+    setCouponNoticeMessage(message)
+    setCouponNoticeOpen(true)
+  }, [])
+
+  const closeCouponNotice = useCallback(() => setCouponNoticeOpen(false), [])
+
+  const handleClaimOneCoupon = useCallback(
+    (couponId: string) => {
+      const coupon = PRODUCT_DETAIL_COUPONS.find((item) => item.id === couponId)
+      if (!coupon) return
+
+      if (coupon.unlimited) {
+        showCouponNotice('쿠폰을 받았습니다.')
+        return
+      }
+
+      let newlyClaimed = false
+      setClaimedCouponIds((prev) => {
+        if (prev.has(couponId)) return prev
+        newlyClaimed = true
+        return new Set(prev).add(couponId)
+      })
+      if (newlyClaimed) {
+        showCouponNotice('쿠폰을 받았습니다.')
+      }
+    },
+    [showCouponNotice],
+  )
+
+  const handleClaimAllCoupons = useCallback(() => {
+    const unclaimed = getUnclaimedLimitedCoupons(claimedCouponIds)
+    const count = unclaimed.length
+
+    if (count > 0) {
+      setClaimedCouponIds((prev) => {
+        const next = new Set(prev)
+        unclaimed.forEach((coupon) => next.add(coupon.id))
+        return next
+      })
+    }
+
+    setCouponModalOpen(false)
+    showCouponNotice(`${count}개의 쿠폰을 받았습니다.`)
+  }, [claimedCouponIds, showCouponNotice])
+
+  const allCouponsClaimed = areAllLimitedCouponsClaimed(claimedCouponIds)
 
   if (!product) {
     return (
@@ -262,8 +321,16 @@ export function PcProductDetailPage({ productId }: PcProductDetailPageProps) {
                 <span className="text-titleBold text-black">{price}원</span>
               </div>
             </div>
-            <button type="button" className="flex shrink-0 items-center rounded-sm bg-dark px-2 py-1.5">
-              <span className="text-bodyMedium2 text-white">쿠폰 받기</span>
+            <button
+              type="button"
+              className={`flex shrink-0 items-center rounded-sm px-2 py-1.5 ${
+                allCouponsClaimed ? 'bg-subtleText' : 'bg-dark'
+              }`}
+              onClick={() => setCouponModalOpen(true)}
+            >
+              <span className="text-bodyMedium2 text-white">
+                {allCouponsClaimed ? '받은쿠폰' : '쿠폰 받기'}
+              </span>
             </button>
           </div>
 
@@ -332,9 +399,29 @@ export function PcProductDetailPage({ productId }: PcProductDetailPageProps) {
         open={cartPopupOpen}
         onClose={() => setCartPopupOpen(false)}
         onGoToCart={handleGoToCart}
+        lockBodyScroll={false}
       />
 
-      <ProductOptionRequiredPopup open={optionRequiredOpen} onClose={closeOptionRequiredPopup} />
+      <ProductOptionRequiredPopup
+        open={optionRequiredOpen}
+        onClose={closeOptionRequiredPopup}
+        lockBodyScroll={false}
+      />
+
+      <ProductCouponBenefitsModal
+        open={couponModalOpen}
+        claimedIds={claimedCouponIds}
+        onClose={() => setCouponModalOpen(false)}
+        onClaimOne={handleClaimOneCoupon}
+        onClaimAll={handleClaimAllCoupons}
+      />
+
+      <CouponNoticePopup
+        open={couponNoticeOpen}
+        message={couponNoticeMessage}
+        onClose={closeCouponNotice}
+        lockBodyScroll={false}
+      />
     </main>
   )
 }

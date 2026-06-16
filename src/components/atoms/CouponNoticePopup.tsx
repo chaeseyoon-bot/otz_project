@@ -6,11 +6,18 @@ export interface CouponNoticePopupProps {
   open: boolean
   message: string
   onClose: () => void
+  /** Desktop overlays keep page scroll to avoid scrollbar layout shift. */
+  lockBodyScroll?: boolean
 }
 
 /** Mobile coupon feedback layer popup — replaces bottom toast for coupon actions. */
-export function CouponNoticePopup({ open, message, onClose }: CouponNoticePopupProps) {
-  useLockBodyScroll(open)
+export function CouponNoticePopup({
+  open,
+  message,
+  onClose,
+  lockBodyScroll = true,
+}: CouponNoticePopupProps) {
+  useLockBodyScroll(open && lockBodyScroll)
 
   useEffect(() => {
     if (!open) return

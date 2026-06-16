@@ -50,6 +50,7 @@ body,
 /* Avoid horizontal page scroll when sections use 100vw / w-screen (scrollbar gutter). */
 html {
   overflow-x: hidden;
+  scrollbar-gutter: stable;
 }
 
 /* Dim overlays must call useLockBodyScroll — background page must not scroll while open. */

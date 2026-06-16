@@ -5,11 +5,16 @@ import { useLockBodyScroll } from '../../hooks/useLockBodyScroll'
 export interface ProductOptionRequiredPopupProps {
   open: boolean
   onClose: () => void
+  lockBodyScroll?: boolean
 }
 
 /** Figma 2824:23951 — required option alert layer popup. */
-export function ProductOptionRequiredPopup({ open, onClose }: ProductOptionRequiredPopupProps) {
-  useLockBodyScroll(open)
+export function ProductOptionRequiredPopup({
+  open,
+  onClose,
+  lockBodyScroll = true,
+}: ProductOptionRequiredPopupProps) {
+  useLockBodyScroll(open && lockBodyScroll)
 
   useEffect(() => {
     if (!open) return

@@ -6,11 +6,18 @@ export interface CartAddedPopupProps {
   open: boolean
   onClose: () => void
   onGoToCart: () => void
+  /** Desktop overlays keep page scroll to avoid scrollbar layout shift. */
+  lockBodyScroll?: boolean
 }
 
 /** Figma 2824:24171 — cart add confirmation layer popup. */
-export function CartAddedPopup({ open, onClose, onGoToCart }: CartAddedPopupProps) {
-  useLockBodyScroll(open)
+export function CartAddedPopup({
+  open,
+  onClose,
+  onGoToCart,
+  lockBodyScroll = true,
+}: CartAddedPopupProps) {
+  useLockBodyScroll(open && lockBodyScroll)
 
   useEffect(() => {
     if (!open) return
