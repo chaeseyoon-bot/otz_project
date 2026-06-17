@@ -23,17 +23,34 @@ function padImageUrls(urls: string[], count: number, fallback: string): string[]
   return result.slice(0, count)
 }
 
+/** Collect image URLs from all PC block layout variants. */
+function pushPcBlockImageUrls(block: ArchiveLookbookDetail['pcBlocks'][number], urls: string[]): void {
+  if (block.type === 'full' || block.type === 'intro-split') {
+    urls.push(block.image.src)
+    return
+  }
+  if (block.type === 'split') {
+    urls.push(block.left.src, block.right.src)
+    return
+  }
+  if (block.type === 'triple') {
+    urls.push(block.left.src, block.center.src, block.right.src)
+    return
+  }
+  if (block.type === 'asymmetric-small-left') {
+    urls.push(block.small.src, block.large.src)
+    return
+  }
+  if (block.type === 'asymmetric-small-right') {
+    urls.push(block.large.src, block.small.src)
+  }
+}
+
 /** PC editorial layout — hero + grid (up to 7 images). */
 export function extractPcImageUrlsFromDetail(detail: ArchiveLookbookDetail): string[] {
   const urls: string[] = []
   for (const block of detail.pcBlocks) {
-    if (block.type === 'full') {
-      urls.push(block.image.src)
-    } else if (block.type === 'split') {
-      urls.push(block.left.src, block.right.src)
-    } else {
-      urls.push(block.left.src, block.center.src, block.right.src)
-    }
+    pushPcBlockImageUrls(block, urls)
   }
   const fallback =
     detail.mobileImages[0]?.src ??
