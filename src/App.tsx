@@ -98,7 +98,22 @@ export default function App() {
   }, [])
 
   useEffect(() => {
-    void hydrateArchiveDetailConfig()
+    const refreshArchiveConfig = () => {
+      void hydrateArchiveDetailConfig()
+    }
+
+    refreshArchiveConfig()
+    window.addEventListener('focus', refreshArchiveConfig)
+
+    const onVisibilityChange = () => {
+      if (document.visibilityState === 'visible') refreshArchiveConfig()
+    }
+    document.addEventListener('visibilitychange', onVisibilityChange)
+
+    return () => {
+      window.removeEventListener('focus', refreshArchiveConfig)
+      document.removeEventListener('visibilitychange', onVisibilityChange)
+    }
   }, [])
 
   const isNew = pathname.startsWith('/new')

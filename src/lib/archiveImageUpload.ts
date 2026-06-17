@@ -23,6 +23,22 @@ export function isStoredBannerImageUrl(url: string | null | undefined): boolean 
   return /\/storage\/v1\/object\/public\/home_banners\//i.test(normalized)
 }
 
+/** Supabase Storage URL or durable public path — never blob/data. */
+export function isDurableArchiveImageUrl(url: string | null | undefined): boolean {
+  const normalized = url?.trim()
+  if (!normalized) return false
+  if (normalized.startsWith('data:') || normalized.startsWith('blob:')) return false
+  return normalized.startsWith('http') || normalized.startsWith('/')
+}
+
+export async function uploadArchiveImageSlot(
+  file: File,
+  storageKey: string,
+): Promise<{ url: string; fileName: string }> {
+  const uploaded = await uploadAdminBannerImage(file, storageKey)
+  return { url: uploaded.url, fileName: uploaded.fileName }
+}
+
 function resolveUploadFile(
   imageUrl: string | null,
   imageFileName: string | null,
@@ -48,7 +64,7 @@ export async function uploadArchiveLookbookImages(
   let thumbnailUrl = entry.thumbnailUrl
   let thumbnailFileName = entry.thumbnailFileName
 
-  if (!isStoredBannerImageUrl(thumbnailUrl)) {
+  if (!isDurableArchiveImageUrl(thumbnailUrl)) {
     try {
       const file = resolveUploadFile(thumbnailUrl, thumbnailFileName, pendingFiles.get(thumbKey), 'thumbnail.png')
       const uploaded = await uploadAdminBannerImage(file, thumbKey)
@@ -76,7 +92,7 @@ export async function uploadArchiveLookbookImages(
             return current
           }
 
-          if (!isStoredBannerImageUrl(imageUrl)) {
+          if (!isDurableArchiveImageUrl(imageUrl)) {
             try {
               const file = resolveUploadFile(
                 imageUrl,

@@ -1,5 +1,5 @@
 import { useLookbookSectionContent } from '../../hooks/useLookbookSectionContent'
-import { navigateSpa } from '../../lib/spaNavigation'
+import { getArchiveDetailPath, navigateSpa } from '../../lib/spaNavigation'
 
 /** Figma 2601:23531 — link chevron 6×12 */
 function ArchiveLinkChevron({ className }: { className?: string }) {
@@ -89,41 +89,55 @@ function LookbookCopyBlock({
   )
 }
 
+interface LookbookImageButtonProps {
+  src: string
+  className: string
+  onClick: () => void
+}
+
+function LookbookImageButton({ src, className, onClick }: LookbookImageButtonProps) {
+  return (
+    <button
+      type="button"
+      className={`relative overflow-hidden border-0 bg-light p-0 ${className}`}
+      aria-label="아카이브 상세 보기"
+      onClick={onClick}
+    >
+      <img src={src} alt="" className="absolute inset-0 size-full object-cover" draggable={false} />
+    </button>
+  )
+}
+
 export function LookbookSection() {
   const content = useLookbookSectionContent()
   const mobileTitle = content.titleLines.join(' ') || content.title.replace(/\n/g, ' ')
   const mobileImages = content.mobileImageUrls
+
+  const goToArchiveDetail = () => {
+    navigateSpa(getArchiveDetailPath(content.archiveLookbookId))
+  }
 
   return (
     <section className="w-full">
       {/* Mobile — 203 + 140×2 mosaic */}
       <div className="bg-white px-[15px] pb-10 pt-10 lg:hidden">
         <div className="grid h-[352px] grid-cols-[203px_140px] gap-[2px]">
-          <div className="relative h-[352px] w-[203px] overflow-hidden bg-light">
-            <img
-              src={mobileImages[0]}
-              alt=""
-              className="absolute inset-0 size-full object-cover"
-              draggable={false}
-            />
-          </div>
+          <LookbookImageButton
+            src={mobileImages[0]}
+            className="h-[352px] w-[203px] cursor-pointer"
+            onClick={goToArchiveDetail}
+          />
           <div className="grid grid-rows-2 gap-[2px]">
-            <div className="relative h-[175px] w-[140px] overflow-hidden bg-light">
-              <img
-                src={mobileImages[1]}
-                alt=""
-                className="absolute inset-0 size-full object-cover"
-                draggable={false}
-              />
-            </div>
-            <div className="relative h-[175px] w-[140px] overflow-hidden bg-light">
-              <img
-                src={mobileImages[2]}
-                alt=""
-                className="absolute inset-0 size-full object-cover"
-                draggable={false}
-              />
-            </div>
+            <LookbookImageButton
+              src={mobileImages[1]}
+              className="h-[175px] w-[140px] cursor-pointer"
+              onClick={goToArchiveDetail}
+            />
+            <LookbookImageButton
+              src={mobileImages[2]}
+              className="h-[175px] w-[140px] cursor-pointer"
+              onClick={goToArchiveDetail}
+            />
           </div>
         </div>
         <div className="pt-[10px]">
@@ -163,24 +177,19 @@ export function LookbookSection() {
             </div>
 
             <div className="flex min-h-0 min-w-0 flex-1 items-stretch justify-end">
-              <div className="relative h-[512px] w-[410px] shrink-0 overflow-hidden bg-light">
-                <img
-                  src={content.pcHeroImage}
-                  alt=""
-                  className="absolute inset-0 size-full object-cover"
-                  draggable={false}
-                />
-              </div>
+              <LookbookImageButton
+                src={content.pcHeroImage}
+                className="h-[512px] w-[410px] shrink-0 cursor-pointer"
+                onClick={goToArchiveDetail}
+              />
               <div className="grid w-[615px] shrink-0 grid-cols-3 grid-rows-2 gap-0">
                 {content.pcGridImages.map((src, index) => (
-                  <div key={`archive-${index}`} className="relative h-[256px] w-[205px] overflow-hidden bg-light">
-                    <img
-                      src={src}
-                      alt=""
-                      className="absolute inset-0 size-full object-cover"
-                      draggable={false}
-                    />
-                  </div>
+                  <LookbookImageButton
+                    key={`archive-${index}`}
+                    src={src}
+                    className="h-[256px] w-[205px] cursor-pointer"
+                    onClick={goToArchiveDetail}
+                  />
                 ))}
               </div>
             </div>

@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useRef, useState } from 'react'
-import { uploadArchiveLookbookImages } from '../../lib/archiveImageUpload'
+import { uploadArchiveImageSlot, uploadArchiveLookbookImages } from '../../lib/archiveImageUpload'
 import {
   countCompleteRows,
   countDetailImages,
@@ -8,7 +8,6 @@ import {
   createEmptyAdminArchiveLookbookEntry,
   createDefaultAdminArchiveDetailConfig,
   getNextArchiveLookbookId,
-  loadAdminArchiveDetailConfig,
   MAX_ARCHIVE_DETAIL_IMAGES,
   MAX_ARCHIVE_DETAIL_ROWS,
   MAX_ARCHIVE_LOOKBOOKS,
@@ -16,7 +15,11 @@ import {
   sortArchiveLookbooksNewestFirst,
 } from '../../lib/adminArchiveDetailConfig'
 import { getArchiveDetailPath } from '../../lib/archiveRoutes'
-import { hydrateArchiveDetailConfig, loadArchiveDetailConfigFromSupabase, upsertArchiveDetailConfig } from '../../lib/archiveLookbooksApi'
+import {
+  hydrateArchiveDetailConfig,
+  loadArchiveDetailConfigFromSupabase,
+  upsertArchiveDetailConfig,
+} from '../../lib/archiveLookbooksApi'
 import { navigateSpa } from '../../lib/spaNavigation'
 import { ImageUploader, TextInput } from './editorialAdminPrimitives'
 
@@ -97,6 +100,8 @@ function RowToolbar({ index, total, onMoveUp, onMoveDown, onRemove }) {
 function DetailRowEditor({
   row,
   rowIndex,
+  lookbookId,
+  uploadingKey,
   totalRows,
   onColumnsChange,
   onImageChange,
@@ -140,6 +145,7 @@ function DetailRowEditor({
             aspectClass="aspect-[3/4] w-full max-w-[140px]"
             previewUrl={row.images[slotIndex]?.imageUrl}
             fileName={row.images[slotIndex]?.imageFileName}
+            isUploading={uploadingKey === `archive-row-${lookbookId}-${rowIndex}-${slotIndex}`}
             onSelect={(e) => {
               const file = e.target.files?.[0]
               onImageChange(slotIndex, file)
@@ -157,8 +163,8 @@ export function ArchiveDetailManagement() {
   const [config, setConfig] = useState(createDefaultAdminArchiveDetailConfig)
   const [selectedId, setSelectedId] = useState(null)
   const [isSaving, setIsSaving] = useState(false)
+  const [uploadingKey, setUploadingKey] = useState(null)
   const [message, setMessage] = useState(null)
-  /** Selected files waiting for upload on save — key: archive-thumb-* / archive-row-* */
   const pendingFilesRef = useRef(new Map())
 
   const sortedLookbooks = useMemo(
@@ -168,25 +174,23 @@ export function ArchiveDetailManagement() {
 
   useEffect(() => {
     void (async () => {
-      let remote = await loadArchiveDetailConfigFromSupabase()
-      const local = loadAdminArchiveDetailConfig()
-
-      if (!remote && local.lookbooks.length > 0) {
-        const migrated = await upsertArchiveDetailConfig(local)
-        if (migrated.ok) {
-          remote = await loadArchiveDetailConfigFromSupabase()
-        } else {
-          console.warn('[ArchiveDetailManagement] Supabase migrate failed:', migrated.message)
-        }
-      }
-
       const hydrated = await hydrateArchiveDetailConfig()
-      const next = remote ?? hydrated ?? local
-      setConfig(next)
-      const first = sortArchiveLookbooksNewestFirst(next.lookbooks)[0]
+      setConfig(hydrated)
+      const first = sortArchiveLookbooksNewestFirst(hydrated.lookbooks)[0]
       setSelectedId(first?.id ?? null)
     })()
   }, [])
+
+  useEffect(() => {
+    const warnOnLeave = (event) => {
+      if (uploadingKey || isSaving) {
+        event.preventDefault()
+        event.returnValue = ''
+      }
+    }
+    window.addEventListener('beforeunload', warnOnLeave)
+    return () => window.removeEventListener('beforeunload', warnOnLeave)
+  }, [uploadingKey, isSaving])
 
   const selected = useMemo(
     () => config.lookbooks.find((item) => item.id === selectedId) ?? null,
@@ -216,13 +220,20 @@ export function ArchiveDetailManagement() {
     }
   }
 
-  const handleImageSelect = (file, storageKey, previousUrl, onDone) => {
+  const handleImageUpload = async (file, storageKey, previousUrl, onDone) => {
     if (!file) return
     revokeBlobUrl(previousUrl)
-    pendingFilesRef.current.set(storageKey, file)
-    const previewUrl = URL.createObjectURL(file)
-    onDone(previewUrl, file.name)
-    showMessage('이미지가 선택되었습니다. 저장 시 스토리지에 업로드됩니다.')
+    setUploadingKey(storageKey)
+    try {
+      const uploaded = await uploadArchiveImageSlot(file, storageKey)
+      onDone(uploaded.url, uploaded.fileName)
+      showMessage('이미지가 서버에 저장되었습니다.')
+    } catch (error) {
+      const detail = error instanceof Error ? error.message : '이미지 업로드에 실패했습니다.'
+      showMessage(detail)
+    } finally {
+      setUploadingKey(null)
+    }
   }
 
   const clearPendingImage = (storageKey, previousUrl, onDone) => {
@@ -290,9 +301,25 @@ export function ArchiveDetailManagement() {
 
     const storageKey = `archive-row-${selected.id}-${rowIndex}-${slotIndex}`
     const previousUrl = selected.detailRows[rowIndex]?.images[slotIndex]?.imageUrl
-    handleImageSelect(file, storageKey, previousUrl, (url, fileName) =>
+    handleImageUpload(file, storageKey, previousUrl, (url, fileName) =>
       setRowImage(rowIndex, slotIndex, { imageUrl: url, imageFileName: fileName }),
     )
+  }
+
+  const persistConfigToServer = async (lookbooks) => {
+    const payload = saveAdminArchiveDetailConfig({ lookbooks })
+    const result = await upsertArchiveDetailConfig(payload)
+    if (!result.ok) {
+      throw new Error(result.message)
+    }
+
+    const verified = await loadArchiveDetailConfigFromSupabase()
+    if (!verified) {
+      throw new Error('서버 저장 후 데이터 확인에 실패했습니다. 다시 시도해 주세요.')
+    }
+
+    setConfig(verified)
+    return verified
   }
 
   const handleSave = async () => {
@@ -330,22 +357,15 @@ export function ArchiveDetailManagement() {
         ),
       }
 
-      showMessage('이미지를 스토리지에 업로드하는 중…')
+      showMessage('서버에 저장하는 중…')
       const uploadedEntry = await uploadArchiveLookbookImages(normalizedEntry, pendingFilesRef.current)
 
       const lookbooks = config.lookbooks.map((item) =>
         item.id === selected.id ? uploadedEntry : item,
       )
-      const saved = saveAdminArchiveDetailConfig({ lookbooks })
-      setConfig(saved)
 
-      const supabaseResult = await upsertArchiveDetailConfig(saved)
-      if (!supabaseResult.ok) {
-        showMessage(supabaseResult.message)
-        return
-      }
-
-      showMessage('아카이브가 저장되었습니다. 이미지·설정이 스토리지에 반영됩니다.')
+      await persistConfigToServer(lookbooks)
+      showMessage('서버에 저장되었습니다.')
     } catch (error) {
       const detail = error instanceof Error ? error.message : '저장에 실패했습니다.'
       showMessage(detail)
@@ -375,15 +395,11 @@ export function ArchiveDetailManagement() {
       setSelectedId(sortArchiveLookbooksNewestFirst(nextLookbooks)[0]?.id ?? null)
     }
     try {
-      const saved = saveAdminArchiveDetailConfig({ lookbooks: nextLookbooks })
-      const supabaseResult = await upsertArchiveDetailConfig(saved)
-      if (!supabaseResult.ok) {
-        showMessage(supabaseResult.message)
-        return
-      }
-      showMessage('룩북이 삭제되었습니다.')
-    } catch {
-      showMessage('삭제 저장에 실패했습니다.')
+      await persistConfigToServer(nextLookbooks)
+      showMessage('서버에 저장되었습니다.')
+    } catch (error) {
+      const detail = error instanceof Error ? error.message : '삭제 저장에 실패했습니다.'
+      showMessage(detail)
     }
   }
 
@@ -434,7 +450,7 @@ export function ArchiveDetailManagement() {
         <div className="min-w-0">
           <h2 className="m-0 text-[18px] font-bold text-dark">아카이브 상세 관리</h2>
           <p className="m-0 text-[11px] text-subtleText">
-            MO/PC 동일 이미지 · 행마다 1~3열 자유 배치 · 저장 시 스토리지 업로드
+            이미지는 선택 즉시 서버 업로드 · 제목·행 배치는 「저장」 시 Supabase에 반영
           </p>
         </div>
         <div className="flex shrink-0 flex-wrap items-center gap-2">
@@ -521,17 +537,18 @@ export function ArchiveDetailManagement() {
               </div>
             </SectionBlock>
 
-            <SectionBlock title="리스트 썸네일" hint="아카이브 목록 카드에 노출됩니다. 선택 후 저장 시 스토리지에 업로드됩니다.">
+            <SectionBlock title="리스트 썸네일" hint="선택 즉시 서버에 저장됩니다.">
               <ImageUploader
                 label="썸네일"
                 spec="MO/PC 공용 · 1장"
                 aspectClass="aspect-[4/5] w-[100px]"
                 previewUrl={selected.thumbnailUrl}
                 fileName={selected.thumbnailFileName}
+                isUploading={uploadingKey === `archive-thumb-${selected.id}`}
                 onSelect={(e) => {
                   const file = e.target.files?.[0]
                   const storageKey = `archive-thumb-${selected.id}`
-                  handleImageSelect(file, storageKey, selected.thumbnailUrl, (url, fileName) => {
+                  handleImageUpload(file, storageKey, selected.thumbnailUrl, (url, fileName) => {
                     updateSelected({ thumbnailUrl: url, thumbnailFileName: fileName })
                   })
                   e.target.value = ''
@@ -572,7 +589,7 @@ export function ArchiveDetailManagement() {
 
             <SectionBlock
               title="상세 이미지 (행 단위)"
-              hint="행마다 1~3개를 선택해 배치하세요. 저장 시 스토리지에 업로드됩니다."
+              hint="행마다 1~3개를 선택해 배치하세요. 이미지는 선택 즉시 서버에 저장됩니다."
             >
               {selected.detailRows.length ? (
                 <div className="space-y-3">
@@ -581,6 +598,8 @@ export function ArchiveDetailManagement() {
                       key={row.id}
                       row={row}
                       rowIndex={rowIndex}
+                      lookbookId={selected.id}
+                      uploadingKey={uploadingKey}
                       totalRows={selected.detailRows.length}
                       onColumnsChange={(columns) => setRowColumns(rowIndex, columns)}
                       onImageChange={(slotIndex, file) => handleRowImageSelect(rowIndex, slotIndex, file)}

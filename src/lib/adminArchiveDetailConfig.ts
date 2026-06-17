@@ -12,9 +12,9 @@ export function setArchiveDetailConfigCache(config: AdminArchiveDetailConfig | n
   remoteConfigCache = config
 }
 
-/** Remote (Supabase) cache when hydrated; otherwise browser localStorage. */
+/** In-memory Supabase cache after hydrate. Never reads localStorage for storefront truth. */
 export function getEffectiveArchiveDetailConfig(): AdminArchiveDetailConfig {
-  return remoteConfigCache ?? loadAdminArchiveDetailConfig()
+  return remoteConfigCache ?? createDefaultAdminArchiveDetailConfig()
 }
 
 export const MAX_ARCHIVE_DETAIL_IMAGES = 30
@@ -178,6 +178,165 @@ export function countCompleteRows(rows: AdminArchiveDetailRow[]): number {
   ).length
 }
 
+function flattenPublishableImageUrls(entry: AdminArchiveLookbookEntry): string[] {
+  const urls: string[] = []
+  const thumb = entry.thumbnailUrl?.trim()
+  if (isPublishableArchiveImageUrl(thumb)) urls.push(thumb!)
+
+  for (const row of entry.detailRows) {
+    for (let index = 0; index < row.columnsPerRow; index += 1) {
+      const url = row.images[index]?.imageUrl?.trim()
+      if (isPublishableArchiveImageUrl(url)) urls.push(url!)
+    }
+  }
+
+  return urls
+}
+
+function flattenImageFileNames(entry: AdminArchiveLookbookEntry): string[] {
+  const names: string[] = []
+  if (entry.thumbnailFileName?.trim()) names.push(entry.thumbnailFileName.trim())
+
+  for (const row of entry.detailRows) {
+    for (let index = 0; index < row.columnsPerRow; index += 1) {
+      const name = row.images[index]?.imageFileName?.trim()
+      if (name) names.push(name)
+    }
+  }
+
+  return names
+}
+
+/** Re-applies durable image URLs onto a saved row layout (title/intro/columns preserved). */
+export function remapDetailRowsWithPublishableUrls(
+  rows: AdminArchiveDetailRow[],
+  publishableUrls: string[],
+  fileNames: string[] = [],
+): AdminArchiveDetailRow[] {
+  let urlIndex = 0
+
+  return rows.map((row) => ({
+    ...row,
+    images: Array.from({ length: row.columnsPerRow }, (_, slotIndex) => {
+      const previous = row.images[slotIndex] ?? createEmptyAdminArchiveImageRef()
+      const imageUrl = publishableUrls[urlIndex] ?? previous.imageUrl
+      const imageFileName = fileNames[urlIndex] ?? previous.imageFileName
+      urlIndex += 1
+      return { imageUrl, imageFileName }
+    }),
+  }))
+}
+
+export interface MergeArchiveLookbookFallback {
+  imageUrls: string[]
+  fileNames?: string[]
+}
+
+/** Merges browser draft (titles/rows) with Supabase (durable URLs). */
+export function mergeArchiveLookbookEntry(
+  draft: AdminArchiveLookbookEntry,
+  remote: AdminArchiveLookbookEntry | undefined,
+  fallback?: MergeArchiveLookbookFallback,
+): AdminArchiveLookbookEntry {
+  const publishableUrls = [
+    ...new Set([
+      ...flattenPublishableImageUrls(remote ?? createEmptyAdminArchiveLookbookEntry(draft.id)),
+      ...flattenPublishableImageUrls(draft),
+      ...(fallback?.imageUrls ?? []),
+    ]),
+  ].filter(isPublishableArchiveImageUrl)
+
+  const fileNames = [
+    ...flattenImageFileNames(remote ?? createEmptyAdminArchiveLookbookEntry(draft.id)),
+    ...flattenImageFileNames(draft),
+    ...(fallback?.fileNames ?? []),
+  ]
+
+  const layoutSource =
+    draft.detailRows.length > 0
+      ? draft
+      : remote?.detailRows.length
+        ? remote
+        : draft
+
+  const detailRows =
+    layoutSource.detailRows.length > 0
+      ? remapDetailRowsWithPublishableUrls(layoutSource.detailRows, publishableUrls, fileNames)
+      : []
+
+  const thumbnailUrl =
+    (isPublishableArchiveImageUrl(remote?.thumbnailUrl) ? remote!.thumbnailUrl!.trim() : null) ??
+    (isPublishableArchiveImageUrl(draft.thumbnailUrl) ? draft.thumbnailUrl!.trim() : null) ??
+    publishableUrls[0] ??
+    null
+
+  return {
+    ...createEmptyAdminArchiveLookbookEntry(draft.id),
+    ...(remote ?? {}),
+    ...draft,
+    id: draft.id,
+    title: draft.title.trim() || remote?.title.trim() || '',
+    introHeading: draft.introHeading.trim() || remote?.introHeading.trim() || '',
+    introBody: draft.introBody.trim() || remote?.introBody.trim() || '',
+    seasons: draft.seasons.length ? draft.seasons : (remote?.seasons ?? ['all']),
+    aspectRatio: draft.aspectRatio || remote?.aspectRatio || DEFAULT_ASPECT_RATIO,
+    thumbnailUrl,
+    thumbnailFileName: draft.thumbnailFileName || remote?.thumbnailFileName || fallback?.fileNames?.[0] || null,
+    detailRows,
+    createdAt: draft.createdAt || remote?.createdAt || new Date().toISOString(),
+  }
+}
+
+export function archiveEntryHasRicherMetadata(
+  draft: AdminArchiveLookbookEntry,
+  remote?: AdminArchiveLookbookEntry,
+): boolean {
+  if (draft.title.trim() && !remote?.title?.trim()) return true
+  if (draft.introHeading.trim() && !remote?.introHeading?.trim()) return true
+  if (draft.introBody.trim() && !remote?.introBody?.trim()) return true
+  if (draft.detailRows.some((row) => row.columnsPerRow > 1) && !remote?.detailRows?.some((row) => row.columnsPerRow > 1)) {
+    return true
+  }
+  if (draft.detailRows.length > 0 && !(remote?.detailRows.length ?? 0)) return true
+  return false
+}
+
+/** Union merge — draft supplies copy/layout, remote/fallback supply durable image URLs. */
+export function mergeArchiveDetailConfigs(
+  draft: AdminArchiveDetailConfig,
+  remote: AdminArchiveDetailConfig,
+  fallbackById: Record<string, MergeArchiveLookbookFallback> = {},
+): AdminArchiveDetailConfig {
+  const remoteById = new Map(remote.lookbooks.map((entry) => [entry.id, entry]))
+  const draftById = new Map(draft.lookbooks.map((entry) => [entry.id, entry]))
+  const ids = [...new Set([...draftById.keys(), ...remoteById.keys()])]
+
+  const lookbooks = ids
+    .map((id) => {
+      const draftEntry = draftById.get(id)
+      const remoteEntry = remoteById.get(id)
+      if (!draftEntry && remoteEntry) return remoteEntry
+      if (!draftEntry) return null
+      return mergeArchiveLookbookEntry(draftEntry, remoteEntry, fallbackById[id])
+    })
+    .filter((entry): entry is AdminArchiveLookbookEntry => entry != null)
+    .filter((entry) => archiveEntryHasDetailData(entry) || entry.title.trim())
+
+  return normalizeAdminArchiveDetailConfig({
+    version: 1,
+    lookbooks,
+    updatedAt: new Date().toISOString(),
+  })
+}
+
+export function archiveConfigHasRicherDraftMetadata(
+  draft: AdminArchiveDetailConfig,
+  remote: AdminArchiveDetailConfig,
+): boolean {
+  const remoteById = new Map(remote.lookbooks.map((entry) => [entry.id, entry]))
+  return draft.lookbooks.some((entry) => archiveEntryHasRicherMetadata(entry, remoteById.get(entry.id)))
+}
+
 function normalizeColumnsPerRow(value: unknown): ArchiveColumnsPerRow {
   if (value === 1 || value === 2 || value === 3) return value
   return 1
@@ -303,19 +462,32 @@ function normalizeLookbookEntry(raw: LegacyAdminArchiveLookbookEntry | undefined
 
 export function normalizeAdminArchiveDetailConfig(
   raw: Partial<AdminArchiveDetailConfig> | null | undefined,
+  options?: { keepEmptyEntries?: boolean },
 ): AdminArchiveDetailConfig {
   if (!raw || !Array.isArray(raw.lookbooks)) return createDefaultAdminArchiveDetailConfig()
 
   const lookbooks = raw.lookbooks
     .map((item) => normalizeLookbookEntry(item))
     .filter((item): item is AdminArchiveLookbookEntry => item != null)
-    .filter((entry) => archiveEntryHasDetailData(entry) || entry.title.trim())
+    .filter(
+      (entry) =>
+        options?.keepEmptyEntries || archiveEntryHasDetailData(entry) || entry.title.trim(),
+    )
     .slice(0, MAX_ARCHIVE_LOOKBOOKS)
 
   return {
     version: 1,
     lookbooks: sortArchiveLookbooksNewestFirst(lookbooks),
     updatedAt: typeof raw.updatedAt === 'string' ? raw.updatedAt : null,
+  }
+}
+
+/** Mirrors server payload to localStorage — offline cache only, not source of truth. */
+export function mirrorAdminArchiveDetailConfigLocally(config: AdminArchiveDetailConfig): void {
+  try {
+    localStorage.setItem(STORAGE_KEY, JSON.stringify(config))
+  } catch {
+    /* ignore quota errors */
   }
 }
 
@@ -332,18 +504,16 @@ export function loadAdminArchiveDetailConfig(): AdminArchiveDetailConfig {
 export function saveAdminArchiveDetailConfig(
   config: Pick<AdminArchiveDetailConfig, 'lookbooks'>,
 ): AdminArchiveDetailConfig {
-  const next = normalizeAdminArchiveDetailConfig({
-    version: 1,
-    lookbooks: config.lookbooks,
-    updatedAt: new Date().toISOString(),
-  })
+  const next = normalizeAdminArchiveDetailConfig(
+    {
+      version: 1,
+      lookbooks: config.lookbooks,
+      updatedAt: new Date().toISOString(),
+    },
+    { keepEmptyEntries: true },
+  )
 
-  try {
-    localStorage.setItem(STORAGE_KEY, JSON.stringify(next))
-  } catch {
-    throw new Error('ARCHIVE_DETAIL_CONFIG_STORAGE_FAILED')
-  }
-
+  mirrorAdminArchiveDetailConfigLocally(next)
   setArchiveDetailConfigCache(next)
   window.dispatchEvent(new CustomEvent(ARCHIVE_DETAIL_CONFIG_UPDATED_EVENT))
   return next

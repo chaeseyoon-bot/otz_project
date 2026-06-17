@@ -27,7 +27,7 @@ export function EditorialEventCard({ event, className = '', onClick }: Editorial
           decoding="async"
           draggable={false}
         />
-        <div className="absolute left-0 top-0 bg-[rgba(0,0,0,0.8)] px-[10px] py-[7px]">
+        <div className="absolute left-0 top-0 h-fit w-fit bg-[rgba(0,0,0,0.8)] px-[10px] pt-[4px] pb-[6px]">
           <span className="text-[10px] font-semibold leading-[1.1] text-white">{event.categoryLabel}</span>
         </div>
       </div>

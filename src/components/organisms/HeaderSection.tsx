@@ -15,7 +15,7 @@ import { useSpaPathname } from '../../hooks/useSpaPathname'
 import { MobileHeaderUtilityIcons } from '../molecules/MobileHeaderUtilityIcons'
 import { PcHeaderSection } from './PcHeaderSection'
 
-const MAIN_TABS = ['홈', 'NEW', 'BEST', '26SS', 'ARCHIVE', 'EDITORIAL']
+const MAIN_TABS = ['홈', 'NEW', 'BEST', 'ARCHIVE', 'EDITORIAL']
 const logoOtz = figmaAsset('icons/OTZ_LOGO.svg')
 const MOBILE_TOP_BANNER_HEIGHT = 40
 const MOBILE_MAIN_HEADER_HEIGHT = 52
@@ -27,8 +27,8 @@ const MOBILE_SHOW_TRIGGER_DELTA = 14
 const HOME_TAB_INDEX = 0
 const NEW_TAB_INDEX = 1
 const BEST_TAB_INDEX = 2
-const ARCHIVE_TAB_INDEX = 4
-const EDITORIAL_TAB_INDEX = 5
+const ARCHIVE_TAB_INDEX = 3
+const EDITORIAL_TAB_INDEX = 4
 
 function getMobileTabIndexByPath(pathname: string) {
   if (pathname.startsWith('/new')) return NEW_TAB_INDEX

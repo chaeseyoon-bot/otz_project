@@ -2,6 +2,8 @@ import {
   normalizeAdminArchiveDetailConfig,
   setArchiveDetailConfigCache,
   ARCHIVE_DETAIL_CONFIG_UPDATED_EVENT,
+  mirrorAdminArchiveDetailConfigLocally,
+  createDefaultAdminArchiveDetailConfig,
   type AdminArchiveDetailConfig,
 } from './adminArchiveDetailConfig'
 import { isSupabaseConfigured, supabase } from './supabase'
@@ -40,7 +42,13 @@ export async function upsertArchiveDetailConfig(
     return { ok: false, message: 'Supabase 환경 변수가 설정되지 않았습니다.' }
   }
 
-  const payload = normalizeAdminArchiveDetailConfig(config)
+  const payload = normalizeAdminArchiveDetailConfig(
+    {
+      ...config,
+      updatedAt: config.updatedAt ?? new Date().toISOString(),
+    },
+    { keepEmptyEntries: true },
+  )
 
   const { error } = await supabase.from('archive_lookbooks_config').upsert(
     {
@@ -71,35 +79,24 @@ export async function upsertArchiveDetailConfig(
   }
 
   setArchiveDetailConfigCache(payload)
+  mirrorAdminArchiveDetailConfigLocally(payload)
   window.dispatchEvent(new CustomEvent(ARCHIVE_DETAIL_CONFIG_UPDATED_EVENT))
   return { ok: true, message: '저장되었습니다.' }
 }
 
-/** Loads remote config into memory cache for storefront + admin resolvers. */
+/** Loads config from Supabase — single source of truth for admin + storefront. */
 export async function hydrateArchiveDetailConfig(): Promise<AdminArchiveDetailConfig> {
   const remote = await loadArchiveDetailConfigFromSupabase()
+
   if (remote) {
     setArchiveDetailConfigCache(remote)
+    mirrorAdminArchiveDetailConfigLocally(remote)
     window.dispatchEvent(new CustomEvent(ARCHIVE_DETAIL_CONFIG_UPDATED_EVENT))
     return remote
   }
 
-  const { loadAdminArchiveDetailConfig } = await import('./adminArchiveDetailConfig')
-  const local = loadAdminArchiveDetailConfig()
-
-  if (local.lookbooks.length > 0) {
-    const migrated = await upsertArchiveDetailConfig(local)
-    if (migrated.ok) {
-      const migratedRemote = await loadArchiveDetailConfigFromSupabase()
-      if (migratedRemote) {
-        setArchiveDetailConfigCache(migratedRemote)
-        window.dispatchEvent(new CustomEvent(ARCHIVE_DETAIL_CONFIG_UPDATED_EVENT))
-        return migratedRemote
-      }
-    }
-  }
-
-  setArchiveDetailConfigCache(local)
+  const empty = createDefaultAdminArchiveDetailConfig()
+  setArchiveDetailConfigCache(empty)
   window.dispatchEvent(new CustomEvent(ARCHIVE_DETAIL_CONFIG_UPDATED_EVENT))
-  return local
+  return empty
 }

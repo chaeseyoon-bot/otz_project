@@ -7,11 +7,11 @@ import {
 import { ARCHIVE_LOOKBOOK_ITEMS } from '../data/archiveLookbooks'
 import {
   type AdminArchiveLookbookEntry,
-  archiveEntryHasDetailData,
   archiveEntryHasPublishableListData,
   getEffectiveArchiveDetailConfig,
   isPublishableArchiveImageUrl,
 } from './adminArchiveDetailConfig'
+import { getLocalArchiveLookbookDetail } from './archiveLocalAssets'
 
 function toDetailImage(ref: { imageUrl: string | null }): ArchiveLookbookDetailImage | null {
   const src = ref.imageUrl?.trim()
@@ -81,9 +81,13 @@ export function getArchiveLookbookDetail(lookbookId: string): ArchiveLookbookDet
   const admin = getEffectiveArchiveDetailConfig()
   const entry = admin.lookbooks.find((item) => item.id === lookbookId)
 
-  if (entry && archiveEntryHasDetailData(entry) && archiveEntryHasPublishableListData(entry)) {
-    return resolveFromAdminEntry(entry)
+  if (entry && archiveEntryHasPublishableListData(entry)) {
+    const fromAdmin = resolveFromAdminEntry(entry)
+    if (fromAdmin.mobileImages.length > 0) return fromAdmin
   }
+
+  const localDetail = getLocalArchiveLookbookDetail(lookbookId)
+  if (localDetail) return localDetail
 
   return getStaticArchiveLookbookDetail(lookbookId)
 }
