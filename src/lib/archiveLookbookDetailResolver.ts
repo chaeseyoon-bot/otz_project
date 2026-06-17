@@ -11,6 +11,7 @@ import {
   getEffectiveArchiveDetailConfig,
   isPublishableArchiveImageUrl,
 } from './adminArchiveDetailConfig'
+import { getRowSlotCount } from './archiveDetailLayout'
 import { getLocalArchiveLookbookDetail } from './archiveLocalAssets'
 
 function toDetailImage(ref: { imageUrl: string | null }): ArchiveLookbookDetailImage | null {
@@ -23,7 +24,7 @@ function flattenRowImages(entry: AdminArchiveLookbookEntry): ArchiveLookbookDeta
   const images: ArchiveLookbookDetailImage[] = []
 
   for (const row of entry.detailRows) {
-    for (let index = 0; index < row.columnsPerRow; index += 1) {
+    for (let index = 0; index < getRowSlotCount(row); index += 1) {
       const image = toDetailImage(row.images[index] ?? { imageUrl: null })
       if (image) images.push(image)
     }
@@ -39,14 +40,15 @@ function resolveFromAdminEntry(entry: AdminArchiveLookbookEntry): ArchiveLookboo
 
   const rowInputs = entry.detailRows
     .map((row) => {
+      const slots = getRowSlotCount(row)
       const images = row.images
-        .slice(0, row.columnsPerRow)
+        .slice(0, slots)
         .map(toDetailImage)
         .filter((image): image is ArchiveLookbookDetailImage => image != null)
 
-      if (images.length !== row.columnsPerRow) return null
+      if (images.length !== slots) return null
 
-      return { columnsPerRow: row.columnsPerRow, images }
+      return { columnsPerRow: row.columnsPerRow, rowLayout: row.rowLayout, images }
     })
     .filter((row): row is NonNullable<typeof row> => row != null)
 
@@ -64,7 +66,7 @@ function resolveFromAdminEntry(entry: AdminArchiveLookbookEntry): ArchiveLookboo
     introHeading || introBody ? { heading: introHeading, body: introBody } : null
 
   const firstRowImageCount =
-    rowInputs[0]?.images.length ?? (imagesForDetail.length > 0 ? 1 : 0)
+    entry.detailRows[0] ? getRowSlotCount(entry.detailRows[0]) : (imagesForDetail.length > 0 ? 1 : 0)
 
   return {
     lookbookId: entry.id,

@@ -5,10 +5,8 @@ import {
 } from '../data/archiveLookbooks'
 import {
   archiveEntryHasPublishableListData,
-  compareArchiveLookbooksNewestFirst,
   getEffectiveArchiveDetailConfig,
   isPublishableArchiveImageUrl,
-  sortArchiveLookbooksNewestFirst,
   type AdminArchiveLookbookEntry,
 } from './adminArchiveDetailConfig'
 import { buildLocalArchiveLookbookItems } from './archiveLocalAssets'
@@ -46,54 +44,34 @@ function adminEntryToListItem(entry: {
   }
 }
 
-function sortLookbookItemsNewestFirst(items: ArchiveLookbookItem[]): ArchiveLookbookItem[] {
-  const adminEntryForId = (id: string): AdminArchiveLookbookEntry | undefined =>
-    getEffectiveArchiveDetailConfig().lookbooks.find((entry) => entry.id === id)
+function resolveAdminListItem(
+  entry: AdminArchiveLookbookEntry,
+  localById: Map<string, ArchiveLookbookItem>,
+): ArchiveLookbookItem | null {
+  const local = localById.get(entry.id)
+  const thumbnailUrl = isPublishableArchiveImageUrl(entry.thumbnailUrl)
+    ? entry.thumbnailUrl!.trim()
+    : local?.image
 
-  return [...items].sort((a, b) => {
-    const adminA = adminEntryForId(a.id)
-    const adminB = adminEntryForId(b.id)
-    if (adminA && adminB) return compareArchiveLookbooksNewestFirst(adminA, adminB)
-    const aNum = Number(/^archive-(\d+)$/.exec(a.id)?.[1] ?? 0)
-    const bNum = Number(/^archive-(\d+)$/.exec(b.id)?.[1] ?? 0)
-    return bNum - aNum
-  })
+  const adminItem = adminEntryToListItem({ ...entry, thumbnailUrl: thumbnailUrl ?? null })
+  return adminItem ?? local ?? null
 }
 
-/** List thumbnails — local assets always shown; admin enriches when URLs are durable. */
+/** List thumbnails — order follows admin config array (sidebar order). */
 export function resolveArchiveLookbookItems(): ArchiveLookbookItem[] {
-  const localItems = buildLocalArchiveLookbookItems()
   const admin = getEffectiveArchiveDetailConfig()
-  const adminById = new Map(admin.lookbooks.map((entry) => [entry.id, entry]))
+  const localItems = buildLocalArchiveLookbookItems()
+  const localById = new Map(localItems.map((item) => [item.id, item]))
 
-  if (localItems.length) {
-    const merged = localItems.map((local) => {
-      const entry = adminById.get(local.id)
-      if (!entry) return local
+  if (admin.lookbooks.length) {
+    const fromAdmin = admin.lookbooks
+      .map((entry) => resolveAdminListItem(entry, localById))
+      .filter((item): item is ArchiveLookbookItem => item != null)
 
-      const thumbnailUrl = isPublishableArchiveImageUrl(entry.thumbnailUrl)
-        ? entry.thumbnailUrl!.trim()
-        : local.image
-
-      const adminItem = adminEntryToListItem({ ...entry, thumbnailUrl })
-      return adminItem ?? local
-    })
-
-    for (const entry of sortArchiveLookbooksNewestFirst(admin.lookbooks)) {
-      if (localItems.some((item) => item.id === entry.id)) continue
-      const adminItem = adminEntryToListItem(entry)
-      if (adminItem) merged.push(adminItem)
-    }
-
-    return sortLookbookItemsNewestFirst(merged)
+    if (fromAdmin.length) return fromAdmin
   }
 
-  const fromAdmin = sortArchiveLookbooksNewestFirst(admin.lookbooks)
-    .filter(archiveEntryHasPublishableListData)
-    .map(adminEntryToListItem)
-    .filter((item): item is ArchiveLookbookItem => item != null)
-
-  if (fromAdmin.length) return sortLookbookItemsNewestFirst(fromAdmin)
+  if (localItems.length) return localItems
   return ARCHIVE_LOOKBOOK_ITEMS
 }
 

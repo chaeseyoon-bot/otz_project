@@ -1,5 +1,6 @@
 import { uploadAdminBannerImage } from './adminBannerUpload'
 import type { AdminArchiveLookbookEntry } from './adminArchiveDetailConfig'
+import { getRowSlotCount } from './archiveDetailLayout'
 import { createEmptyAdminArchiveImageRef } from './adminArchiveDetailConfig'
 
 export function dataUrlToFile(dataUrl: string, fileName: string): File {
@@ -37,6 +38,15 @@ export async function uploadArchiveImageSlot(
 ): Promise<{ url: string; fileName: string }> {
   const uploaded = await uploadAdminBannerImage(file, storageKey)
   return { url: uploaded.url, fileName: uploaded.fileName }
+}
+
+/** Upload multiple files in parallel — each with its own storage key. */
+export async function uploadArchiveImageBatch(
+  items: Array<{ file: File; storageKey: string }>,
+): Promise<Array<{ url: string; fileName: string }>> {
+  return Promise.all(
+    items.map(async ({ file, storageKey }) => uploadArchiveImageSlot(file, storageKey)),
+  )
 }
 
 function resolveUploadFile(
@@ -82,9 +92,9 @@ export async function uploadArchiveLookbookImages(
   const detailRows = await Promise.all(
     entry.detailRows.map(async (row, rowIndex) => {
       const images = await Promise.all(
-        Array.from({ length: row.columnsPerRow }, async (_, slotIndex) => {
+        Array.from({ length: getRowSlotCount(row) }, async (_, slotIndex) => {
           const current = row.images[slotIndex] ?? createEmptyAdminArchiveImageRef()
-          const slotKey = `archive-row-${entry.id}-${rowIndex}-${slotIndex}`
+          const slotKey = `archive-row-${entry.id}-${row.id}-${slotIndex}`
           let imageUrl = current.imageUrl
           let imageFileName = current.imageFileName
 

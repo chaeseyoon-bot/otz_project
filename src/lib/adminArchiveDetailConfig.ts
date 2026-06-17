@@ -1,5 +1,14 @@
 import { buildPcBlocksFromImages } from '../data/archiveLookbookDetails'
 import type { ArchiveSeasonId } from '../data/archiveLookbooks'
+import {
+  columnsPerRowFromLayout,
+  getRowSlotCount,
+  inferRowLayout,
+  isArchiveRowLayout,
+  planFigmaAutoLayoutRows,
+  rowLayoutSlotCount,
+  type ArchiveRowLayout,
+} from './archiveDetailLayout'
 import { parseArchiveSeasonFromTitle } from './archiveSeasonFilters'
 
 export const ARCHIVE_DETAIL_CONFIG_UPDATED_EVENT = 'otz-archive-detail-config-updated'
@@ -30,6 +39,8 @@ export interface AdminArchiveImageRef {
 
 export interface AdminArchiveDetailRow {
   id: string
+  /** Figma 141-3059 row template — defaults from columnsPerRow when omitted. */
+  rowLayout?: ArchiveRowLayout
   columnsPerRow: ArchiveColumnsPerRow
   images: AdminArchiveImageRef[]
 }
@@ -73,14 +84,64 @@ export function createRowId(): string {
   return `row-${Date.now()}-${Math.random().toString(36).slice(2, 8)}`
 }
 
+export function normalizeRowLayoutFields(row: AdminArchiveDetailRow): AdminArchiveDetailRow {
+  const rowLayout = inferRowLayout(row.columnsPerRow, row.rowLayout)
+  const columnsPerRow = columnsPerRowFromLayout(rowLayout)
+  const slotCount = rowLayoutSlotCount(rowLayout)
+  const images = [...row.images]
+  while (images.length < slotCount) images.push(createEmptyAdminArchiveImageRef())
+
+  return {
+    ...row,
+    rowLayout,
+    columnsPerRow,
+    images: images.slice(0, slotCount),
+  }
+}
+
+export function createDetailRowWithLayout(
+  layout: ArchiveRowLayout,
+  images: AdminArchiveImageRef[] = [],
+): AdminArchiveDetailRow {
+  const slotCount = rowLayoutSlotCount(layout)
+  const filled = Array.from({ length: slotCount }, (_, index) => images[index] ?? createEmptyAdminArchiveImageRef())
+
+  return normalizeRowLayoutFields({
+    id: createRowId(),
+    rowLayout: layout,
+    columnsPerRow: columnsPerRowFromLayout(layout),
+    images: filled,
+  })
+}
+
+export function createDetailRowsFromFigmaAutoLayout(
+  uploaded: AdminArchiveImageRef[],
+  startLayoutIndex = 0,
+): AdminArchiveDetailRow[] {
+  const plan = planFigmaAutoLayoutRows(uploaded.length, startLayoutIndex)
+  let offset = 0
+
+  return plan.map(({ layout, slotCount }) => {
+    const row = createDetailRowWithLayout(layout, uploaded.slice(offset, offset + slotCount))
+    offset += slotCount
+    return row
+  })
+}
+
 export function createEmptyAdminArchiveDetailRow(
   columnsPerRow: ArchiveColumnsPerRow = 1,
+  rowLayout?: ArchiveRowLayout,
 ): AdminArchiveDetailRow {
-  return {
+  const layout = rowLayout ?? inferRowLayout(columnsPerRow)
+  const slots = columnsPerRowFromLayout(layout)
+  return normalizeRowLayoutFields({
     id: createRowId(),
-    columnsPerRow,
-    images: Array.from({ length: columnsPerRow }, () => createEmptyAdminArchiveImageRef()),
-  }
+    rowLayout: layout,
+    columnsPerRow: slots,
+    images: Array.from({ length: getRowSlotCount({ columnsPerRow: slots, rowLayout: layout }) }, () =>
+      createEmptyAdminArchiveImageRef(),
+    ),
+  })
 }
 
 export function createEmptyAdminArchiveLookbookEntry(id: string): AdminArchiveLookbookEntry {
@@ -126,7 +187,7 @@ export function archiveEntryHasDetailData(entry: AdminArchiveLookbookEntry): boo
   if (entry.introHeading?.trim() || entry.introBody?.trim()) return true
   if (entry.thumbnailUrl?.trim()) return true
   return entry.detailRows.some((row) =>
-    row.images.slice(0, row.columnsPerRow).some((img) => Boolean(img.imageUrl?.trim())),
+    row.images.slice(0, getRowSlotCount(row)).some((img) => Boolean(img.imageUrl?.trim())),
   )
 }
 
@@ -161,21 +222,24 @@ export function getNextArchiveLookbookId(lookbooks: AdminArchiveLookbookEntry[])
 export function getLatestArchiveLookbookIdFromConfig(
   config: AdminArchiveDetailConfig = getEffectiveArchiveDetailConfig(),
 ): string | null {
-  const published = sortArchiveLookbooksNewestFirst(config.lookbooks).filter(archiveEntryHasPublishableListData)
+  const published = config.lookbooks.filter(archiveEntryHasPublishableListData)
   return published[0]?.id ?? null
 }
 
 export function countDetailImages(rows: AdminArchiveDetailRow[]): number {
   return rows.reduce(
-    (total, row) => total + row.images.slice(0, row.columnsPerRow).filter((img) => img.imageUrl?.trim()).length,
+    (total, row) =>
+      total +
+      row.images.slice(0, getRowSlotCount(row)).filter((img) => img.imageUrl?.trim()).length,
     0,
   )
 }
 
 export function countCompleteRows(rows: AdminArchiveDetailRow[]): number {
-  return rows.filter((row) =>
-    row.images.slice(0, row.columnsPerRow).every((img) => Boolean(img.imageUrl?.trim())),
-  ).length
+  return rows.filter((row) => {
+    const slots = getRowSlotCount(row)
+    return row.images.slice(0, slots).every((img) => Boolean(img.imageUrl?.trim()))
+  }).length
 }
 
 function flattenPublishableImageUrls(entry: AdminArchiveLookbookEntry): string[] {
@@ -184,7 +248,7 @@ function flattenPublishableImageUrls(entry: AdminArchiveLookbookEntry): string[]
   if (isPublishableArchiveImageUrl(thumb)) urls.push(thumb!)
 
   for (const row of entry.detailRows) {
-    for (let index = 0; index < row.columnsPerRow; index += 1) {
+    for (let index = 0; index < getRowSlotCount(row); index += 1) {
       const url = row.images[index]?.imageUrl?.trim()
       if (isPublishableArchiveImageUrl(url)) urls.push(url!)
     }
@@ -198,7 +262,7 @@ function flattenImageFileNames(entry: AdminArchiveLookbookEntry): string[] {
   if (entry.thumbnailFileName?.trim()) names.push(entry.thumbnailFileName.trim())
 
   for (const row of entry.detailRows) {
-    for (let index = 0; index < row.columnsPerRow; index += 1) {
+    for (let index = 0; index < getRowSlotCount(row); index += 1) {
       const name = row.images[index]?.imageFileName?.trim()
       if (name) names.push(name)
     }
@@ -217,7 +281,7 @@ export function remapDetailRowsWithPublishableUrls(
 
   return rows.map((row) => ({
     ...row,
-    images: Array.from({ length: row.columnsPerRow }, (_, slotIndex) => {
+    images: Array.from({ length: getRowSlotCount(row) }, (_, slotIndex) => {
       const previous = row.images[slotIndex] ?? createEmptyAdminArchiveImageRef()
       const imageUrl = publishableUrls[urlIndex] ?? previous.imageUrl
       const imageFileName = fileNames[urlIndex] ?? previous.imageFileName
@@ -353,15 +417,18 @@ function normalizeImageRef(raw: unknown): AdminArchiveImageRef {
 function normalizeDetailRow(raw: unknown, fallback: AdminArchiveDetailRow): AdminArchiveDetailRow {
   const item = raw as Partial<AdminArchiveDetailRow>
   const columnsPerRow = normalizeColumnsPerRow(item?.columnsPerRow ?? fallback.columnsPerRow)
-  const images = Array.from({ length: columnsPerRow }, (_, index) =>
-    normalizeImageRef(item?.images?.[index]),
-  )
+  const rowLayout = isArchiveRowLayout(item?.rowLayout)
+    ? item.rowLayout
+    : inferRowLayout(columnsPerRow, item?.rowLayout)
+  const slotCount = getRowSlotCount({ columnsPerRow, rowLayout })
+  const images = Array.from({ length: slotCount }, (_, index) => normalizeImageRef(item?.images?.[index]))
 
-  return {
+  return normalizeRowLayoutFields({
     id: typeof item?.id === 'string' ? item.id : fallback.id,
+    rowLayout,
     columnsPerRow,
     images,
-  }
+  })
 }
 
 function migrateLegacyDetailRows(raw: LegacyAdminArchiveLookbookEntry): AdminArchiveDetailRow[] {
@@ -477,9 +544,21 @@ export function normalizeAdminArchiveDetailConfig(
 
   return {
     version: 1,
-    lookbooks: sortArchiveLookbooksNewestFirst(lookbooks),
+    lookbooks,
     updatedAt: typeof raw.updatedAt === 'string' ? raw.updatedAt : null,
   }
+}
+
+/** Lower index in config.lookbooks = higher on archive list (admin sidebar top). */
+export function compareArchiveLookbooksByConfigOrder(
+  a: AdminArchiveLookbookEntry,
+  b: AdminArchiveLookbookEntry,
+  orderedIds: string[] = getEffectiveArchiveDetailConfig().lookbooks.map((entry) => entry.id),
+): number {
+  const aIndex = orderedIds.indexOf(a.id)
+  const bIndex = orderedIds.indexOf(b.id)
+  if (aIndex !== -1 && bIndex !== -1 && aIndex !== bIndex) return aIndex - bIndex
+  return compareArchiveLookbooksNewestFirst(a, b)
 }
 
 /** Mirrors server payload to localStorage — offline cache only, not source of truth. */

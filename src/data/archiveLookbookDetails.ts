@@ -1,4 +1,5 @@
 import { archiveAsset } from '../lib/archiveAssetUrl'
+import { inferRowLayout } from '../lib/archiveDetailLayout'
 import { ARCHIVE_LOOKBOOK_ITEMS, type ArchiveLookbookItem } from './archiveLookbooks'
 
 export interface ArchiveLookbookDetailImage {
@@ -15,6 +16,9 @@ export type ArchivePcDetailBlock =
       center: ArchiveLookbookDetailImage
       right: ArchiveLookbookDetailImage
     }
+  | { type: 'asymmetric-small-left'; small: ArchiveLookbookDetailImage; large: ArchiveLookbookDetailImage }
+  | { type: 'asymmetric-small-right'; large: ArchiveLookbookDetailImage; small: ArchiveLookbookDetailImage }
+  | { type: 'intro-split'; image: ArchiveLookbookDetailImage }
 
 export type ArchiveColumnsPerRow = 1 | 2 | 3
 
@@ -58,7 +62,30 @@ export function buildPcBlocksFromImages(
 
 export interface ArchiveDetailRowInput {
   columnsPerRow: ArchiveColumnsPerRow
+  rowLayout?: import('../lib/archiveDetailLayout').ArchiveRowLayout
   images: ArchiveLookbookDetailImage[]
+}
+
+/** Builds one PC block from row images + Figma layout template. */
+export function buildPcBlockFromRowInput(row: ArchiveDetailRowInput): ArchivePcDetailBlock | null {
+  const images = row.images.filter(Boolean)
+  if (!images.length) return null
+
+  const layout = inferRowLayout(row.columnsPerRow, row.rowLayout)
+
+  if (layout === 'intro-split' || layout === 'full') {
+    return { type: layout === 'intro-split' ? 'intro-split' : 'full', image: images[0] }
+  }
+
+  if (layout === 'asymmetric-small-left' && images.length >= 2) {
+    return { type: 'asymmetric-small-left', small: images[0], large: images[1] }
+  }
+
+  if (layout === 'asymmetric-small-right' && images.length >= 2) {
+    return { type: 'asymmetric-small-right', large: images[0], small: images[1] }
+  }
+
+  return buildPcBlockFromRowImages(images, row.columnsPerRow)
 }
 
 /** Builds PC blocks from per-row column settings (mixed 1/2/3 layout). */
@@ -66,7 +93,7 @@ export function buildPcBlocksFromRows(rows: ArchiveDetailRowInput[]): ArchivePcD
   const blocks: ArchivePcDetailBlock[] = []
 
   for (const row of rows) {
-    const block = buildPcBlockFromRowImages(row.images, row.columnsPerRow)
+    const block = buildPcBlockFromRowInput(row)
     if (block) blocks.push(block)
   }
 
