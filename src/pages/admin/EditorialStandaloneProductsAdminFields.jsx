@@ -59,8 +59,7 @@ export function EditorialStandaloneProductsAdminFields({ event, onUpdate }) {
     <div className="space-y-3">
       <div className="flex flex-wrap items-center justify-between gap-2">
         <div>
-          <p className="m-0 text-[11px] font-semibold text-dark">갤러리 하단 단독상품</p>
-          <p className="m-0 mt-0.5 text-[10px] text-subtleText">
+          <p className="m-0 text-[10px] text-subtleText">
             Figma 144:4223 — 룩북 갤러리 바로 아래 노출 · 상품당 03·04·05·07·08 컷 자동 출력
           </p>
         </div>

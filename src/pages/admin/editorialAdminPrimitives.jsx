@@ -36,7 +36,7 @@ export function FormRow({ label, hint, children, alignTop = false }) {
   )
 }
 
-export function TextInput({ value, onChange, placeholder, multiline = false, rows = 3 }) {
+export function TextInput({ value, onChange, placeholder, multiline = false, rows = 3, className = '' }) {
   const cls =
     'w-full rounded-sm border border-lightGray bg-white px-2 py-1.5 text-[13px] text-dark outline-none focus:border-dark'
   if (multiline) {
@@ -46,7 +46,7 @@ export function TextInput({ value, onChange, placeholder, multiline = false, row
         value={value}
         onChange={(e) => onChange(e.target.value)}
         placeholder={placeholder}
-        className={`${cls} resize-y`}
+        className={`${cls} resize-y ${className}`}
       />
     )
   }

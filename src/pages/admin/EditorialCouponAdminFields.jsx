@@ -48,7 +48,8 @@ function CouponNotesField({ eventId, notes, onChange }) {
     <div className="space-y-2">
       <TextInput
         multiline
-        rows={10}
+        rows={4}
+        className="h-[100px] min-h-[100px]"
         value={text}
         onChange={(value) => {
           if (value.split('\n').length > MAX_COUPON_NOTES) return

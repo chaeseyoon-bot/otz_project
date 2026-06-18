@@ -35,8 +35,7 @@ export function EditorialCatalogProductGridsAdminFields({ event, onUpdate }) {
   return (
     <div className="space-y-3">
       <div>
-        <p className="m-0 text-[11px] font-semibold text-dark">카탈로그 상품 그리드</p>
-        <p className="m-0 mt-0.5 text-[10px] text-subtleText">
+        <p className="m-0 text-[10px] text-subtleText">
           Figma 151:4481 — 단독상품 아래 SHOES / BAG &amp; ACC 5열 그리드 · 섹션당 최대{' '}
           {CATALOG_PRODUCT_GRID_SLOTS}개
         </p>

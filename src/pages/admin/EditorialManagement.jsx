@@ -22,8 +22,7 @@ import { getEditorialDetailPath } from '../../lib/editorialRoutes'
 import { navigateSpa } from '../../lib/spaNavigation'
 import { FormRow, ImageUploader, TextInput } from './editorialAdminPrimitives'
 import { EditorialSectionFields } from './editorialSectionFields'
-import { EditorialCollectionAdminFields } from './EditorialCollectionAdminFields'
-import { EditorialHeroInfoAdminFields } from './EditorialHeroInfoAdminFields'
+import { EditorialHeroInfoAdminFields, EditorialHeroGalleryAdminFields } from './EditorialHeroInfoAdminFields'
 import { EditorialStandaloneProductsAdminFields } from './EditorialStandaloneProductsAdminFields'
 import { EditorialCatalogProductGridsAdminFields } from './EditorialCatalogProductGridsAdminFields'
 
@@ -568,7 +567,11 @@ export function EditorialManagement() {
               </SectionBlock>
 
               <SectionBlock title="히어로 하단 정보">
-                <EditorialHeroInfoAdminFields
+                <EditorialHeroInfoAdminFields event={selectedEvent} onUpdate={updateSelectedEvent} />
+              </SectionBlock>
+
+              <SectionBlock title="갤러리 이미지 등록">
+                <EditorialHeroGalleryAdminFields
                   event={selectedEvent}
                   onUpdate={updateSelectedEvent}
                   uploadingKey={uploadingKey}
@@ -577,7 +580,7 @@ export function EditorialManagement() {
               </SectionBlock>
 
               {isCatalogCategory ? (
-                <SectionBlock title="갤러리 하단 단독상품">
+                <SectionBlock title="단독상품 등록">
                   <EditorialStandaloneProductsAdminFields event={selectedEvent} onUpdate={updateSelectedEvent} />
                 </SectionBlock>
               ) : null}
@@ -588,16 +591,7 @@ export function EditorialManagement() {
                 </SectionBlock>
               ) : null}
 
-              {isCatalogCategory ? (
-                <SectionBlock title="COLLECTION / COLLABO 콘텐츠">
-                  <EditorialCollectionAdminFields
-                    event={selectedEvent}
-                    uploadingKey={uploadingKey}
-                    onUpdate={updateSelectedEvent}
-                    onImageUpload={handleImageUpload}
-                  />
-                </SectionBlock>
-              ) : (
+              {!isCatalogCategory ? (
               <SectionBlock title="콘텐츠 영역">
                 <p className="m-0 mb-2 text-[10px] text-subtleText">
                   히어로 아래 영역입니다. 순서 변경·추가·제거가 가능합니다. (COLLABO / KEYWORD)
@@ -661,7 +655,7 @@ export function EditorialManagement() {
                   )}
                 </div>
               </SectionBlock>
-              )}
+              ) : null}
 
             </div>
           </div>
