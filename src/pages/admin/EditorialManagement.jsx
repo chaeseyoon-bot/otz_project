@@ -1,4 +1,5 @@
 import { useEffect, useMemo, useRef, useState } from 'react'
+import { useLockBodyScroll } from '../../hooks/useLockBodyScroll'
 import { EditorialPcDetailContent } from '../../components/organisms/EditorialPcDetailContent'
 import { EditorialCollectionPcDetailContent } from '../../components/organisms/EditorialCollectionPcDetailContent'
 import { useEditorialConfigContext } from '../../contexts/EditorialConfigContext'
@@ -191,6 +192,58 @@ function EditorialPreviewPanel({ event, config }) {
   )
 }
 
+function ConfirmDialog({ title, message, confirmLabel = '삭제', cancelLabel = '취소', onConfirm, onCancel }) {
+  useLockBodyScroll(true)
+
+  useEffect(() => {
+    const onKeyDown = (event) => {
+      if (event.key === 'Escape') onCancel()
+    }
+    window.addEventListener('keydown', onKeyDown)
+    return () => window.removeEventListener('keydown', onKeyDown)
+  }, [onCancel])
+
+  return (
+    <div
+      className="fixed inset-0 z-[60] flex items-center justify-center bg-black/50 p-4"
+      onClick={onCancel}
+      role="presentation"
+    >
+      <div
+        className="w-full max-w-[360px] rounded-sm bg-white p-6 shadow-xl"
+        onClick={(event) => event.stopPropagation()}
+        role="alertdialog"
+        aria-modal="true"
+        aria-labelledby="editorial-confirm-dialog-title"
+        aria-describedby="editorial-confirm-dialog-message"
+      >
+        <p id="editorial-confirm-dialog-title" className="m-0 text-bodyBold1 text-dark">
+          {title}
+        </p>
+        <p id="editorial-confirm-dialog-message" className="m-0 mt-2 text-bodyRegular2 text-textDefault">
+          {message}
+        </p>
+        <div className="mt-6 flex justify-end gap-2">
+          <button
+            type="button"
+            className="rounded-sm border border-lightGray bg-white px-4 py-2 text-bodySmall text-dark hover:border-dark"
+            onClick={onCancel}
+          >
+            {cancelLabel}
+          </button>
+          <button
+            type="button"
+            className="rounded-sm border border-dark bg-dark px-4 py-2 text-bodySmall text-white hover:opacity-90"
+            onClick={onConfirm}
+          >
+            {confirmLabel}
+          </button>
+        </div>
+      </div>
+    </div>
+  )
+}
+
 export function EditorialManagement() {
   const { saveConfig } = useEditorialConfigContext()
   const [config, setConfig] = useState(createDefaultEditorialConfig)
@@ -199,6 +252,7 @@ export function EditorialManagement() {
   const [isSaving, setIsSaving] = useState(false)
   const [message, setMessage] = useState(null)
   const [sectionToAdd, setSectionToAdd] = useState('')
+  const [pendingDeleteEventId, setPendingDeleteEventId] = useState(null)
 
   const sortedEvents = useMemo(
     () => sortEditorialEventsNewestFirst(config.events),
@@ -215,6 +269,11 @@ export function EditorialManagement() {
   const selectedEvent = useMemo(
     () => config.events.find((event) => event.id === selectedEventId) ?? null,
     [config.events, selectedEventId],
+  )
+
+  const pendingDeleteEvent = useMemo(
+    () => config.events.find((event) => event.id === pendingDeleteEventId) ?? null,
+    [config.events, pendingDeleteEventId],
   )
 
   const availableSections = useMemo(() => {
@@ -453,7 +512,7 @@ export function EditorialManagement() {
                     <button
                       type="button"
                       className="shrink-0 rounded-sm border border-lightGray bg-white px-1 text-[10px] text-subtleText hover:text-dark"
-                      onClick={() => handleRemoveEvent(event.id)}
+                      onClick={() => setPendingDeleteEventId(event.id)}
                       aria-label={`${event.id} 삭제`}
                     >
                       ×
@@ -540,7 +599,7 @@ export function EditorialManagement() {
                   <button
                     type="button"
                     className="rounded-sm border border-red-200 bg-white px-2 py-1 text-[11px] text-red-600"
-                    onClick={() => handleRemoveEvent(selectedEvent.id)}
+                    onClick={() => setPendingDeleteEventId(selectedEvent.id)}
                   >
                     기획전 삭제
                   </button>
@@ -665,6 +724,18 @@ export function EditorialManagement() {
           </div>
         </div>
       </div>
+
+      {pendingDeleteEvent ? (
+        <ConfirmDialog
+          title="기획전 삭제"
+          message={`${pendingDeleteEvent.id} (${pendingDeleteEvent.title || '제목 없음'})을(를) 삭제하시겠습니까?`}
+          onCancel={() => setPendingDeleteEventId(null)}
+          onConfirm={() => {
+            handleRemoveEvent(pendingDeleteEvent.id)
+            setPendingDeleteEventId(null)
+          }}
+        />
+      ) : null}
     </div>
   )
 }
