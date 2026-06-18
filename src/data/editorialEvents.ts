@@ -1,7 +1,7 @@
 import { editorialAsset } from '../lib/editorialAssetUrl'
 import { resolveEditorialListItems } from '../lib/editorialContentResolver'
 
-export type EditorialCategoryId = 'all' | 'collection' | 'curation' | 'collabo'
+export type EditorialCategoryId = 'all' | 'collection' | 'keyword' | 'collabo'
 
 export interface EditorialEventItem {
   id: string
@@ -15,8 +15,8 @@ export interface EditorialEventItem {
 
 export const EDITORIAL_CATEGORY_FILTERS: { id: EditorialCategoryId; label: string }[] = [
   { id: 'collection', label: 'COLLECTION' },
-  { id: 'curation', label: 'CURATION' },
   { id: 'collabo', label: 'COLLABO' },
+  { id: 'keyword', label: 'KEYWORD' },
 ]
 
 /**
@@ -77,16 +77,16 @@ export const EDITORIAL_EVENTS: EditorialEventItem[] = [
     thumbnail: editorialAsset('03.png'),
     title: 'Winter Mood 큐레이션 — 따뜻한 실루엣',
     period: '2025.12.01 - 2026.01.31',
-    category: 'curation',
-    categoryLabel: 'CURATION',
+    category: 'keyword',
+    categoryLabel: 'KEYWORD',
   },
   {
     id: 'editorial-08',
     thumbnail: editorialAsset('04.png'),
     title: 'Holiday Gift Edit — 연말 선물 가이드',
     period: '2025.11.15 - 2025.12.31',
-    category: 'curation',
-    categoryLabel: 'CURATION',
+    category: 'keyword',
+    categoryLabel: 'KEYWORD',
   },
   {
     id: 'editorial-09',

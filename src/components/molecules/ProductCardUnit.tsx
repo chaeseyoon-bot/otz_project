@@ -68,6 +68,12 @@ interface ProductCardUnitProps {
   hideMultiCutDots?: boolean
   /** Override price row wrapper below title. */
   priceRowClassName?: string
+  /** Override discount rate text styling in the price row. */
+  priceDiscountClassName?: string
+  /** Override sale price text styling in the price row. */
+  priceSaleClassName?: string
+  /** Override original price text styling in the price row. */
+  priceOriginalClassName?: string
 }
 
 const SWIPE_COMMIT_PX = 48
@@ -354,6 +360,30 @@ function ProductMediaOverlays({
   )
 }
 
+export function ProductCardPriceRow({
+  product,
+  className = 'flex flex-wrap items-center gap-x-[6px] gap-y-0 pt-1',
+  discountClassName = 'text-[15px] font-bold text-primary',
+  priceClassName = 'text-[15px] font-bold text-dark',
+  originalPriceClassName = 'text-[13px] font-normal leading-[1.4] tracking-[-0.02em] text-subtleText line-through',
+}: {
+  product: Pick<ProductCardItem, 'discountRate' | 'price' | 'originalPrice'>
+  className?: string
+  discountClassName?: string
+  priceClassName?: string
+  originalPriceClassName?: string
+}) {
+  const hasDiscount = Boolean(product.discountRate?.trim())
+
+  return (
+    <div className={className}>
+      {hasDiscount ? <span className={discountClassName}>{product.discountRate}</span> : null}
+      <span className={priceClassName}>{product.price}</span>
+      {product.originalPrice ? <span className={originalPriceClassName}>{product.originalPrice}</span> : null}
+    </div>
+  )
+}
+
 export function ProductCardUnit({
   product,
   liked,
@@ -367,6 +397,9 @@ export function ProductCardUnit({
   rank,
   hideMultiCutDots = false,
   priceRowClassName = 'flex flex-wrap items-center gap-x-[6px] gap-y-0 pt-1',
+  priceDiscountClassName,
+  priceSaleClassName,
+  priceOriginalClassName,
 }: ProductCardUnitProps) {
   const [isDesktop, setIsDesktop] = useState(
     () => typeof window !== 'undefined' && window.matchMedia('(min-width: 1024px)').matches,
@@ -419,15 +452,13 @@ export function ProductCardUnit({
         ) : null}
       </div>
       <p className={titleClassName}>{product.title}</p>
-      <div className={priceRowClassName}>
-        <span className="text-[15px] font-bold text-primary">{product.discountRate}</span>
-        <span className="text-[15px] font-bold text-black">{product.price}</span>
-        {product.originalPrice ? (
-          <span className="text-[13px] font-normal leading-[1.4] tracking-[-0.02em] text-subtleText line-through">
-            {product.originalPrice}
-          </span>
-        ) : null}
-      </div>
+      <ProductCardPriceRow
+        product={product}
+        className={priceRowClassName}
+        discountClassName={priceDiscountClassName}
+        priceClassName={priceSaleClassName}
+        originalPriceClassName={priceOriginalClassName}
+      />
     </article>
   )
 }

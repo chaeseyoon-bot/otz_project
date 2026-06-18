@@ -1,13 +1,16 @@
 import { useEffect, useMemo, useRef, useState } from 'react'
 import { EditorialPcDetailContent } from '../../components/organisms/EditorialPcDetailContent'
+import { EditorialCollectionPcDetailContent } from '../../components/organisms/EditorialCollectionPcDetailContent'
 import { useEditorialConfigContext } from '../../contexts/EditorialConfigContext'
 import { uploadAdminBannerImage } from '../../lib/adminBannerUpload'
 import {
   createEmptyEditorialEvent,
   createDefaultEditorialConfig,
+  createDefaultCollectionBlocks,
   EDITORIAL_CATEGORY_OPTIONS,
   EDITORIAL_SECTION_LABELS,
   EDITORIAL_SECTION_TYPES,
+  editorialCategoryLabel,
   getEditorialImageBlockLabel,
   getNextEditorialId,
   loadAdminEditorialConfig,
@@ -19,6 +22,10 @@ import { getEditorialDetailPath } from '../../lib/editorialRoutes'
 import { navigateSpa } from '../../lib/spaNavigation'
 import { FormRow, ImageUploader, TextInput } from './editorialAdminPrimitives'
 import { EditorialSectionFields } from './editorialSectionFields'
+import { EditorialCollectionAdminFields } from './EditorialCollectionAdminFields'
+import { EditorialHeroInfoAdminFields } from './EditorialHeroInfoAdminFields'
+import { EditorialStandaloneProductsAdminFields } from './EditorialStandaloneProductsAdminFields'
+import { EditorialCatalogProductGridsAdminFields } from './EditorialCatalogProductGridsAdminFields'
 
 function SectionBlock({ title, children }) {
   return (
@@ -170,8 +177,12 @@ function EditorialPreviewPanel({ event, config }) {
         {isLoading && !detail ? (
           <p className="m-0 px-2 py-12 text-center text-[10px] text-subtleText">로딩…</p>
         ) : detail ? (
-          <ScaledPcPreview key={`${event.id}-${detail.sectionOrder.join(',')}`}>
-            <EditorialPcDetailContent detail={detail} />
+          <ScaledPcPreview key={`${event.id}-${detail.layout}-${detail.collectionBlocks?.length ?? 0}`}>
+            {detail.layout === 'collection' ? (
+              <EditorialCollectionPcDetailContent detail={detail} />
+            ) : (
+              <EditorialPcDetailContent detail={detail} />
+            )}
           </ScaledPcPreview>
         ) : (
           <p className="m-0 px-2 py-12 text-center text-[10px] text-subtleText">미리보기 없음</p>
@@ -343,6 +354,9 @@ export function EditorialManagement() {
     updateSelectedEvent({ productTabs: nextTabs })
   }
 
+  const isCatalogCategory =
+    selectedEvent?.category === 'collection' || selectedEvent?.category === 'collabo'
+
   if (!selectedEvent) {
     return (
       <div className="flex min-h-0 flex-1 flex-col overflow-hidden">
@@ -479,9 +493,15 @@ export function EditorialManagement() {
                       value={selectedEvent.category}
                       onChange={(e) => {
                         const category = e.target.value
-                        const label =
-                          EDITORIAL_CATEGORY_OPTIONS.find((item) => item.value === category)?.label ?? 'COLLECTION'
-                        updateSelectedEvent({ category, categoryLabel: label })
+                        const categoryLabel = editorialCategoryLabel(category)
+                        const patch = { category, categoryLabel }
+                        if (
+                          (category === 'collection' || category === 'collabo') &&
+                          !selectedEvent.collectionBlocks?.length
+                        ) {
+                          patch.collectionBlocks = createDefaultCollectionBlocks()
+                        }
+                        updateSelectedEvent(patch)
                       }}
                       className="h-8 w-full rounded-sm border border-lightGray bg-white px-2 text-[13px]"
                     >
@@ -531,7 +551,7 @@ export function EditorialManagement() {
               <SectionBlock title="히어로 배너">
                 <ImageUploader
                   label="통이미지"
-                  spec="MO/PC 공용 · Figma 1400×637"
+                  spec={isCatalogCategory ? 'MO/PC 공용 · 전체 너비 히어로' : 'MO/PC 공용 · Figma 1400×637'}
                   aspectClass="aspect-[1400/637] w-[140px]"
                   previewUrl={selectedEvent.mainBannerUrl}
                   fileName={selectedEvent.mainBannerFileName}
@@ -547,9 +567,40 @@ export function EditorialManagement() {
                 />
               </SectionBlock>
 
+              <SectionBlock title="히어로 하단 정보">
+                <EditorialHeroInfoAdminFields
+                  event={selectedEvent}
+                  onUpdate={updateSelectedEvent}
+                  uploadingKey={uploadingKey}
+                  onImageUpload={handleImageUpload}
+                />
+              </SectionBlock>
+
+              {isCatalogCategory ? (
+                <SectionBlock title="갤러리 하단 단독상품">
+                  <EditorialStandaloneProductsAdminFields event={selectedEvent} onUpdate={updateSelectedEvent} />
+                </SectionBlock>
+              ) : null}
+
+              {isCatalogCategory ? (
+                <SectionBlock title="카탈로그 상품 그리드 (SHOES / BAG & ACC)">
+                  <EditorialCatalogProductGridsAdminFields event={selectedEvent} onUpdate={updateSelectedEvent} />
+                </SectionBlock>
+              ) : null}
+
+              {isCatalogCategory ? (
+                <SectionBlock title="COLLECTION / COLLABO 콘텐츠">
+                  <EditorialCollectionAdminFields
+                    event={selectedEvent}
+                    uploadingKey={uploadingKey}
+                    onUpdate={updateSelectedEvent}
+                    onImageUpload={handleImageUpload}
+                  />
+                </SectionBlock>
+              ) : (
               <SectionBlock title="콘텐츠 영역">
                 <p className="m-0 mb-2 text-[10px] text-subtleText">
-                  히어로 아래 영역입니다. 순서 변경·추가·제거가 가능합니다.
+                  히어로 아래 영역입니다. 순서 변경·추가·제거가 가능합니다. (COLLABO / KEYWORD)
                 </p>
                 <div className="space-y-2.5">
                   {selectedEvent.sectionOrder.map((sectionType, index) => (
@@ -610,6 +661,7 @@ export function EditorialManagement() {
                   )}
                 </div>
               </SectionBlock>
+              )}
 
             </div>
           </div>

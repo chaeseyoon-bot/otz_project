@@ -1,10 +1,8 @@
 import {
   createEmptyEditorialBenefit,
-  createEmptyEditorialCoupon,
   createEmptyEditorialProductTab,
   FEATURED_PRODUCT_SLOTS,
   MAX_BENEFITS,
-  MAX_COUPONS,
   MAX_PRODUCT_TABS,
   MUST_ITEM_SLOTS,
   PRODUCT_TAB_SLOTS,
@@ -99,125 +97,10 @@ export function EditorialSectionFields({
 
     case 'coupon':
       return (
-        <div className="space-y-2">
-          {event.coupons.map((coupon, index) => (
-            <div key={coupon.id} className="space-y-2 rounded-sm border border-lightGray p-2.5">
-              <div className="flex items-center justify-between">
-                <p className="m-0 text-[11px] font-semibold">쿠폰 {index + 1}</p>
-                <button
-                  type="button"
-                  className="text-[11px] text-subtleText"
-                  onClick={() => onUpdate({ coupons: event.coupons.filter((_, i) => i !== index) })}
-                >
-                  삭제
-                </button>
-              </div>
-              <div className="grid gap-2 sm:grid-cols-2">
-                <FormRow label="종류">
-                  <select
-                    value={coupon.kind}
-                    onChange={(e) => {
-                      const kind = e.target.value
-                      onUpdate({
-                        coupons: event.coupons.map((item, i) =>
-                          i === index ? { ...item, kind, unit: kind === 'amount' ? '원' : '%' } : item,
-                        ),
-                      })
-                    }}
-                    className="h-8 w-full rounded-sm border border-lightGray px-2 text-[13px]"
-                  >
-                    <option value="percent">할인율 (%)</option>
-                    <option value="amount">할인금액 (원)</option>
-                  </select>
-                </FormRow>
-                <FormRow label="라벨">
-                  <TextInput
-                    value={coupon.label}
-                    onChange={(v) =>
-                      onUpdate({
-                        coupons: event.coupons.map((item, i) => (i === index ? { ...item, label: v } : item)),
-                      })
-                    }
-                    placeholder="장바구니 쿠폰"
-                  />
-                </FormRow>
-                <FormRow label="할인 값">
-                  <TextInput
-                    value={coupon.value}
-                    onChange={(v) =>
-                      onUpdate({
-                        coupons: event.coupons.map((item, i) => (i === index ? { ...item, value: v } : item)),
-                      })
-                    }
-                    placeholder="15"
-                  />
-                </FormRow>
-                <FormRow label="유효 기간">
-                  <TextInput
-                    value={coupon.validPeriod}
-                    onChange={(v) =>
-                      onUpdate({
-                        coupons: event.coupons.map((item, i) => (i === index ? { ...item, validPeriod: v } : item)),
-                      })
-                    }
-                  />
-                </FormRow>
-                <FormRow label="조건 1">
-                  <TextInput
-                    value={coupon.condition1}
-                    onChange={(v) =>
-                      onUpdate({
-                        coupons: event.coupons.map((item, i) => (i === index ? { ...item, condition1: v } : item)),
-                      })
-                    }
-                  />
-                </FormRow>
-                <FormRow label="조건 2">
-                  <TextInput
-                    value={coupon.condition2}
-                    onChange={(v) =>
-                      onUpdate({
-                        coupons: event.coupons.map((item, i) => (i === index ? { ...item, condition2: v } : item)),
-                      })
-                    }
-                  />
-                </FormRow>
-                <FormRow label="적용 상품">
-                  <TextInput
-                    value={coupon.applicableProducts}
-                    onChange={(v) =>
-                      onUpdate({
-                        coupons: event.coupons.map((item, i) =>
-                          i === index ? { ...item, applicableProducts: v } : item,
-                        ),
-                      })
-                    }
-                  />
-                </FormRow>
-              </div>
-            </div>
-          ))}
-          {event.coupons.length < MAX_COUPONS ? (
-            <button
-              type="button"
-              className="rounded-sm border border-dashed border-lightGray px-2 py-1 text-[11px]"
-              onClick={() => onUpdate({ coupons: [...event.coupons, createEmptyEditorialCoupon()] })}
-            >
-              + 쿠폰
-            </button>
-          ) : null}
-          <FormRow label="유의사항" hint="한 줄씩">
-            <TextInput
-              value={event.couponNotes.join('\n')}
-              onChange={(value) =>
-                onUpdate({ couponNotes: value.split('\n').filter((line) => line.trim()) })
-              }
-              multiline
-              rows={3}
-              placeholder="줄바꿈으로 구분"
-            />
-          </FormRow>
-        </div>
+        <p className="m-0 text-[11px] leading-snug text-subtleText">
+          쿠폰 카드 · 상세 · 유의사항은 「히어로 하단 정보」의 쿠폰 상세에서 편집합니다. 이 영역은 콘텐츠
+          순서에만 사용됩니다.
+        </p>
       )
 
     case 'lookbook':

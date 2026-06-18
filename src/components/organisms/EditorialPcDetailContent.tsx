@@ -7,6 +7,7 @@ import type {
   EditorialProductTab,
 } from '../../data/editorialEventDetails'
 import { ProductCardUnit } from '../molecules/ProductCardUnit'
+import { EditorialHeroInfoSection } from './EditorialHeroInfoSection'
 import { ICONS } from '../../constants/icons'
 import { getProductDetailPath } from '../../lib/productRoutes'
 import { navigateSpa } from '../../lib/spaNavigation'
@@ -170,7 +171,7 @@ function EditorialCouponCard({ coupon }: { coupon: EditorialCouponItem }) {
           type="button"
           className="mt-12 w-full rounded-sm border-0 bg-dark px-[30px] py-[30px] text-[28px] font-medium leading-[1.4] tracking-[-0.04em] text-white hover:opacity-90"
         >
-          쿠폰 다운로드하기
+          {coupon.downloadLabel}
         </button>
       </div>
     </div>
@@ -180,17 +181,23 @@ function EditorialCouponCard({ coupon }: { coupon: EditorialCouponItem }) {
 function EditorialCouponSection({
   coupons,
   notes,
+  sectionConfig,
 }: {
   coupons: EditorialCouponItem[]
   notes: string[]
+  sectionConfig: EditorialEventDetail['couponSection']
 }) {
   if (coupons.length === 0) return null
 
   return (
     <section className="w-full bg-white pb-[100px] pt-[80px]">
       <div className="flex flex-col items-center pb-[30px]">
-        <p className="m-0 text-[18px] font-bold leading-[1.4] tracking-[-0.02em] text-subtleText">SPECIAL GIFT</p>
-        <h2 className="m-0 text-[52px] font-extrabold leading-[1.2] tracking-[-0.02em] text-dark">COUPON</h2>
+        <p className="m-0 text-[18px] font-bold leading-[1.4] tracking-[-0.02em] text-subtleText">
+          {sectionConfig.eyebrow}
+        </p>
+        <h2 className="m-0 text-[52px] font-extrabold leading-[1.2] tracking-[-0.02em] text-dark">
+          {sectionConfig.title}
+        </h2>
       </div>
       <div className="bg-[#f1f1f1] px-40 py-[100px]">
         <div className="flex flex-col gap-10">
@@ -202,7 +209,7 @@ function EditorialCouponSection({
       {notes.length > 0 ? (
         <div className="px-[100px] pt-[50px]">
           <h3 className="m-0 text-center text-[34px] font-extrabold leading-[1.2] tracking-[-0.02em] text-dark">
-            유의사항
+            {sectionConfig.notesTitle}
           </h3>
           <ul className="m-0 mt-[30px] flex list-none flex-col gap-3 p-0">
             {notes.map((note, index) => (
@@ -229,6 +236,8 @@ function EditorialProductGrid({
   likedIds: Set<string>
   onToggleLike: (id: string) => void
 }) {
+  if (!section.products.length) return null
+
   const gridClass =
     section.columns === 5
       ? 'grid grid-cols-5 auto-rows-[1fr] items-stretch gap-x-4 gap-y-10'
@@ -309,14 +318,15 @@ function EditorialTabbedProducts({
   onToggleLike: (id: string) => void
 }) {
   const [activeTabId, setActiveTabId] = useState(tabs[0]?.id ?? 'all')
-  const activeTab = tabs.find((tab) => tab.id === activeTabId) ?? tabs[0]
+  const tabsWithProducts = tabs.filter((tab) => tab.products.length > 0)
+  const activeTab = tabsWithProducts.find((tab) => tab.id === activeTabId) ?? tabsWithProducts[0]
 
-  if (!activeTab) return null
+  if (!activeTab || !tabsWithProducts.length) return null
 
   return (
     <section className="w-full bg-white pb-20 pt-10">
       <div className="flex w-full justify-center bg-dark">
-        {tabs.map((tab) => {
+        {tabsWithProducts.map((tab) => {
           const isActive = tab.id === activeTabId
           return (
             <button
@@ -357,7 +367,13 @@ function renderEditorialSection(
     case 'gift':
       return <EditorialGiftSection gift={detail.giftSection} />
     case 'coupon':
-      return <EditorialCouponSection coupons={detail.coupons} notes={detail.couponNotes} />
+      return (
+        <EditorialCouponSection
+          coupons={detail.coupons}
+          notes={detail.couponNotes}
+          sectionConfig={detail.couponSection}
+        />
+      )
     case 'lookbook':
       return <EditorialLookbookImage images={detail.lookbookPair} />
     case 'featured_products':
@@ -394,6 +410,7 @@ export function EditorialPcDetailContent({ detail }: EditorialPcDetailContentPro
     <div className="mx-auto w-full max-w-[1400px] py-[60px]">
       <EditorialDetailHeader detail={detail} />
       <EditorialHeroBanner mainBanner={detail.mainBanner} />
+      <EditorialHeroInfoSection heroInfo={detail.heroInfo} />
       {detail.sectionOrder.map((sectionType) => (
         <Fragment key={sectionType}>{renderEditorialSection(sectionType, detail, likedIds, toggleLike)}</Fragment>
       ))}

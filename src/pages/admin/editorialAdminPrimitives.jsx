@@ -23,9 +23,13 @@ function FieldLabel({ children, hint }) {
   )
 }
 
-export function FormRow({ label, hint, children }) {
+export function FormRow({ label, hint, children, alignTop = false }) {
   return (
-    <div className="grid gap-1 sm:grid-cols-[108px_minmax(0,1fr)] sm:items-center sm:gap-3">
+    <div
+      className={`grid gap-1 sm:grid-cols-[108px_minmax(0,1fr)] sm:gap-3 ${
+        alignTop ? 'sm:items-start' : 'sm:items-center'
+      }`}
+    >
       <FieldLabel hint={hint}>{label}</FieldLabel>
       <div className="min-w-0">{children}</div>
     </div>

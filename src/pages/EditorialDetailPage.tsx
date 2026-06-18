@@ -1,7 +1,9 @@
 import { useEffect, useState } from 'react'
 import { EditorialMobileDetailContent } from '../components/organisms/EditorialMobileDetailContent'
+import { EditorialCollectionMobileDetailContent } from '../components/organisms/EditorialCollectionMobileDetailContent'
 import { EditorialMobileDetailHeader } from '../components/organisms/EditorialMobileDetailHeader'
 import { EditorialPcDetailContent } from '../components/organisms/EditorialPcDetailContent'
+import { EditorialCollectionPcDetailContent } from '../components/organisms/EditorialCollectionPcDetailContent'
 import { useEditorialConfigContext } from '../contexts/EditorialConfigContext'
 import { fetchEditorialEventDetail, type EditorialEventDetail } from '../data/editorialEventDetails'
 import { navigateSpa } from '../lib/spaNavigation'
@@ -49,14 +51,24 @@ export function EditorialDetailPage({ editorialId }: EditorialDetailPageProps) {
     return null
   }
 
+  const isCollection = detail.layout === 'collection'
+
   return (
     <>
       <main className="hidden bg-white lg:block">
-        <EditorialPcDetailContent detail={detail} />
+        {isCollection ? (
+          <EditorialCollectionPcDetailContent detail={detail} />
+        ) : (
+          <EditorialPcDetailContent detail={detail} />
+        )}
       </main>
       <main className="bg-white lg:hidden">
-        <EditorialMobileDetailHeader />
-        <EditorialMobileDetailContent detail={detail} />
+        {!isCollection ? <EditorialMobileDetailHeader /> : null}
+        {isCollection ? (
+          <EditorialCollectionMobileDetailContent detail={detail} />
+        ) : (
+          <EditorialMobileDetailContent detail={detail} />
+        )}
       </main>
     </>
   )

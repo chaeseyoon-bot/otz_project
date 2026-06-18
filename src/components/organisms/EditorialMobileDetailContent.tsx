@@ -7,6 +7,7 @@ import type {
   EditorialProductTab,
 } from '../../data/editorialEventDetails'
 import { ProductCardUnit } from '../molecules/ProductCardUnit'
+import { EditorialHeroInfoSection } from './EditorialHeroInfoSection'
 import { ICONS } from '../../constants/icons'
 import { getProductDetailPath } from '../../lib/productRoutes'
 import { navigateSpa } from '../../lib/spaNavigation'
@@ -128,7 +129,7 @@ function MobileCouponCard({ coupon }: { coupon: EditorialCouponItem }) {
           type="button"
           className="mt-3 w-full rounded-sm border-0 bg-dark px-2 py-2.5 text-[11px] font-medium leading-[1.2] text-white"
         >
-          쿠폰 다운로드하기
+          {coupon.downloadLabel}
         </button>
       </div>
     </div>
@@ -138,17 +139,21 @@ function MobileCouponCard({ coupon }: { coupon: EditorialCouponItem }) {
 function MobileCouponSection({
   coupons,
   notes,
+  sectionConfig,
 }: {
   coupons: EditorialCouponItem[]
   notes: string[]
+  sectionConfig: EditorialEventDetail['couponSection']
 }) {
   if (coupons.length === 0) return null
 
   return (
     <section className="w-full bg-white pt-10">
       <div className="flex flex-col items-center pb-2.5">
-        <p className="m-0 text-[13px] font-medium leading-[1.2] text-subtleText">SPECIAL GIFT</p>
-        <h2 className="m-0 text-[28px] font-extrabold leading-[1.2] tracking-[-0.02em] text-dark">COUPON</h2>
+        <p className="m-0 text-[13px] font-medium leading-[1.2] text-subtleText">{sectionConfig.eyebrow}</p>
+        <h2 className="m-0 text-[28px] font-extrabold leading-[1.2] tracking-[-0.02em] text-dark">
+          {sectionConfig.title}
+        </h2>
       </div>
       <div className="bg-light2 px-3 py-[25px]">
         <div className="flex flex-col gap-5">
@@ -159,7 +164,9 @@ function MobileCouponSection({
       </div>
       {notes.length > 0 ? (
         <div className="px-1 pb-10 pt-5">
-          <h3 className="m-0 text-center text-[18px] font-bold leading-[1.4] tracking-[-0.02em] text-dark">유의사항</h3>
+          <h3 className="m-0 text-center text-[18px] font-bold leading-[1.4] tracking-[-0.02em] text-dark">
+            {sectionConfig.notesTitle}
+          </h3>
           <ul className="m-0 mt-2 flex list-none flex-col gap-1.5 p-0">
             {notes.map((note, index) => (
               <li key={index} className="flex items-start gap-1">
@@ -318,13 +325,14 @@ function MobileTabbedProducts({
   onToggleLike: (id: string) => void
 }) {
   const [activeTabId, setActiveTabId] = useState(tabs[0]?.id ?? 'all')
-  const activeTab = tabs.find((tab) => tab.id === activeTabId) ?? tabs[0]
+  const tabsWithProducts = tabs.filter((tab) => tab.products.length > 0)
+  const activeTab = tabsWithProducts.find((tab) => tab.id === activeTabId) ?? tabsWithProducts[0]
 
-  if (!activeTab) return null
+  if (!activeTab || !tabsWithProducts.length) return null
 
   return (
     <section className="w-full bg-white pb-10">
-      <MobileTabGrid tabs={tabs} activeTabId={activeTabId} onSelect={setActiveTabId} />
+      <MobileTabGrid tabs={tabsWithProducts} activeTabId={activeTabId} onSelect={setActiveTabId} />
       <div className="px-10 pb-0 pt-[50px] text-center">
         <h2 className="m-0 text-[26px] font-extrabold leading-[1.2] tracking-[-0.02em] text-dark">
           {activeTab.sectionTitle}
@@ -372,7 +380,7 @@ function renderMobileEditorialSection(
     case 'gift':
       return <MobileGiftSection gift={detail.giftSection} />
     case 'coupon':
-      return <MobileCouponSection coupons={detail.coupons} notes={detail.couponNotes} />
+      return <MobileCouponSection coupons={detail.coupons} notes={detail.couponNotes} sectionConfig={detail.couponSection} />
     case 'lookbook':
       return <MobileLookbookStack images={detail.lookbookPair} />
     case 'featured_products':
@@ -430,6 +438,10 @@ export function EditorialMobileDetailContent({ detail }: EditorialMobileDetailCo
 
       <div className="px-[15px]">
         <MobileHeroBanner mainBanner={detail.mainBanner} />
+      </div>
+      <EditorialHeroInfoSection heroInfo={detail.heroInfo} />
+
+      <div className="px-[15px]">
         {detail.sectionOrder
           .filter((sectionType) => insetSections.includes(sectionType))
           .map((sectionType) => (
