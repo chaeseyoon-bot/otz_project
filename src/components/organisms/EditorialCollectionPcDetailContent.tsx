@@ -230,6 +230,12 @@ export function EditorialCollectionPcDetailContent({ detail }: EditorialCollecti
     return { contentBlocks: content, productBlocks: product }
   }, [detail.collectionBlocks, heroGalleryImages.length])
 
+  const hasProductTab = useMemo(() => {
+    const hasCatalogProducts = (detail.catalogProductGrids ?? []).some((section) => section.products.length > 0)
+    const hasProductBlocks = productBlocks.some((block) => block.products.length > 0)
+    return hasCatalogProducts || hasProductBlocks
+  }, [detail.catalogProductGrids, productBlocks])
+
   const toggleLike = (id: string) => {
     setLikedIds((prev) => {
       const next = new Set(prev)
@@ -252,7 +258,9 @@ export function EditorialCollectionPcDetailContent({ detail }: EditorialCollecti
   return (
     <div className="flex w-full flex-col items-center justify-start bg-white pb-20">
       <CollectionDetailHeader detail={detail} />
-      <EditorialMainTab activeTab={activeTab} onTabChange={handleTabChange} />
+      {hasProductTab ? (
+        <EditorialMainTab activeTab={activeTab} onTabChange={handleTabChange} />
+      ) : null}
       <CollectionHero mainBanner={detail.mainBanner} />
       <div ref={contentSectionRef} className="w-full scroll-mt-6">
         <EditorialHeroInfoSection heroInfo={catalogHeroInfo} variant="catalog-pc" />
