@@ -14,6 +14,7 @@ export interface EditorialEventItem {
 }
 
 export const EDITORIAL_CATEGORY_FILTERS: { id: EditorialCategoryId; label: string }[] = [
+  { id: 'all', label: 'ALL' },
   { id: 'collection', label: 'COLLECTION' },
   { id: 'collabo', label: 'COLLABO' },
   { id: 'keyword', label: 'KEYWORD' },

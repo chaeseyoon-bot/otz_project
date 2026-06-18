@@ -10,7 +10,7 @@ import {
 /** Figma 2629:53973 (MO) / 2629:52636 (PC) */
 export function EditorialPage() {
   const { config } = useEditorialConfigContext()
-  const [activeCategory, setActiveCategory] = useState<EditorialCategoryId>('collection')
+  const [activeCategory, setActiveCategory] = useState<EditorialCategoryId>('all')
 
   const events = useMemo(
     () => filterEditorialEvents(activeCategory),
