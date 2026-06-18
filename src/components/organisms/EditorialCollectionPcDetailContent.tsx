@@ -1,4 +1,4 @@
-import { Fragment, useMemo, useState } from 'react'
+import { Fragment, useCallback, useMemo, useRef, useState } from 'react'
 import type { EditorialCollectionBlock, EditorialCouponItem, EditorialEventDetail, EditorialHeroInfo, EditorialProductSection } from '../../data/editorialEventDetails'
 import { EditorialMainTab, type EditorialMainTabId } from '../molecules/EditorialMainTab'
 import { ProductCardUnit } from '../molecules/ProductCardUnit'
@@ -213,6 +213,8 @@ function renderCollectionBlock(
 export function EditorialCollectionPcDetailContent({ detail }: EditorialCollectionPcDetailContentProps) {
   const [activeTab, setActiveTab] = useState<EditorialMainTabId>('content')
   const [likedIds, setLikedIds] = useState<Set<string>>(() => new Set())
+  const contentSectionRef = useRef<HTMLDivElement>(null)
+  const productSectionRef = useRef<HTMLDivElement>(null)
   const heroGalleryImages = useMemo(() => resolveCatalogHeroGalleryUrls(detail), [detail])
 
   const { contentBlocks, productBlocks } = useMemo(() => {
@@ -237,46 +239,51 @@ export function EditorialCollectionPcDetailContent({ detail }: EditorialCollecti
     })
   }
 
-  const visibleBlocks = activeTab === 'product' ? productBlocks : contentBlocks
+  const handleTabChange = useCallback((tab: EditorialMainTabId) => {
+    setActiveTab(tab)
+    requestAnimationFrame(() => {
+      const targetRef = tab === 'product' ? productSectionRef : contentSectionRef
+      targetRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' })
+    })
+  }, [])
+
   const catalogHeroInfo = useMemo(() => resolveCatalogPcHeroInfo(detail), [detail])
 
   return (
     <div className="flex w-full flex-col items-center justify-start bg-white pb-20">
       <CollectionDetailHeader detail={detail} />
-      <EditorialMainTab activeTab={activeTab} onTabChange={setActiveTab} />
+      <EditorialMainTab activeTab={activeTab} onTabChange={handleTabChange} />
       <CollectionHero mainBanner={detail.mainBanner} />
-      {activeTab === 'content' ? (
-        <>
-          <EditorialHeroInfoSection heroInfo={catalogHeroInfo} variant="catalog-pc" />
-          {heroGalleryImages.length > 0 ? (
-            <EditorialLookbookMasonrySection images={heroGalleryImages} variant="hero-follow" />
-          ) : null}
-          {(detail.standaloneShowcases ?? []).map((showcase) => (
-            <EditorialProductShowcaseSection
-              key={showcase.id}
-              title={showcase.title}
-              subtitle={showcase.subtitle}
-              product={showcase.product}
-              gallery={showcase.gallery}
-            />
-          ))}
-          {(detail.catalogProductGrids ?? []).map((section) => (
-            <EditorialCatalogProductGridSection
-              key={section.id}
-              section={section}
-              likedIds={likedIds}
-              onToggleLike={toggleLike}
-              variant="pc"
-            />
-          ))}
-          {contentBlocks.map((block) => (
-            <Fragment key={block.id}>
-              {renderCollectionBlock(block, likedIds, toggleLike)}
-            </Fragment>
-          ))}
-        </>
-      ) : null}
-      {visibleBlocks.map((block) => (
+      <div ref={contentSectionRef} className="w-full scroll-mt-6">
+        <EditorialHeroInfoSection heroInfo={catalogHeroInfo} variant="catalog-pc" />
+        {heroGalleryImages.length > 0 ? (
+          <EditorialLookbookMasonrySection images={heroGalleryImages} variant="hero-follow" />
+        ) : null}
+        {(detail.standaloneShowcases ?? []).map((showcase) => (
+          <EditorialProductShowcaseSection
+            key={showcase.id}
+            title={showcase.title}
+            subtitle={showcase.subtitle}
+            product={showcase.product}
+            gallery={showcase.gallery}
+          />
+        ))}
+      </div>
+      <div ref={productSectionRef} className="w-full scroll-mt-6">
+        {(detail.catalogProductGrids ?? []).map((section) => (
+          <EditorialCatalogProductGridSection
+            key={section.id}
+            section={section}
+            likedIds={likedIds}
+            onToggleLike={toggleLike}
+            variant="pc"
+          />
+        ))}
+        {productBlocks.map((block) => (
+          <Fragment key={block.id}>{renderCollectionBlock(block, likedIds, toggleLike)}</Fragment>
+        ))}
+      </div>
+      {contentBlocks.map((block) => (
         <Fragment key={block.id}>{renderCollectionBlock(block, likedIds, toggleLike)}</Fragment>
       ))}
     </div>
