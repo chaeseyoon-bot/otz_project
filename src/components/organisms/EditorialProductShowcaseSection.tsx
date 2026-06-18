@@ -2,8 +2,9 @@ import { useRef, useState } from 'react'
 import type { EditorialShowcaseGalleryImage } from '../../data/editorialEventDetails'
 import type { ProductCardItem } from '../molecules/ProductCardUnit'
 import { ProductCardPriceRow } from '../molecules/ProductCardUnit'
+import { AdaptiveProductImage } from '../molecules/AdaptiveProductImage'
 import { useHorizontalMouseDragScroll } from '../../hooks/useHorizontalMouseDragScroll'
-import { swapImageExtension } from '../../lib/productImage'
+import { PRODUCT_CUT_CONTAIN_CLASS, PRODUCT_CUT_PORTRAIT_CLASS, swapImageExtension } from '../../lib/productImage'
 import { getProductDetailPath } from '../../lib/productRoutes'
 import { navigateSpa } from '../../lib/spaNavigation'
 
@@ -58,7 +59,7 @@ function ShowcaseGallerySlide({
 
   if (hidden || !src) return null
 
-  const handleError = () => {
+  const handleFinalError = () => {
     const alternate = slide.fallbackSrc ?? swapImageExtension(src)
     if (alternate && alternate !== src) {
       setSrc(alternate)
@@ -67,35 +68,19 @@ function ShowcaseGallerySlide({
     setHidden(true)
   }
 
-  if (slide.variant === 'editorial') {
-    return (
-      <div className="relative flex h-[220px] w-[176px] shrink-0 snap-start items-center bg-light lg:h-[475px] lg:w-[380px]">
-        <div className="relative aspect-[1200/1500] min-w-0 flex-1">
-          <img
-            src={src}
-            alt=""
-            className="pointer-events-none absolute inset-0 size-full object-cover"
-            loading="lazy"
-            decoding="async"
-            draggable={false}
-            onError={handleError}
-          />
-        </div>
-      </div>
-    )
-  }
-
   return (
-    <div className="relative flex h-[220px] w-[176px] shrink-0 snap-start items-center bg-light lg:h-[475px] lg:w-[380px]">
-      <div className="relative aspect-square min-w-0 flex-1 mix-blend-multiply">
-        <img
+    <div className="relative flex h-[220px] w-[176px] shrink-0 snap-start items-center justify-center bg-light lg:h-[475px] lg:w-[380px]">
+      <div className="relative h-full w-full overflow-hidden">
+        <AdaptiveProductImage
           src={src}
           alt=""
-          className="pointer-events-none absolute inset-0 size-full object-cover"
+          orientation={slide.variant === 'editorial' ? 'portrait' : undefined}
+          baseClassName="pointer-events-none absolute inset-0 size-full"
+          containClassName={PRODUCT_CUT_CONTAIN_CLASS}
+          portraitClassName={PRODUCT_CUT_PORTRAIT_CLASS}
           loading="lazy"
-          decoding="async"
           draggable={false}
-          onError={handleError}
+          onFinalError={handleFinalError}
         />
       </div>
     </div>
