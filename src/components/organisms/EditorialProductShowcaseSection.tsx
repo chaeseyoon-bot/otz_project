@@ -13,6 +13,8 @@ export interface EditorialProductShowcaseSectionProps {
   subtitle: string
   product: ProductCardItem
   gallery: EditorialShowcaseGalleryImage[]
+  /** Figma 170:4230 — collection MO layout (no extra horizontal padding). */
+  layout?: 'default' | 'collection'
 }
 
 function ShowcaseLinkChevron() {
@@ -50,9 +52,11 @@ function resolveGallerySlides(
 function ShowcaseGallerySlide({
   slide,
   productImage,
+  collectionLayout,
 }: {
   slide: EditorialShowcaseGalleryImage
   productImage: string
+  collectionLayout?: boolean
 }) {
   const [hidden, setHidden] = useState(false)
   const [src, setSrc] = useState(slide.src || productImage)
@@ -69,7 +73,13 @@ function ShowcaseGallerySlide({
   }
 
   return (
-    <div className="relative flex h-[220px] w-[176px] shrink-0 snap-start items-center justify-center bg-light lg:h-[475px] lg:w-[380px]">
+    <div
+      className={`relative flex shrink-0 snap-start items-center justify-center bg-light ${
+        collectionLayout
+          ? 'h-[340px] w-[271px] lg:h-[475px] lg:w-[380px]'
+          : 'h-[220px] w-[176px] lg:h-[475px] lg:w-[380px]'
+      }`}
+    >
       <div className="relative h-full w-full overflow-hidden">
         <AdaptiveProductImage
           src={src}
@@ -93,9 +103,11 @@ export function EditorialProductShowcaseSection({
   subtitle,
   product,
   gallery,
+  layout = 'default',
 }: EditorialProductShowcaseSectionProps) {
   const scrollerRef = useRef<HTMLDivElement>(null)
   const slides = resolveGallerySlides(gallery, product)
+  const isCollection = layout === 'collection'
 
   useHorizontalMouseDragScroll(scrollerRef, { enabled: slides.length > 1 })
 
@@ -104,15 +116,27 @@ export function EditorialProductShowcaseSection({
   if (!slides.length) return null
 
   return (
-    <section className="mx-auto flex w-full max-w-[1400px] flex-col gap-6 border-b border-dark bg-white px-[15px] py-10 lg:gap-6 lg:px-0 lg:py-16">
-      <div className="flex w-full flex-col gap-4">
+    <section
+      className={`mx-auto flex w-full max-w-[1400px] flex-col border-b border-dark bg-white py-10 lg:py-16 ${
+        isCollection ? 'gap-6 lg:gap-6 lg:px-0' : 'gap-6 px-[15px] lg:gap-6 lg:px-0'
+      }`}
+    >
+      <div className={`flex w-full flex-col ${isCollection ? 'gap-2 lg:gap-4' : 'gap-4'}`}>
         {title ? (
-          <h2 className="m-0 text-[28px] font-bold leading-[1.4] tracking-[-0.4px] text-dark lg:text-[34px]">
+          <h2
+            className={`m-0 font-bold leading-[1.4] tracking-[-0.04em] text-dark ${
+              isCollection ? 'text-[24px] lg:text-[34px]' : 'text-[28px] lg:text-[34px]'
+            }`}
+          >
             {title}
           </h2>
         ) : null}
         {subtitle ? (
-          <p className="m-0 text-[14px] font-normal leading-[1.4] tracking-[-0.04em] text-dark lg:text-[16px]">
+          <p
+            className={`m-0 font-normal leading-[1.4] tracking-[-0.04em] text-dark ${
+              isCollection ? 'text-[13px] lg:text-[16px]' : 'text-[14px] lg:text-[16px]'
+            }`}
+          >
             {subtitle}
           </p>
         ) : null}
@@ -121,30 +145,53 @@ export function EditorialProductShowcaseSection({
       <div className="flex w-full flex-col">
         <div
           ref={scrollerRef}
-          className="flex h-[220px] gap-2 overflow-x-auto scroll-smooth lg:h-[476px] [scrollbar-width:none] [-ms-overflow-style:none] [&::-webkit-scrollbar]:hidden"
+          className={`flex overflow-x-auto scroll-smooth [scrollbar-width:none] [-ms-overflow-style:none] [&::-webkit-scrollbar]:hidden ${
+            isCollection ? 'h-[340px] gap-2 lg:h-[476px] lg:gap-2' : 'h-[220px] gap-2 lg:h-[476px]'
+          }`}
         >
           {slides.map((slide, index) => (
-            <ShowcaseGallerySlide key={`${slide.src}-${index}`} slide={slide} productImage={product.image} />
+            <ShowcaseGallerySlide
+              key={`${slide.src}-${index}`}
+              slide={slide}
+              productImage={product.image}
+              collectionLayout={isCollection}
+            />
           ))}
         </div>
 
         <div className="pt-3">
-          <p className="m-0 pt-3 text-[14px] font-normal leading-[1.4] tracking-[-0.02em] text-textDefault lg:text-[15px]">
+          <p
+            className={`m-0 pt-3 font-normal leading-[1.4] tracking-[-0.02em] text-textDefault ${
+              isCollection ? 'text-[13px] lg:text-[15px]' : 'text-[14px] lg:text-[15px]'
+            }`}
+          >
             {product.title}
           </p>
           <ProductCardPriceRow
             product={product}
             className="flex flex-wrap items-center gap-x-1.5 gap-y-0 pt-1"
-            discountClassName="text-[16px] font-bold leading-[1.4] tracking-[-0.02em] text-primary lg:text-[18px]"
-            priceClassName="text-[16px] font-bold leading-[1.4] tracking-[-0.02em] text-dark lg:text-[18px]"
+            discountClassName={
+              isCollection
+                ? 'text-[15px] font-bold leading-[1.4] tracking-[-0.02em] text-primary lg:text-[18px]'
+                : 'text-[16px] font-bold leading-[1.4] tracking-[-0.02em] text-primary lg:text-[18px]'
+            }
+            priceClassName={
+              isCollection
+                ? 'text-[15px] font-bold leading-[1.4] tracking-[-0.02em] text-dark lg:text-[18px]'
+                : 'text-[16px] font-bold leading-[1.4] tracking-[-0.02em] text-dark lg:text-[18px]'
+            }
             originalPriceClassName="text-[14px] font-normal leading-[1.4] tracking-[-0.02em] text-subtleText line-through lg:text-[15px]"
           />
         </div>
 
-        <div className="pt-8">
+        <div className={isCollection ? 'pt-6 lg:pt-8' : 'pt-8'}>
           <button
             type="button"
-            className="inline-flex h-[48px] items-center gap-3 rounded-[4px] bg-dark px-6 text-[14px] font-medium leading-[1.4] tracking-[-0.04em] text-white hover:opacity-90 lg:h-[54px] lg:text-[16px]"
+            className={`inline-flex items-center gap-3 bg-dark font-medium leading-[1.4] tracking-[-0.04em] text-white hover:opacity-90 ${
+              isCollection
+                ? 'rounded-sm px-4 py-2 text-[13px] lg:h-[54px] lg:rounded-[4px] lg:px-6 lg:text-[16px]'
+                : 'h-[48px] rounded-[4px] px-6 text-[14px] lg:h-[54px] lg:text-[16px]'
+            }`}
             onClick={() => navigateSpa(productPath)}
           >
             상품 바로가기

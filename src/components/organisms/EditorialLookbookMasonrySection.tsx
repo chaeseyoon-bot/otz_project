@@ -1,7 +1,7 @@
 export interface EditorialLookbookMasonrySectionProps {
   images: string[]
   /** Figma 143:4669 — directly below catalog hero info */
-  variant?: 'default' | 'hero-follow'
+  variant?: 'default' | 'hero-follow' | 'hero-follow-mobile'
 }
 
 function splitMasonryColumns(images: string[]): [string[], string[]] {
@@ -43,16 +43,23 @@ export function EditorialLookbookMasonrySection({
 
   const [leftColumn, rightColumn] = splitMasonryColumns(images)
   const isHeroFollow = variant === 'hero-follow'
+  const isHeroFollowMobile = variant === 'hero-follow-mobile'
 
   return (
     <section
       className={`bg-white ${
-        isHeroFollow
-          ? 'mx-auto w-full max-w-[1400px] border-b border-dark pt-16 pb-16'
-          : 'w-full py-16'
+        isHeroFollowMobile
+          ? 'border-b border-dark px-10 py-10'
+          : isHeroFollow
+            ? 'mx-auto w-full max-w-[1400px] border-b border-dark pt-16 pb-16'
+            : 'w-full py-16'
       }`}
     >
-      <div className={`mx-auto flex w-full max-w-[1000px] gap-2 ${isHeroFollow ? '' : 'px-10'}`}>
+      <div
+        className={`mx-auto flex w-full gap-2 ${
+          isHeroFollowMobile ? '' : isHeroFollow ? 'max-w-[1000px]' : 'max-w-[1000px] px-10'
+        }`}
+      >
         <MasonryColumn images={leftColumn} />
         <MasonryColumn images={rightColumn} />
       </div>

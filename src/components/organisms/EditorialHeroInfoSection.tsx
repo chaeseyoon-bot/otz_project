@@ -5,7 +5,7 @@ import { CouponNoticePopup } from '../atoms/CouponNoticePopup'
 export interface EditorialHeroInfoSectionProps {
   heroInfo: EditorialHeroInfo
   /** Figma 143:5626 — catalog/collabo PC detail layout */
-  variant?: 'default' | 'catalog-pc'
+  variant?: 'default' | 'catalog-pc' | 'catalog-mobile'
 }
 
 function parsePeriodLines(period: string): { start: string; end: string } | null {
@@ -41,14 +41,22 @@ function HeroInfoPeriod({ period, catalogPc }: { period: string; catalogPc?: boo
   }
 
   return (
-    <div className="text-[13px] font-normal leading-[1.4] tracking-[-0.02em] text-dark lg:text-[14px]">
+    <div className="flex text-[13px] font-normal leading-[1.4] tracking-[-0.02em] text-dark lg:text-[14px]">
       <p className="m-0 whitespace-nowrap">{parsed.start}</p>
       {parsed.end ? <p className="m-0 whitespace-nowrap">-{parsed.end}</p> : null}
     </div>
   )
 }
 
-function HeroInfoSubtitle({ subtitle, catalogPc }: { subtitle: string; catalogPc?: boolean }) {
+function HeroInfoSubtitle({
+  subtitle,
+  catalogPc,
+  catalogMobile,
+}: {
+  subtitle: string
+  catalogPc?: boolean
+  catalogMobile?: boolean
+}) {
   const lines = subtitle.split('\n').map((line) => line.trim()).filter(Boolean)
   if (!lines.length) return null
 
@@ -57,6 +65,21 @@ function HeroInfoSubtitle({ subtitle, catalogPc }: { subtitle: string; catalogPc
       <p className="m-0 whitespace-pre-wrap text-[16px] font-normal leading-[1.4] tracking-[-0.04em] text-dark">
         {subtitle}
       </p>
+    )
+  }
+
+  if (catalogMobile) {
+    return (
+      <div className="text-[14px] font-normal leading-[1.4] tracking-[-0.04em] text-dark">
+        {lines.map((line, index) => (
+          <p
+            key={`${line}-${index}`}
+            className={`m-0 mb-0 last:mb-0 [word-break:break-word] ${index === 0 ? 'font-semibold' : ''}`}
+          >
+            {line}
+          </p>
+        ))}
+      </div>
     )
   }
 
@@ -77,10 +100,12 @@ function HeroInfoSubtitle({ subtitle, catalogPc }: { subtitle: string; catalogPc
 function HeroInfoCouponTicket({
   coupon,
   catalogPc,
+  catalogMobile,
   onDownload,
 }: {
   coupon: EditorialCouponItem
   catalogPc?: boolean
+  catalogMobile?: boolean
   onDownload?: () => void
 }) {
   if (catalogPc) {
@@ -110,6 +135,41 @@ function HeroInfoCouponTicket({
           </div>
           {coupon.conditions[0] ? (
             <p className="m-0 self-end text-[18px] font-medium leading-[1.4] tracking-[-0.04em] text-subtleText">
+              {coupon.conditions[0]}
+            </p>
+          ) : null}
+        </div>
+      </button>
+    )
+  }
+
+  if (catalogMobile) {
+    return (
+      <button
+        type="button"
+        onClick={onDownload}
+        className="relative h-[160px] w-full cursor-pointer border-0 bg-black text-left text-white"
+        style={{
+          clipPath:
+            'polygon(0 0, 100% 0, 100% calc(50% - 9px), calc(100% - 10px) 50%, 100% calc(50% + 9px), 100% 100%, 0 100%)',
+        }}
+      >
+        <div className="flex h-full items-center justify-between p-[30px]">
+          <div className="flex h-full flex-col items-start justify-between">
+            {coupon.label ? (
+              <p className="m-0 text-[16px] font-medium leading-[1.4] tracking-[-0.04em]">{coupon.label}</p>
+            ) : (
+              <span />
+            )}
+            <div className="flex items-end leading-none">
+              <span className="text-[64px] font-extrabold leading-none tracking-[-0.02em]">{coupon.value}</span>
+              <span className="flex h-[80px] w-[70px] flex-col justify-end text-[30px] font-extrabold leading-none tracking-[-0.02em]">
+                {coupon.unit}
+              </span>
+            </div>
+          </div>
+          {coupon.conditions[0] ? (
+            <p className="m-0 self-end text-[14px] font-medium leading-[1.4] tracking-[-0.04em] text-subtleText">
               {coupon.conditions[0]}
             </p>
           ) : null}
@@ -150,18 +210,26 @@ function HeroInfoCouponTicket({
   )
 }
 
-function HeroInfoCouponNotesList({ notes, catalogPc }: { notes: string[]; catalogPc?: boolean }) {
+function HeroInfoCouponNotesList({
+  notes,
+  catalogPc,
+  catalogMobile,
+}: {
+  notes: string[]
+  catalogPc?: boolean
+  catalogMobile?: boolean
+}) {
   return (
-    <ul className={`m-0 flex list-none flex-col p-0 ${catalogPc ? 'gap-2' : 'gap-1.5'}`}>
+    <ul className={`m-0 flex list-none flex-col p-0 ${catalogPc || catalogMobile ? 'gap-2' : 'gap-1.5'}`}>
       {notes.map((note, index) => (
-        <li key={index} className={`flex items-start ${catalogPc ? 'gap-2' : 'gap-1'}`}>
+        <li key={index} className={`flex items-start ${catalogPc || catalogMobile ? 'gap-2' : 'gap-1'}`}>
           <span
-            className={`block shrink-0 bg-subtleText ${catalogPc ? 'mt-[9px] size-[2px]' : 'mt-[7px] size-[2px]'}`}
+            className={`block shrink-0 bg-subtleText ${catalogPc || catalogMobile ? 'mt-[9px] size-[2px]' : 'mt-[7px] size-[2px]'}`}
             aria-hidden
           />
           <p
             className={`m-0 flex-1 text-textDefault ${
-              catalogPc
+              catalogPc || catalogMobile
                 ? 'text-[14px] font-normal leading-[1.4] tracking-[-0.04em]'
                 : 'text-[12px] leading-[1.4] tracking-[-0.04em]'
             }`}
@@ -180,12 +248,14 @@ function HeroInfoCouponBlock({
   couponSectionTitle,
   couponNotes,
   catalogPc,
+  catalogMobile,
 }: {
   coupon: EditorialCouponItem
   couponSectionEyebrow: string
   couponSectionTitle: string
   couponNotes: string[]
   catalogPc?: boolean
+  catalogMobile?: boolean
 }) {
   const [notesOpen, setNotesOpen] = useState(false)
   const [couponNoticeOpen, setCouponNoticeOpen] = useState(false)
@@ -193,13 +263,21 @@ function HeroInfoCouponBlock({
   const sectionTitle = couponSectionTitle.trim()
 
   return (
-    <div className={`flex w-full flex-col ${catalogPc ? 'gap-4' : 'gap-3 lg:gap-4'}`}>
+    <div
+      className={`flex w-full flex-col ${
+        catalogPc ? 'gap-4' : catalogMobile ? 'gap-4' : 'gap-3 lg:gap-4'
+      }`}
+    >
       {eyebrow || sectionTitle ? (
-        <div className={catalogPc ? 'flex flex-col gap-2' : undefined}>
+        <div className={catalogPc || catalogMobile ? 'flex flex-col gap-2' : undefined}>
           {eyebrow ? (
             <p
               className={`m-0 font-semibold leading-[1.4] tracking-[-0.04em] text-dark ${
-                catalogPc ? 'text-[24px]' : 'text-[15px] font-extrabold leading-[1.2] tracking-[-0.02em] lg:text-[18px]'
+                catalogPc
+                  ? 'text-[24px]'
+                  : catalogMobile
+                    ? 'text-[20px] font-bold'
+                    : 'text-[15px] font-extrabold leading-[1.2] tracking-[-0.02em] lg:text-[18px]'
               }`}
             >
               {eyebrow}
@@ -208,7 +286,11 @@ function HeroInfoCouponBlock({
           {sectionTitle ? (
             <p
               className={`m-0 font-normal leading-[1.4] tracking-[-0.04em] text-textDefault ${
-                catalogPc ? 'text-[16px] text-dark' : 'mt-1 text-[13px] tracking-[-0.02em] lg:text-[14px]'
+                catalogPc
+                  ? 'text-[16px] text-dark'
+                  : catalogMobile
+                    ? 'text-[13px] text-dark'
+                    : 'mt-1 text-[13px] tracking-[-0.02em] lg:text-[14px]'
               }`}
             >
               {sectionTitle}
@@ -219,6 +301,7 @@ function HeroInfoCouponBlock({
       <HeroInfoCouponTicket
         coupon={coupon}
         catalogPc={catalogPc}
+        catalogMobile={catalogMobile}
         onDownload={() => setCouponNoticeOpen(true)}
       />
       <CouponNoticePopup
@@ -236,12 +319,16 @@ function HeroInfoCouponBlock({
             className={
               catalogPc
                 ? 'w-fit border-0 bg-transparent p-0 text-[16px] font-normal leading-[1.4] tracking-[-0.04em] text-dark underline underline-offset-2'
-                : 'w-fit border-0 bg-transparent p-0 text-[12px] font-normal leading-[1.4] tracking-[-0.02em] text-subtleText underline underline-offset-2'
+                : catalogMobile
+                  ? 'w-fit border-0 bg-transparent p-0 text-[14px] font-normal leading-[1.4] tracking-[-0.04em] text-dark underline underline-offset-2'
+                  : 'w-fit border-0 bg-transparent p-0 text-[12px] font-normal leading-[1.4] tracking-[-0.02em] text-subtleText underline underline-offset-2'
             }
           >
             {notesOpen ? '유의사항 닫기' : '유의사항 보기'}
           </button>
-          {notesOpen ? <HeroInfoCouponNotesList notes={couponNotes} catalogPc={catalogPc} /> : null}
+          {notesOpen ? (
+            <HeroInfoCouponNotesList notes={couponNotes} catalogPc={catalogPc} catalogMobile={catalogMobile} />
+          ) : null}
         </>
       ) : null}
     </div>
@@ -293,10 +380,58 @@ function CatalogPcHeroInfo({ heroInfo }: { heroInfo: EditorialHeroInfo }) {
   )
 }
 
+/** Figma 164:5544 — collection/collabo MO hero info below main banner. */
+function CatalogMobileHeroInfo({ heroInfo }: { heroInfo: EditorialHeroInfo }) {
+  const showPeriod = heroInfo.showPeriod && heroInfo.period.trim().length > 0
+  const coupon = heroInfo.coupon
+  const showCoupon = coupon != null && heroInfo.showCoupon !== false
+  const title = heroInfo.title.trim()
+  const subtitle = heroInfo.subtitle.trim()
+
+  if (!title && !subtitle && !showPeriod && !showCoupon) return null
+
+  return (
+    <section className="border-b border-dark py-10">
+      <div className="flex w-full flex-col gap-2">
+        {showPeriod ? (
+          <p className="m-0 text-[16px] font-normal leading-[1.2] tracking-[-0.02em] text-dark">
+            {heroInfo.period}
+          </p>
+        ) : null}
+        {title || subtitle ? (
+          <div className="flex flex-col gap-4">
+            {title ? (
+              <h2 className="m-0 whitespace-pre-line text-[24px] font-bold leading-[1.4] tracking-[-0.04em] text-dark">
+                {title}
+              </h2>
+            ) : null}
+            {subtitle ? <HeroInfoSubtitle subtitle={subtitle} catalogMobile /> : null}
+          </div>
+        ) : null}
+      </div>
+      {showCoupon ? (
+        <div className="pt-8">
+          <HeroInfoCouponBlock
+            coupon={coupon}
+            couponSectionEyebrow={heroInfo.couponSectionEyebrow}
+            couponSectionTitle={heroInfo.couponSectionTitle}
+            couponNotes={heroInfo.couponNotes}
+            catalogMobile
+          />
+        </div>
+      ) : null}
+    </section>
+  )
+}
+
 /** Figma hero info — date / title / subtitle + coupon below main banner. */
 export function EditorialHeroInfoSection({ heroInfo, variant = 'default' }: EditorialHeroInfoSectionProps) {
   if (variant === 'catalog-pc') {
     return <CatalogPcHeroInfo heroInfo={heroInfo} />
+  }
+
+  if (variant === 'catalog-mobile') {
+    return <CatalogMobileHeroInfo heroInfo={heroInfo} />
   }
 
   const showPeriod = heroInfo.showPeriod && heroInfo.period.trim().length > 0
