@@ -54,17 +54,17 @@ function CatalogProductCard({
         }
         priceDiscountClassName={
           isPc
-            ? 'text-[15px] font-bold leading-[1.4] tracking-[-0.02em] text-primary'
+            ? 'text-[18px] font-bold leading-[1.4] tracking-[-0.02em] text-primary'
             : 'text-[12px] font-bold leading-[1.4] text-primary'
         }
         priceSaleClassName={
           isPc
-            ? 'text-[15px] font-bold leading-[1.4] tracking-[-0.02em] text-dark'
+            ? 'text-[18px] font-bold leading-[1.4] tracking-[-0.02em] text-dark'
             : 'text-[12px] font-bold leading-[1.4] text-dark'
         }
         priceOriginalClassName={
           isPc
-            ? 'text-[13px] font-normal leading-[1.4] tracking-[-0.02em] text-subtleText line-through'
+            ? 'text-[14px] font-normal leading-[1.4] tracking-[-0.02em] text-subtleText line-through'
             : 'text-[11px] font-normal leading-[1.4] tracking-[-0.02em] text-subtleText line-through'
         }
         mediaInnerClassName={isPc ? 'aspect-[272/340]' : 'aspect-[1200/1500]'}
@@ -74,7 +74,7 @@ function CatalogProductCard({
   )
 }
 
-/** Figma 151:4481 — SHOES / BAG & ACC 5-column catalog product grid. */
+/** Figma 151:4481 — SHOES / BAG & ACC 6-column catalog product grid. */
 export function EditorialCatalogProductGridSection({
   section,
   likedIds,
@@ -107,7 +107,7 @@ export function EditorialCatalogProductGridSection({
       <div
         className={
           isPc
-            ? 'grid w-full grid-cols-5 gap-x-[10px] gap-y-12 pb-[50px]'
+            ? 'grid w-full grid-cols-6 gap-x-[10px] gap-y-12 pb-[50px]'
             : `grid grid-cols-2 gap-x-2 gap-y-8 ${section.title ? '' : ''} pb-10`
         }
       >

@@ -1,5 +1,6 @@
 import { useState } from 'react'
 import type { EditorialCouponItem, EditorialHeroInfo } from '../../data/editorialEventDetails'
+import { CouponNoticePopup } from '../atoms/CouponNoticePopup'
 
 export interface EditorialHeroInfoSectionProps {
   heroInfo: EditorialHeroInfo
@@ -73,11 +74,21 @@ function HeroInfoSubtitle({ subtitle, catalogPc }: { subtitle: string; catalogPc
   )
 }
 
-function HeroInfoCouponTicket({ coupon, catalogPc }: { coupon: EditorialCouponItem; catalogPc?: boolean }) {
+function HeroInfoCouponTicket({
+  coupon,
+  catalogPc,
+  onDownload,
+}: {
+  coupon: EditorialCouponItem
+  catalogPc?: boolean
+  onDownload?: () => void
+}) {
   if (catalogPc) {
     return (
-      <div
-        className="relative h-[200px] w-full max-w-[420px] shrink-0 bg-black text-white"
+      <button
+        type="button"
+        onClick={onDownload}
+        className="relative h-[200px] w-full max-w-[420px] shrink-0 cursor-pointer border-0 bg-black text-left text-white"
         style={{
           clipPath:
             'polygon(0 0, 100% 0, 100% calc(50% - 12px), calc(100% - 14px) 50%, 100% calc(50% + 12px), 100% 100%, 0 100%)',
@@ -103,12 +114,16 @@ function HeroInfoCouponTicket({ coupon, catalogPc }: { coupon: EditorialCouponIt
             </p>
           ) : null}
         </div>
-      </div>
+      </button>
     )
   }
 
   return (
-    <div className="relative w-full max-w-[300px] overflow-hidden bg-black text-white lg:max-w-[340px]">
+    <button
+      type="button"
+      onClick={onDownload}
+      className="relative w-full max-w-[300px] cursor-pointer overflow-hidden border-0 bg-black text-left text-white lg:max-w-[340px]"
+    >
       <div
         className="pointer-events-none absolute inset-y-0 left-0 w-3 bg-[repeating-linear-gradient(90deg,transparent,transparent_3px,#fff_3px,#fff_5px)] opacity-20"
         aria-hidden
@@ -131,7 +146,7 @@ function HeroInfoCouponTicket({ coupon, catalogPc }: { coupon: EditorialCouponIt
           </p>
         ) : null}
       </div>
-    </div>
+    </button>
   )
 }
 
@@ -173,6 +188,7 @@ function HeroInfoCouponBlock({
   catalogPc?: boolean
 }) {
   const [notesOpen, setNotesOpen] = useState(false)
+  const [couponNoticeOpen, setCouponNoticeOpen] = useState(false)
   const eyebrow = couponSectionEyebrow.trim()
   const sectionTitle = couponSectionTitle.trim()
 
@@ -200,7 +216,17 @@ function HeroInfoCouponBlock({
           ) : null}
         </div>
       ) : null}
-      <HeroInfoCouponTicket coupon={coupon} catalogPc={catalogPc} />
+      <HeroInfoCouponTicket
+        coupon={coupon}
+        catalogPc={catalogPc}
+        onDownload={() => setCouponNoticeOpen(true)}
+      />
+      <CouponNoticePopup
+        open={couponNoticeOpen}
+        message="쿠폰이 다운로드 되었습니다."
+        onClose={() => setCouponNoticeOpen(false)}
+        lockBodyScroll={!catalogPc}
+      />
       {couponNotes.length > 0 ? (
         <>
           <button
