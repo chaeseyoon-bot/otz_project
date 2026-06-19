@@ -63,7 +63,7 @@ export function EditorialDetailPage({ editorialId }: EditorialDetailPageProps) {
         )}
       </main>
       <main className="bg-white lg:hidden">
-        {!isCollection ? <EditorialMobileDetailHeader /> : null}
+        <EditorialMobileDetailHeader />
         {isCollection ? (
           <EditorialCollectionMobileDetailContent detail={detail} />
         ) : (
