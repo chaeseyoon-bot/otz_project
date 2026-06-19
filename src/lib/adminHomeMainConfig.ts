@@ -143,8 +143,20 @@ export interface AdminLookbookSection {
   imageSlots: AdminLookbookImageSlot[]
 }
 
+/** Figma MO/PC GNB top announcement strip (40px). */
+export interface AdminTopAnnouncementBar {
+  enabled: boolean
+  mobileText: string
+  pcText: string
+  bgColor: string
+  textColor: string
+  /** Optional tap destination — internal path or external URL. */
+  linkHref: string
+}
+
 export interface AdminHomeMainConfig {
-  version: 8
+  version: 9
+  topAnnouncementBar: AdminTopAnnouncementBar
   mainBanners: AdminMainBannerSlide[]
   quickMenuSlots: AdminQuickMenuSlot[]
   brandBanner: AdminBrandBanner
@@ -711,9 +723,39 @@ const DEFAULT_SERIES: AdminSeriesBanner[] = [
   },
 ]
 
+const DEFAULT_TOP_ANNOUNCEMENT: AdminTopAnnouncementBar = {
+  enabled: true,
+  mobileText: '26SS Collection 툴레아 스웨이드',
+  pcText: '26SS Collection 새로운 컬러를 입은 로마리 오찌',
+  bgColor: '#000000',
+  textColor: '#FFFFFF',
+  linkHref: '',
+}
+
+function normalizeHexColor(raw: unknown, fallback: string): string {
+  if (typeof raw !== 'string') return fallback
+  const trimmed = raw.trim()
+  return /^#[0-9A-Fa-f]{6}$/.test(trimmed) ? trimmed : fallback
+}
+
+export function normalizeTopAnnouncementBar(
+  raw: Partial<AdminTopAnnouncementBar> | undefined,
+  fallback: AdminTopAnnouncementBar = DEFAULT_TOP_ANNOUNCEMENT,
+): AdminTopAnnouncementBar {
+  return {
+    enabled: typeof raw?.enabled === 'boolean' ? raw.enabled : fallback.enabled,
+    mobileText: typeof raw?.mobileText === 'string' ? raw.mobileText : fallback.mobileText,
+    pcText: typeof raw?.pcText === 'string' ? raw.pcText : fallback.pcText,
+    bgColor: normalizeHexColor(raw?.bgColor, fallback.bgColor),
+    textColor: normalizeHexColor(raw?.textColor, fallback.textColor),
+    linkHref: typeof raw?.linkHref === 'string' ? raw.linkHref : fallback.linkHref,
+  }
+}
+
 export function createDefaultHomeMainConfig(): AdminHomeMainConfig {
   return {
-    version: 8,
+    version: 9,
+    topAnnouncementBar: { ...DEFAULT_TOP_ANNOUNCEMENT },
     mainBanners: [
       {
         id: 'main-1',
@@ -788,7 +830,11 @@ function migrateHomeMainConfig(parsed: Partial<AdminHomeMainConfig>): AdminHomeM
       : defaults.planningBanners
 
   return {
-    version: 8,
+    version: 9,
+    topAnnouncementBar: normalizeTopAnnouncementBar(
+      parsed.topAnnouncementBar as Partial<AdminTopAnnouncementBar> | undefined,
+      defaults.topAnnouncementBar,
+    ),
     mainBanners:
       Array.isArray(parsed.mainBanners) && parsed.mainBanners.length > 0
         ? parsed.mainBanners
@@ -854,7 +900,8 @@ export function loadAdminHomeMainConfig(): AdminHomeMainConfig {
       parsed.version !== 5 &&
       parsed.version !== 6 &&
       parsed.version !== 7 &&
-      parsed.version !== 8
+      parsed.version !== 8 &&
+      parsed.version !== 9
     ) {
       return deepRewriteHomeBannerUrls(migrateLegacyConfig(parsed))
     }
@@ -869,8 +916,9 @@ export function saveAdminHomeMainConfig(
   config: Omit<AdminHomeMainConfig, 'version' | 'updatedAt'>,
 ): AdminHomeMainConfig {
   const next: AdminHomeMainConfig = {
-    version: 8,
+    version: 9,
     ...config,
+    topAnnouncementBar: normalizeTopAnnouncementBar(config.topAnnouncementBar),
     styleBannerSection: normalizeStyleBannerSection(config.styleBannerSection),
     lookbookSection: normalizeLookbookSection(config.lookbookSection),
     marketingPopupSlides: normalizeMarketingPopupSlides(config.marketingPopupSlides),

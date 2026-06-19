@@ -16,8 +16,9 @@ import type {
   AdminSeriesBanner,
   AdminStyleBannerCard,
   AdminStyleBannerSection,
+  AdminTopAnnouncementBar,
 } from './adminHomeMainConfig'
-import { STYLE_BANNER_PRODUCT_SLOTS } from './adminHomeMainConfig'
+import { STYLE_BANNER_PRODUCT_SLOTS, normalizeTopAnnouncementBar } from './adminHomeMainConfig'
 import { resolveBrandSeriesCategoryPath } from './categoryRoutes'
 import { getProductDetailPath } from './productRoutes'
 import {
@@ -684,4 +685,29 @@ export function resolveMarketingPopupSlides(
       linkHref: linkHref || undefined,
     }
   })
+}
+
+export interface ResolvedTopAnnouncementBar {
+  enabled: boolean
+  mobileText: string
+  pcText: string
+  bgColor: string
+  textColor: string
+  linkHref: string
+}
+
+export function resolveTopAnnouncementBar(
+  bar: AdminTopAnnouncementBar | undefined,
+): ResolvedTopAnnouncementBar {
+  const normalized = normalizeTopAnnouncementBar(bar)
+  const mobileText = normalized.mobileText.trim()
+  const pcText = (normalized.pcText.trim() || mobileText).trim()
+  return {
+    enabled: normalized.enabled && Boolean(mobileText || pcText),
+    mobileText: mobileText || pcText,
+    pcText,
+    bgColor: normalized.bgColor,
+    textColor: normalized.textColor,
+    linkHref: normalized.linkHref.trim(),
+  }
 }

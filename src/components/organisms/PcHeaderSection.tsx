@@ -1,8 +1,10 @@
-import { useEffect, useLayoutEffect, useRef, useState } from 'react'
+import { useEffect, useLayoutEffect, useMemo, useRef, useState, type KeyboardEvent } from 'react'
 import { createPortal } from 'react-dom'
 import { ShoppingBagIconButton } from '../atoms/ShoppingBagIconButton'
 import { useCart } from '../../contexts/CartContext'
+import { useAdminHomeMainConfig } from '../../hooks/useAdminHomeMainConfig'
 import { figmaAsset } from '../../lib/figmaAssetUrl'
+import { resolveTopAnnouncementBar } from '../../lib/homeMainContentResolver'
 import { CART_PATH } from '../../lib/cartRoutes'
 import { PC_HOME_MAX_WIDTH_PX } from '../../design-system/layout'
 import { GNB_MEGA_MENU_GROUPS } from '../../data/gnbMegaMenu'
@@ -13,7 +15,7 @@ import {
   mainIdFromGnbGroupTitle,
   navigateCategoryPlp,
 } from '../../lib/categoryRoutes'
-import { navigateSpa, type SpaPath } from '../../lib/spaNavigation'
+import { navigateExternalOrSpa, navigateSpa, type SpaPath } from '../../lib/spaNavigation'
 
 const logoOtz = figmaAsset('icons/OTZ_LOGO.svg')
 const iconPcGnbArrow = figmaAsset('icons/pc_gnb_arrow.svg')
@@ -92,7 +94,19 @@ function PcNavTextLink({ id, label, pathname }: { id: string; label: string; pat
 export function PcHeaderSection() {
   const pathname = useSpaPathname()
   const { itemCount } = useCart()
-  const [topBannerVisible, setTopBannerVisible] = useState(true)
+  const { topAnnouncementBar, updatedAt } = useAdminHomeMainConfig()
+  const announcement = useMemo(
+    () => resolveTopAnnouncementBar(topAnnouncementBar),
+    [topAnnouncementBar, updatedAt],
+  )
+  const [topBannerDismissed, setTopBannerDismissed] = useState(false)
+  const topBannerVisible = announcement.enabled && !topBannerDismissed
+  const topAnnouncementLink = announcement.linkHref
+  const hasTopAnnouncementLink = Boolean(topAnnouncementLink && topAnnouncementLink !== '#')
+
+  useEffect(() => {
+    setTopBannerDismissed(false)
+  }, [updatedAt, announcement.mobileText, announcement.pcText])
   const [categoryMenuOpen, setCategoryMenuOpen] = useState(false)
   /** Enables enter transition on next frame (slide + dim fade). */
   const [megaEntered, setMegaEntered] = useState(false)
@@ -427,21 +441,48 @@ export function PcHeaderSection() {
   return (
     <>
       {topBannerVisible ? (
-        <div className="flex h-10 items-stretch bg-black text-bodySmall text-white">
+        <div
+          className="flex h-10 items-stretch text-bodySmall"
+          style={{ backgroundColor: announcement.bgColor, color: announcement.textColor }}
+        >
           <div className="min-w-0 flex-1" aria-hidden />
-          <div className="mx-auto flex w-full max-w-[1080px] shrink-0 items-center justify-center px-4 text-center">
-            26SS Collection 새로운 컬러를 입은 로마리 오찌
+          <div
+            className={`mx-auto flex w-full max-w-[1080px] shrink-0 items-center justify-center px-4 text-center ${hasTopAnnouncementLink ? 'cursor-pointer' : ''}`}
+            role={hasTopAnnouncementLink ? 'link' : undefined}
+            tabIndex={hasTopAnnouncementLink ? 0 : undefined}
+            onClick={
+              hasTopAnnouncementLink ? () => navigateExternalOrSpa(topAnnouncementLink) : undefined
+            }
+            onKeyDown={
+              hasTopAnnouncementLink
+                ? (event: KeyboardEvent<HTMLDivElement>) => {
+                    if (event.key === 'Enter' || event.key === ' ') {
+                      event.preventDefault()
+                      navigateExternalOrSpa(topAnnouncementLink)
+                    }
+                  }
+                : undefined
+            }
+          >
+            {announcement.pcText}
           </div>
           <div className="flex min-w-0 flex-1 items-start justify-end">
             <button
               type="button"
-              className="flex size-10 shrink-0 items-center justify-center border-0 bg-transparent text-white opacity-80 hover:opacity-100"
+              className="flex size-10 shrink-0 items-center justify-center border-0 bg-transparent opacity-80 hover:opacity-100"
+              style={{ color: announcement.textColor }}
               aria-label="상단 배너 닫기"
-              onClick={() => setTopBannerVisible(false)}
+              onClick={() => setTopBannerDismissed(true)}
             >
               <span className="relative block size-3.5 rotate-45">
-                <span className="absolute inset-x-0 top-1/2 h-px -translate-y-1/2 bg-white" />
-                <span className="absolute inset-y-0 left-1/2 w-px -translate-x-1/2 bg-white" />
+                <span
+                  className="absolute inset-x-0 top-1/2 h-px -translate-y-1/2"
+                  style={{ backgroundColor: announcement.textColor }}
+                />
+                <span
+                  className="absolute inset-y-0 left-1/2 w-px -translate-x-1/2"
+                  style={{ backgroundColor: announcement.textColor }}
+                />
               </span>
             </button>
           </div>

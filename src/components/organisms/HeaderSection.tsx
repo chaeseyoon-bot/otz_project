@@ -1,8 +1,10 @@
-import { useCallback, useEffect, useRef, useState } from 'react'
+import { useCallback, useEffect, useMemo, useRef, useState, type KeyboardEvent } from 'react'
 import { useCenterHorizontalTabScroll } from '../../hooks/useCenterHorizontalTabScroll'
 import { useHorizontalMouseDragScroll } from '../../hooks/useHorizontalMouseDragScroll'
+import { useAdminHomeMainConfig } from '../../hooks/useAdminHomeMainConfig'
 
 import { figmaAsset } from '../../lib/figmaAssetUrl'
+import { resolveTopAnnouncementBar } from '../../lib/homeMainContentResolver'
 import { isArchiveDetailPath } from '../../lib/archiveRoutes'
 import { isEditorialDetailPath } from '../../lib/editorialRoutes'
 import { isCartPath } from '../../lib/cartRoutes'
@@ -10,7 +12,7 @@ import { isCheckoutPath } from '../../lib/checkoutRoutes'
 import { isOrderCompletePath, isOrderDetailPath } from '../../lib/orderRoutes'
 import { isMyPagePath } from '../../lib/myPageRoutes'
 import { isProductDetailPath } from '../../lib/productRoutes'
-import { navigateSpa } from '../../lib/spaNavigation'
+import { navigateExternalOrSpa, navigateSpa } from '../../lib/spaNavigation'
 import { useSpaPathname } from '../../hooks/useSpaPathname'
 import { MobileHeaderUtilityIcons } from '../molecules/MobileHeaderUtilityIcons'
 import { PcHeaderSection } from './PcHeaderSection'
@@ -60,6 +62,11 @@ function MobileGnbTabLabel({ label, active }: { label: string; active: boolean }
 
 export function HeaderSection() {
   const pathname = useSpaPathname()
+  const { topAnnouncementBar, updatedAt } = useAdminHomeMainConfig()
+  const announcement = useMemo(
+    () => resolveTopAnnouncementBar(topAnnouncementBar),
+    [topAnnouncementBar, updatedAt],
+  )
   const [activeIndex, setActiveIndex] = useState(() => getMobileTabIndexByPath(pathname))
   const isCategoryShoes = pathname.startsWith('/category/shoes')
   const isBrandStory = pathname.startsWith('/brand-story')
@@ -167,23 +174,59 @@ export function HeaderSection() {
     return () => window.removeEventListener('scroll', onScroll)
   }, [])
 
+  const showTopAnnouncement = announcement.enabled
+  const topAnnouncementLink = announcement.linkHref
+  const hasTopAnnouncementLink = Boolean(topAnnouncementLink && topAnnouncementLink !== '#')
+
+  const handleTopAnnouncementKeyDown = useCallback(
+    (event: KeyboardEvent<HTMLDivElement>) => {
+      if (!hasTopAnnouncementLink) return
+      if (event.key === 'Enter' || event.key === ' ') {
+        event.preventDefault()
+        navigateExternalOrSpa(topAnnouncementLink)
+      }
+    },
+    [hasTopAnnouncementLink, topAnnouncementLink],
+  )
+
   return (
     <>
       {!hideMobileHomeHeader ? (
         <header className="sticky top-0 z-20 overflow-visible bg-white lg:hidden">
           <div
             className="overflow-hidden transition-[height] duration-300 ease-out"
-            style={{ height: mobileNavOnlySticky ? 0 : MOBILE_HEADER_COLLAPSE_OFFSET }}
+            style={{
+              height: mobileNavOnlySticky
+                ? 0
+                : showTopAnnouncement
+                  ? MOBILE_HEADER_COLLAPSE_OFFSET
+                  : MOBILE_MAIN_HEADER_HEIGHT,
+            }}
           >
             <div
               className="transition-transform duration-300 ease-out"
               style={{
-                transform: mobileNavOnlySticky ? `translateY(-${MOBILE_HEADER_COLLAPSE_OFFSET}px)` : 'translateY(0)',
+                transform: mobileNavOnlySticky
+                  ? `translateY(-${showTopAnnouncement ? MOBILE_HEADER_COLLAPSE_OFFSET : MOBILE_MAIN_HEADER_HEIGHT}px)`
+                  : 'translateY(0)',
               }}
             >
-              <div className="flex h-10 items-center justify-center bg-black text-bodySmall text-white">
-                26SS Collection 툴레아 스웨이드
-              </div>
+              {showTopAnnouncement ? (
+                <div
+                  className={`flex h-10 items-center justify-center text-bodySmall ${hasTopAnnouncementLink ? 'cursor-pointer' : ''}`}
+                  style={{ backgroundColor: announcement.bgColor, color: announcement.textColor }}
+                  role={hasTopAnnouncementLink ? 'link' : undefined}
+                  tabIndex={hasTopAnnouncementLink ? 0 : undefined}
+                  onClick={
+                    hasTopAnnouncementLink
+                      ? () => navigateExternalOrSpa(topAnnouncementLink)
+                      : undefined
+                  }
+                  onKeyDown={hasTopAnnouncementLink ? handleTopAnnouncementKeyDown : undefined}
+                >
+                  {announcement.mobileText}
+                </div>
+              ) : null}
 
               <div className="flex h-[52px] items-center justify-between pl-[15px] pr-3">
                 <a

@@ -68,6 +68,7 @@ import {
 import { PRODUCT_CARD_CUTS } from '../../lib/productImage'
 
 const SECTION_TABS = [
+  { id: 'topAnnouncement', label: '0. 상단 공지' },
   { id: 'main', label: '1. 메인 배너' },
   { id: 'quick', label: '2. 퀵메뉴' },
   { id: 'brand', label: '3. 브랜드 배너' },
@@ -81,6 +82,7 @@ const SECTION_TABS = [
 ]
 
 const SECTION_SAVE_LABELS = {
+  topAnnouncement: '상단 공지',
   main: '메인 배너',
   quick: '퀵메뉴',
   brand: '브랜드 배너',
@@ -95,6 +97,15 @@ const SECTION_SAVE_LABELS = {
 
 function validateHomeMainActiveTab(activeTab, config) {
   switch (activeTab) {
+    case 'topAnnouncement': {
+      if (!config.topAnnouncementBar.enabled) return null
+      const mobileText = config.topAnnouncementBar.mobileText?.trim() ?? ''
+      const pcText = config.topAnnouncementBar.pcText?.trim() ?? ''
+      if (!mobileText && !pcText) {
+        return '상단 공지를 노출하려면 모바일 또는 PC 문구를 입력해 주세요.'
+      }
+      return null
+    }
     case 'planning': {
       const filledBannerCount = config.planningBanners.filter((banner) =>
         Boolean(banner.imageUrl?.trim()),
@@ -242,6 +253,77 @@ function TextInput({ value, onChange, placeholder, multiline = false, rows = 4 }
       placeholder={placeholder}
       className={`h-10 ${cls}`}
     />
+  )
+}
+
+function normalizeHexColorInput(value) {
+  const trimmed = value.trim()
+  if (/^#[0-9A-Fa-f]{6}$/.test(trimmed)) return trimmed
+  if (/^[0-9A-Fa-f]{6}$/.test(trimmed)) return `#${trimmed}`
+  return trimmed
+}
+
+function HexColorField({ label, value, onChange, hint }) {
+  const pickerValue = /^#[0-9A-Fa-f]{6}$/.test(value) ? value : '#000000'
+
+  return (
+    <div className="flex flex-col gap-1">
+      <FieldLabel hint={hint}>{label}</FieldLabel>
+      <div className="flex items-center gap-2">
+        <input
+          type="color"
+          value={pickerValue}
+          onChange={(e) => onChange(e.target.value)}
+          className="size-10 shrink-0 cursor-pointer rounded-sm border border-lightGray bg-white p-1"
+          aria-label={`${label} 선택`}
+        />
+        <TextInput
+          value={value}
+          onChange={(v) => onChange(normalizeHexColorInput(v))}
+          placeholder="#000000"
+        />
+      </div>
+    </div>
+  )
+}
+
+function TopAnnouncementPreview({ bar }) {
+  const mobileText = bar.mobileText.trim() || '모바일 상단 공지 문구'
+  const pcText = bar.pcText.trim() || bar.mobileText.trim() || 'PC 상단 공지 문구'
+  const bgColor = /^#[0-9A-Fa-f]{6}$/.test(bar.bgColor) ? bar.bgColor : '#000000'
+  const textColor = /^#[0-9A-Fa-f]{6}$/.test(bar.textColor) ? bar.textColor : '#FFFFFF'
+
+  return (
+    <div className="grid gap-5">
+      <div>
+        <p className="m-0 mb-2 text-[11px] text-subtleText">모바일 미리보기 (375px)</p>
+        <div className="overflow-hidden rounded-sm border border-lightGray">
+          <div
+            className="flex h-10 items-center justify-center px-3 text-center text-[12px] leading-[1.4] tracking-[-0.02em]"
+            style={{ backgroundColor: bgColor, color: textColor }}
+          >
+            {mobileText}
+          </div>
+        </div>
+      </div>
+      <div>
+        <p className="m-0 mb-2 text-[11px] text-subtleText">PC 미리보기</p>
+        <div className="overflow-hidden rounded-sm border border-lightGray">
+          <div
+            className="flex h-10 items-stretch text-bodySmall"
+            style={{ backgroundColor: bgColor, color: textColor }}
+          >
+            <div className="min-w-0 flex-1" aria-hidden />
+            <div className="mx-auto flex max-w-[1080px] shrink-0 items-center justify-center px-4 text-center">
+              {pcText}
+            </div>
+            <div className="flex min-w-0 flex-1 items-center justify-end pr-1" aria-hidden>
+              <span className="mr-2 size-3.5 opacity-80">×</span>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
   )
 }
 
@@ -1540,6 +1622,7 @@ export function HomeMainManagement() {
     setIsSaving(true)
     try {
       const saved = saveConfig({
+        topAnnouncementBar: config.topAnnouncementBar,
         mainBanners: config.mainBanners,
         quickMenuSlots: config.quickMenuSlots,
         brandBanner: config.brandBanner,
@@ -1554,6 +1637,7 @@ export function HomeMainManagement() {
       })
 
       const supabaseResult = await upsertHomeBannerSection(activeTab, {
+        topAnnouncementBar: saved.topAnnouncementBar,
         mainBanners: saved.mainBanners,
         quickMenuSlots: saved.quickMenuSlots,
         brandBanner: saved.brandBanner,
@@ -1582,6 +1666,12 @@ export function HomeMainManagement() {
       setIsSaving(false)
     }
   }
+
+  const updateTopAnnouncement = (patch) =>
+    setConfig((prev) => ({
+      ...prev,
+      topAnnouncementBar: { ...prev.topAnnouncementBar, ...patch },
+    }))
 
   const updateMainBanner = (index, patch) =>
     setConfig((prev) => ({
@@ -1902,7 +1992,7 @@ export function HomeMainManagement() {
       <header className="mb-6 border-b border-lightGray pb-6">
         <h2 className="m-0 text-h3 text-dark">홈메인관리</h2>
         <p className="m-0 mt-2 text-bodyRegular2 text-textDefault">
-          홈 화면 10개 섹션(메인·퀵메뉴·브랜드·시리즈·기획전·컬렉션·큐레이션·스타일배너·룩북·마케팅팝업)을 관리합니다.
+          홈 화면 11개 섹션(상단 공지·메인·퀵메뉴·브랜드·시리즈·기획전·컬렉션·큐레이션·스타일배너·룩북·마케팅팝업)을 관리합니다.
         </p>
       </header>
 
@@ -1922,6 +2012,86 @@ export function HomeMainManagement() {
           </button>
         ))}
       </nav>
+
+      {/* ── 0. 상단 공지 ───────────────────────────── */}
+      {activeTab === 'topAnnouncement' ? (
+        <section className="space-y-6">
+          <SpecNote>
+            GNB 최상단 40px 공지 바 · 모바일/PC 문구·배경색·텍스트색 개별 설정 · 링크 입력 시 탭하면 이동
+          </SpecNote>
+
+          <div className="grid grid-cols-1 gap-6 xl:grid-cols-[minmax(0,1fr)_320px]">
+            <article className="rounded-sm border border-lightGray bg-white p-6">
+              <h3 className="m-0 mb-4 text-bodyBold1 text-dark">상단 공지 설정</h3>
+
+              <label className="mb-5 flex cursor-pointer items-center gap-2">
+                <input
+                  type="checkbox"
+                  checked={config.topAnnouncementBar.enabled}
+                  onChange={(e) => updateTopAnnouncement({ enabled: e.target.checked })}
+                  className="size-4 accent-dark"
+                />
+                <span className="text-bodyRegular2 text-dark">상단 공지 노출</span>
+              </label>
+
+              <div className="grid gap-4">
+                <div className="flex flex-col gap-1">
+                  <FieldLabel hint="모바일 GNB 상단 40px 영역에 표시됩니다.">
+                    모바일 문구
+                  </FieldLabel>
+                  <TextInput
+                    value={config.topAnnouncementBar.mobileText}
+                    onChange={(v) => updateTopAnnouncement({ mobileText: v })}
+                    placeholder="예: 26SS Collection 툴레아 스웨이드"
+                  />
+                </div>
+
+                <div className="flex flex-col gap-1">
+                  <FieldLabel hint="PC GNB 상단 40px 영역에 표시됩니다. 비우면 모바일 문구를 사용합니다.">
+                    PC 문구
+                  </FieldLabel>
+                  <TextInput
+                    value={config.topAnnouncementBar.pcText}
+                    onChange={(v) => updateTopAnnouncement({ pcText: v })}
+                    placeholder="예: 26SS Collection 새로운 컬러를 입은 로마리 오찌"
+                  />
+                </div>
+
+                <div className="flex flex-col gap-1">
+                  <FieldLabel hint="선택 · 내부 경로 또는 외부 URL">
+                    링크
+                  </FieldLabel>
+                  <TextInput
+                    value={config.topAnnouncementBar.linkHref}
+                    onChange={(v) => updateTopAnnouncement({ linkHref: v })}
+                    placeholder="예: /new"
+                  />
+                </div>
+
+                <div className="grid gap-4 sm:grid-cols-2">
+                  <HexColorField
+                    label="배경 색상"
+                    value={config.topAnnouncementBar.bgColor}
+                    onChange={(v) => updateTopAnnouncement({ bgColor: v })}
+                    hint="HEX · 예: #000000"
+                  />
+                  <HexColorField
+                    label="텍스트 색상"
+                    value={config.topAnnouncementBar.textColor}
+                    onChange={(v) => updateTopAnnouncement({ textColor: v })}
+                    hint="HEX · 예: #FFFFFF"
+                  />
+                </div>
+              </div>
+            </article>
+
+            <aside className="rounded-sm border border-lightGray bg-white p-5">
+              <h3 className="m-0 mb-4 text-bodyBold1 text-dark">미리보기</h3>
+              <TopAnnouncementPreview bar={config.topAnnouncementBar} />
+            </aside>
+          </div>
+        </section>
+      ) : null}
 
       {/* ── 1. 메인 배너 ───────────────────────────── */}
       {activeTab === 'main' ? (

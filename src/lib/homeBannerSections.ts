@@ -2,11 +2,12 @@ import type {
   AdminHomeMainConfig,
   AdminMainBannerSlide,
 } from './adminHomeMainConfig'
-import { normalizeLookbookSection, normalizeMarketingPopupSlides } from './adminHomeMainConfig'
+import { normalizeLookbookSection, normalizeMarketingPopupSlides, normalizeTopAnnouncementBar } from './adminHomeMainConfig'
 import { deepRewriteHomeBannerUrls, rewriteHomeBannerImageUrl } from './homeBannersAssetUrl'
 
 /** Admin tab id → Supabase `home_banners.section_id` */
 export const ADMIN_TAB_TO_SECTION_ID = {
+  topAnnouncement: 'top_announcement',
   main: 'main_banner',
   quick: 'quick_menu',
   brand: 'brand_banner',
@@ -52,6 +53,13 @@ export function buildHomeBannerSectionPayload(
   const section_id = ADMIN_TAB_TO_SECTION_ID[tabId]
 
   switch (tabId) {
+    case 'topAnnouncement':
+      return {
+        section_id,
+        image_url: null,
+        link_url: config.topAnnouncementBar.linkHref?.trim() || null,
+        metadata: { topAnnouncementBar: config.topAnnouncementBar },
+      }
     case 'main':
       return {
         section_id,
@@ -137,6 +145,7 @@ export function mergeHomeBannerRowsIntoConfig(
 ): AdminHomeMainConfig {
   const next: AdminHomeMainConfig = {
     ...base,
+    topAnnouncementBar: { ...base.topAnnouncementBar },
     mainBanners: base.mainBanners.map((item) => ({ ...item })),
     quickMenuSlots: base.quickMenuSlots.map((item) => ({ ...item })),
     brandBanner: { ...base.brandBanner },
@@ -172,6 +181,16 @@ export function mergeHomeBannerRowsIntoConfig(
     const linkUrl = rewriteHomeBannerImageUrl(row.link_url)
 
     switch (row.section_id) {
+      case 'top_announcement':
+        if (meta.topAnnouncementBar && typeof meta.topAnnouncementBar === 'object') {
+          next.topAnnouncementBar = normalizeTopAnnouncementBar(
+            meta.topAnnouncementBar as AdminHomeMainConfig['topAnnouncementBar'],
+            next.topAnnouncementBar,
+          )
+        } else if (linkUrl) {
+          next.topAnnouncementBar = { ...next.topAnnouncementBar, linkHref: linkUrl }
+        }
+        break
       case 'main_banner':
         if (Array.isArray(meta.mainBanners) && meta.mainBanners.length > 0) {
           next.mainBanners = meta.mainBanners as AdminHomeMainConfig['mainBanners']
