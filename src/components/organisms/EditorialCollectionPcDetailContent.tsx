@@ -77,11 +77,11 @@ function CollectionHero({ mainBanner }: { mainBanner: string }) {
   if (!mainBanner) return null
 
   return (
-    <section className="mx-auto flex w-full max-w-[1400px] flex-col items-center justify-start">
+    <section className="mx-auto flex h-[862px] w-full max-w-[1400px] flex-col items-center justify-center pb-16">
       <img
         src={mainBanner}
         alt=""
-        className="block h-auto w-full pb-16"
+        className="block min-h-0 w-full flex-1 object-cover object-center"
         loading="eager"
         decoding="async"
         draggable={false}
@@ -274,6 +274,7 @@ export function EditorialCollectionPcDetailContent({ detail }: EditorialCollecti
             subtitle={showcase.subtitle}
             product={showcase.product}
             gallery={showcase.gallery}
+            layout="collection"
           />
         ))}
       </div>
