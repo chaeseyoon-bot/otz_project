@@ -1,10 +1,11 @@
 import { createContext, useCallback, useContext, useEffect, useMemo, useState, type ReactNode } from 'react'
 import {
   EDITORIAL_CONFIG_UPDATED_EVENT,
-  loadAdminEditorialConfig,
+  getEffectiveEditorialConfig,
   saveAdminEditorialConfig,
   type AdminEditorialConfig,
 } from '../lib/adminEditorialConfig'
+import { hydrateEditorialConfig } from '../lib/editorialConfigApi'
 
 type SaveInput = Omit<AdminEditorialConfig, 'version' | 'updatedAt'>
 
@@ -17,16 +18,20 @@ interface EditorialConfigContextValue {
 const EditorialConfigContext = createContext<EditorialConfigContextValue | null>(null)
 
 export function EditorialConfigProvider({ children }: { children: ReactNode }) {
-  const [config, setConfig] = useState(loadAdminEditorialConfig)
+  const [config, setConfig] = useState(getEffectiveEditorialConfig)
 
   const reloadConfig = useCallback(() => {
-    setConfig(loadAdminEditorialConfig())
+    setConfig(getEffectiveEditorialConfig())
   }, [])
 
   const saveConfig = useCallback((input: SaveInput) => {
     const next = saveAdminEditorialConfig(input)
     setConfig(next)
     return next
+  }, [])
+
+  useEffect(() => {
+    void hydrateEditorialConfig().then(setConfig)
   }, [])
 
   useEffect(() => {

@@ -26,7 +26,7 @@ import {
   DEFAULT_COUPON_NOTES_TITLE,
   createEditorial01Preset,
   getEventFallback,
-  loadAdminEditorialConfig,
+  getEffectiveEditorialConfig,
   MAX_COUPON_NOTES,
   normalizeSectionOrder,
   sortEditorialEventsNewestFirst,
@@ -289,7 +289,7 @@ async function resolveStandaloneShowcases(
   return resolved
 }
 
-export function resolveEditorialListItems(config: AdminEditorialConfig = loadAdminEditorialConfig()): EditorialEventItem[] {
+export function resolveEditorialListItems(config: AdminEditorialConfig = getEffectiveEditorialConfig()): EditorialEventItem[] {
   return sortEditorialEventsNewestFirst(config.events)
     .filter((event) => event.enabled)
     .map((event) => ({
@@ -305,7 +305,7 @@ export function resolveEditorialListItems(config: AdminEditorialConfig = loadAdm
 
 export async function resolveEditorialEventDetail(
   editorialId: string,
-  config: AdminEditorialConfig = loadAdminEditorialConfig(),
+  config: AdminEditorialConfig = getEffectiveEditorialConfig(),
 ): Promise<EditorialEventDetail | undefined> {
   const event = config.events.find((item) => item.id === editorialId && item.enabled)
   if (!event) return undefined

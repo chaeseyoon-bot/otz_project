@@ -12,6 +12,7 @@ import { CartProvider } from './contexts/CartContext'
 import { EditorialConfigProvider } from './contexts/EditorialConfigContext'
 import { HomeMainConfigProvider } from './contexts/HomeMainConfigContext'
 import { hydrateArchiveDetailConfig } from './lib/archiveLookbooksApi'
+import { hydrateEditorialConfig } from './lib/editorialConfigApi'
 import { tokens } from './design-system/tokens'
 import { CategoryShoesPage } from './pages/CategoryShoesPage'
 import { HomePage } from './pages/HomePage'
@@ -101,17 +102,26 @@ export default function App() {
     const refreshArchiveConfig = () => {
       void hydrateArchiveDetailConfig()
     }
+    const refreshEditorialConfig = () => {
+      void hydrateEditorialConfig()
+    }
 
     refreshArchiveConfig()
+    refreshEditorialConfig()
     window.addEventListener('focus', refreshArchiveConfig)
+    window.addEventListener('focus', refreshEditorialConfig)
 
     const onVisibilityChange = () => {
-      if (document.visibilityState === 'visible') refreshArchiveConfig()
+      if (document.visibilityState === 'visible') {
+        refreshArchiveConfig()
+        refreshEditorialConfig()
+      }
     }
     document.addEventListener('visibilitychange', onVisibilityChange)
 
     return () => {
       window.removeEventListener('focus', refreshArchiveConfig)
+      window.removeEventListener('focus', refreshEditorialConfig)
       document.removeEventListener('visibilitychange', onVisibilityChange)
     }
   }, [])

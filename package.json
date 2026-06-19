@@ -16,7 +16,9 @@
     "assets:sync:dev": "node scripts/sync-figma-dev-assets.mjs",
     "assets:seed:shoes": "node scripts/seed-shoes-placeholders.mjs",
     "products:seed-stock": "node scripts/seed-product-stock.mjs",
-    "products:backfill-image-urls": "node scripts/backfill-product-image-urls.mjs"
+    "products:backfill-image-urls": "node scripts/backfill-product-image-urls.mjs",
+    "editorial:extract-edge": "node scripts/extract-edge-editorial-localStorage.mjs",
+    "editorial:push": "node scripts/push-editorial-config.mjs"
   },
   "dependencies": {
     "@supabase/supabase-js": "^2.105.4",
@@ -31,6 +33,7 @@
     "@types/react": "^19.2.14",
     "@types/react-dom": "^19.2.3",
     "@vitejs/plugin-react": "^6.0.1",
+    "classic-level": "^3.0.0",
     "eslint": "^10.2.1",
     "eslint-plugin-react-hooks": "^7.1.1",
     "eslint-plugin-react-refresh": "^0.5.2",

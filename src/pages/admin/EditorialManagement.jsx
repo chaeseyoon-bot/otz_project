@@ -14,10 +14,10 @@ import {
   editorialCategoryLabel,
   getEditorialImageBlockLabel,
   getNextEditorialId,
-  loadAdminEditorialConfig,
   MAX_EDITORIAL_EVENTS,
   sortEditorialEventsNewestFirst,
 } from '../../lib/adminEditorialConfig'
+import { hydrateEditorialConfig, upsertEditorialConfig } from '../../lib/editorialConfigApi'
 import { resolveEditorialEventDetail } from '../../lib/editorialContentResolver'
 import { getEditorialDetailPath } from '../../lib/editorialRoutes'
 import { navigateSpa } from '../../lib/spaNavigation'
@@ -260,10 +260,12 @@ export function EditorialManagement() {
   )
 
   useEffect(() => {
-    const loaded = loadAdminEditorialConfig()
-    setConfig(loaded)
-    const first = sortEditorialEventsNewestFirst(loaded.events)[0]
-    setSelectedEventId(first?.id ?? null)
+    void (async () => {
+      const loaded = await hydrateEditorialConfig()
+      setConfig(loaded)
+      const first = sortEditorialEventsNewestFirst(loaded.events)[0]
+      setSelectedEventId(first?.id ?? null)
+    })()
   }, [])
 
   const selectedEvent = useMemo(
@@ -311,7 +313,7 @@ export function EditorialManagement() {
     }
   }
 
-  const handleSave = () => {
+  const handleSave = async () => {
     if (!selectedEvent) return
     if (!selectedEvent.title.trim()) {
       showMessage('기획전 제목을 입력해 주세요.')
@@ -326,6 +328,12 @@ export function EditorialManagement() {
     try {
       const saved = saveConfig({ events: config.events })
       setConfig(saved)
+      showMessage('서버에 저장하는 중…')
+      const result = await upsertEditorialConfig(saved)
+      if (!result.ok) {
+        showMessage(result.message)
+        return
+      }
       showMessage('기획전 설정이 저장되었습니다. 에디토리얼 화면에 반영됩니다.')
     } catch {
       showMessage('저장에 실패했습니다. 이미지 용량이 크면 다시 시도해 주세요.')

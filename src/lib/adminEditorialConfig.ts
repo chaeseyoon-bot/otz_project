@@ -248,6 +248,26 @@ export interface AdminEditorialConfig {
 export const EDITORIAL_CONFIG_UPDATED_EVENT = 'otz-editorial-config-updated'
 const STORAGE_KEY = 'otz-admin-editorial'
 
+let remoteConfigCache: AdminEditorialConfig | null = null
+
+export function setEditorialConfigCache(config: AdminEditorialConfig | null): void {
+  remoteConfigCache = config
+}
+
+/** In-memory Supabase cache after hydrate. Never reads localStorage for storefront truth. */
+export function getEffectiveEditorialConfig(): AdminEditorialConfig {
+  return remoteConfigCache ?? createDefaultEditorialConfig()
+}
+
+/** Mirrors server payload to localStorage — offline cache only, not source of truth. */
+export function mirrorAdminEditorialConfigLocally(config: AdminEditorialConfig): void {
+  try {
+    localStorage.setItem(STORAGE_KEY, JSON.stringify(config))
+  } catch {
+    /* ignore quota errors */
+  }
+}
+
 export const COLLECTION_PRODUCT_SLOTS = 12
 export const MAX_COLLECTION_BLOCKS = 20
 export const LOOKBOOK_GALLERY_MAX_IMAGES = 16
@@ -1274,10 +1294,14 @@ export function normalizeEditorialConfig(raw: Partial<AdminEditorialConfig> | nu
 }
 
 export function loadAdminEditorialConfig(): AdminEditorialConfig {
+  if (remoteConfigCache) return remoteConfigCache
+
   try {
     const raw = localStorage.getItem(STORAGE_KEY)
     if (!raw) return createDefaultEditorialConfig()
-    return normalizeEditorialConfig(JSON.parse(raw) as Partial<AdminEditorialConfig>)
+    const parsed = normalizeEditorialConfig(JSON.parse(raw) as Partial<AdminEditorialConfig>)
+    remoteConfigCache = parsed
+    return parsed
   } catch {
     return createDefaultEditorialConfig()
   }
@@ -1294,12 +1318,8 @@ export function saveAdminEditorialConfig(
     updatedAt: new Date().toISOString(),
   }
 
-  try {
-    localStorage.setItem(STORAGE_KEY, JSON.stringify(next))
-  } catch {
-    throw new Error('EDITORIAL_CONFIG_STORAGE_FAILED')
-  }
-
+  mirrorAdminEditorialConfigLocally(next)
+  setEditorialConfigCache(next)
   window.dispatchEvent(new CustomEvent(EDITORIAL_CONFIG_UPDATED_EVENT))
   return next
 }
