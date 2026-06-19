@@ -1,6 +1,6 @@
-import { useState } from 'react'
+import { useState, type KeyboardEvent, type MouseEvent } from 'react'
 import { swapImageExtension } from '../../lib/productImage'
-import { HomeProductDetailLink } from './HomeProductDetailLink'
+import { navigateExternalOrSpa } from '../../lib/spaNavigation'
 
 /** Figma 2424:16202 — mobile curation banner (345×480). */
 export const CURATION_MOBILE_WIDTH = 345
@@ -12,7 +12,6 @@ const BUTTON_ARROW = '/assets/figma/icons/button_arrow.svg'
 export interface CurationMobileSlideProps {
   /** Per-tile image URL candidates (07 editorial first). */
   tiles: string[][]
-  productIds?: (number | null)[]
   badge: string
   title: string
   ctaLabel: string
@@ -46,9 +45,21 @@ function CurationMobileTile({ candidates }: { candidates: string[] }) {
   )
 }
 
+function handleCurationLinkKeyDown(href: string, event: KeyboardEvent<HTMLElement>) {
+  if (event.key === 'Enter' || event.key === ' ') {
+    event.preventDefault()
+    navigateExternalOrSpa(href)
+  }
+}
+
+function handleCurationLinkClick(href: string, event: MouseEvent<HTMLAnchorElement>) {
+  if (!href || href === '#') return
+  event.preventDefault()
+  navigateExternalOrSpa(href)
+}
+
 export function CurationMobileSlide({
   tiles,
-  productIds = [],
   badge,
   title,
   ctaLabel,
@@ -57,6 +68,8 @@ export function CurationMobileSlide({
   const displayBadge = badge.trim() || 'CURATION'
   const displayTitle = title.trim() || 'WINTER ACC\nSTYLING'
   const displayCta = ctaLabel.trim() || '상품 보러 가기'
+  const linkHref = ctaHref.trim()
+  const hasLink = Boolean(linkHref && linkHref !== '#')
   const tileSlots = Array.from(
     { length: CURATION_MOBILE_TILE_COUNT },
     (_, index) => tiles[index] ?? [],
@@ -67,15 +80,18 @@ export function CurationMobileSlide({
       className="relative h-[480px] w-full overflow-hidden"
       data-figma-node="2424:16202"
     >
-      <div className="absolute inset-0 z-0 grid h-full w-full grid-cols-2 grid-rows-2">
+      <div
+        className={`absolute inset-0 z-0 grid h-full w-full grid-cols-2 grid-rows-2 ${hasLink ? 'cursor-pointer' : ''}`}
+        role={hasLink ? 'link' : undefined}
+        tabIndex={hasLink ? 0 : undefined}
+        aria-label={hasLink ? displayCta : undefined}
+        onClick={hasLink ? () => navigateExternalOrSpa(linkHref) : undefined}
+        onKeyDown={hasLink ? (event) => handleCurationLinkKeyDown(linkHref, event) : undefined}
+      >
         {tileSlots.map((candidates, index) => (
-          <HomeProductDetailLink
-            key={index}
-            productId={productIds[index]}
-            className="relative block h-full w-full"
-          >
+          <div key={index} className="relative h-full w-full">
             <CurationMobileTile candidates={candidates} />
-          </HomeProductDetailLink>
+          </div>
         ))}
       </div>
 
@@ -95,8 +111,9 @@ export function CurationMobileSlide({
       </div>
 
       <a
-        href={ctaHref || '#'}
+        href={linkHref || '#'}
         className="absolute bottom-7 right-5 z-20 inline-flex flex-col items-end text-[rgba(255,255,255,0.8)] no-underline"
+        onClick={hasLink ? (event) => handleCurationLinkClick(linkHref, event) : undefined}
       >
         <span className="pr-2.5 text-[13px] leading-none tracking-[-0.02em]">{displayCta}</span>
         <img

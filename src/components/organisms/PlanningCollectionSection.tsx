@@ -23,6 +23,7 @@ export function PlanningCollectionSection() {
                 bannerImage={card.bannerImage}
                 tagLabel={card.tagLabel}
                 title={card.title}
+                linkHref={card.linkHref}
                 products={card.products}
               />
             </article>

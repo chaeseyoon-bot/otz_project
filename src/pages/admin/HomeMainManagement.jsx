@@ -442,6 +442,7 @@ function CollectionMobilePreview({ collection, tags }) {
         bannerImage={collection.imageUrl}
         tagLabel={tagLabel}
         title={collection.title}
+        linkHref={collection.linkHref}
         productImages={productImages}
       />
     </ScaledMobilePreview>

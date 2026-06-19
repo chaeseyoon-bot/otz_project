@@ -70,7 +70,6 @@ export function CurationSection() {
       <div className="px-[15px] pb-0 pt-10 lg:hidden">
         <CurationMobileSlide
           tiles={mobileTiles}
-          productIds={products.map((item) => item.productId)}
           badge={copy.badge}
           title={copy.title}
           ctaLabel={copy.mobileCtaLabel}
