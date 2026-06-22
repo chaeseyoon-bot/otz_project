@@ -1,6 +1,6 @@
 import { Fragment, useCallback, useMemo, useRef, useState } from 'react'
 import type { EditorialCollectionBlock, EditorialCouponItem, EditorialEventDetail, EditorialHeroInfo, EditorialProductSection } from '../../data/editorialEventDetails'
-import { EditorialMainTab, type EditorialMainTabId } from '../molecules/EditorialMainTab'
+import { EditorialMainTab, EDITORIAL_PC_TAB_SCROLL_MARGIN_PX, type EditorialMainTabId } from '../molecules/EditorialMainTab'
 import { ProductCardUnit } from '../molecules/ProductCardUnit'
 import { EditorialHeroInfoSection } from './EditorialHeroInfoSection'
 import { EditorialLookbookMasonrySection } from './EditorialLookbookMasonrySection'
@@ -256,13 +256,13 @@ export function EditorialCollectionPcDetailContent({ detail }: EditorialCollecti
   const catalogHeroInfo = useMemo(() => resolveCatalogPcHeroInfo(detail), [detail])
 
   return (
-    <div className="flex w-full flex-col items-center justify-start bg-white pb-20">
+    <div className="w-full bg-white pb-20">
       <CollectionDetailHeader detail={detail} />
       {hasProductTab ? (
         <EditorialMainTab activeTab={activeTab} onTabChange={handleTabChange} />
       ) : null}
       <CollectionHero mainBanner={detail.mainBanner} />
-      <div ref={contentSectionRef} className="w-full scroll-mt-6">
+      <div ref={contentSectionRef} className="w-full" style={{ scrollMarginTop: EDITORIAL_PC_TAB_SCROLL_MARGIN_PX }}>
         <EditorialHeroInfoSection heroInfo={catalogHeroInfo} variant="catalog-pc" />
         {heroGalleryImages.length > 0 ? (
           <EditorialLookbookMasonrySection images={heroGalleryImages} variant="hero-follow" />
@@ -278,7 +278,7 @@ export function EditorialCollectionPcDetailContent({ detail }: EditorialCollecti
           />
         ))}
       </div>
-      <div ref={productSectionRef} className="w-full scroll-mt-6">
+      <div ref={productSectionRef} className="w-full" style={{ scrollMarginTop: EDITORIAL_PC_TAB_SCROLL_MARGIN_PX }}>
         {(detail.catalogProductGrids ?? []).map((section) => (
           <EditorialCatalogProductGridSection
             key={section.id}

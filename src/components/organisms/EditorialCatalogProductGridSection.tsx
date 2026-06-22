@@ -98,7 +98,7 @@ export function EditorialCatalogProductGridSection({
           <h2
             className={
               isPc
-                ? 'm-0 flex w-full flex-col items-start justify-start bg-black px-6 py-4 text-[32px] font-extrabold leading-[1.2] tracking-[-0.4px] text-white'
+                ? 'm-0 flex w-full flex-col items-start justify-start bg-black px-6 py-4 text-[30px] font-bold leading-[1.2] tracking-[-0.4px] text-white'
                 : 'm-0 flex h-[50px] w-full items-center justify-center bg-dark text-[18px] font-bold leading-[1.2] tracking-[-0.02em] text-white'
             }
           >

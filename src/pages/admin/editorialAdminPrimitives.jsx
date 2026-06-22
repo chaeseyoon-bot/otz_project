@@ -8,6 +8,7 @@ import {
   formatAdminDiscountRate,
   formatAdminPrice,
   getProductThumbnailCandidates,
+  mapProductRow,
   searchAdminProductsForPicker,
 } from '../../lib/productsApi'
 
@@ -23,12 +24,16 @@ function FieldLabel({ children, hint }) {
   )
 }
 
-export function FormRow({ label, hint, children, alignTop = false }) {
+export function FormRow({ label, hint, children, alignTop = false, stacked = false }) {
   return (
     <div
-      className={`grid gap-1 sm:grid-cols-[108px_minmax(0,1fr)] sm:gap-3 ${
-        alignTop ? 'sm:items-start' : 'sm:items-center'
-      }`}
+      className={
+        stacked
+          ? 'flex flex-col gap-1 sm:gap-3'
+          : `grid gap-1 sm:grid-cols-[108px_minmax(0,1fr)] sm:gap-3 ${
+              alignTop ? 'sm:items-start' : 'sm:items-center'
+            }`
+      }
     >
       <FieldLabel hint={hint}>{label}</FieldLabel>
       <div className="min-w-0">{children}</div>
@@ -268,7 +273,7 @@ export function ProductSlotPicker({ productId, slotLabel, onAssign, onClear }) {
     Promise.all([fetchProductById(productId), resolveProductRowForThumbnail(productId)]).then(
       ([product, row]) => {
         if (cancelled) return
-        setSelected(product ?? null)
+        if (product) setSelected(product)
         setThumbCandidates(row ? getProductThumbnailCandidates(row, 'square') : [])
       },
     )
@@ -347,6 +352,8 @@ export function ProductSlotPicker({ productId, slotLabel, onAssign, onClear }) {
                     className="flex w-full items-center gap-1.5 border-0 border-b border-lightGray bg-transparent px-2 py-1.5 text-left last:border-b-0 hover:bg-light"
                     onClick={() => {
                       onAssign(row.id)
+                      setSelected(mapProductRow(row))
+                      setThumbCandidates(getProductThumbnailCandidates(row, 'square'))
                       setIsOpen(false)
                       setQuery('')
                     }}

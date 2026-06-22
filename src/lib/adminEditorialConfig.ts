@@ -46,7 +46,7 @@ export interface AdminEditorialCollectionProductShowcaseBlock {
 
 export type EditorialCatalogProductGridId = 'shoes' | 'bagacc'
 
-/** Figma 151:4481 — SHOES / BAG & ACC 5-column product grids below standalone products. */
+/** Figma 151:4481 — SHOES / BAG & ACC 6-column product grids below standalone products. */
 export interface AdminEditorialCatalogProductGrid {
   id: EditorialCatalogProductGridId
   title: string
@@ -274,7 +274,14 @@ export const LOOKBOOK_GALLERY_MAX_IMAGES = 16
 export const HERO_GALLERY_MAX_IMAGES = 16
 export const PRODUCT_SHOWCASE_GALLERY_SLOTS = 5
 export const MAX_STANDALONE_PRODUCTS = 8
-export const CATALOG_PRODUCT_GRID_SLOTS = 10
+/** PC storefront grid columns (Figma 151:4481). */
+export const CATALOG_PRODUCT_GRID_COLUMNS = 6
+export const CATALOG_PRODUCT_GRID_MIN_ROWS = 1
+export const CATALOG_PRODUCT_GRID_MAX_ROWS = 6
+export const CATALOG_PRODUCT_GRID_DEFAULT_ROWS = 1
+/** @deprecated Prefer CATALOG_PRODUCT_GRID_COLUMNS × row count. */
+export const CATALOG_PRODUCT_GRID_SLOTS =
+  CATALOG_PRODUCT_GRID_COLUMNS * CATALOG_PRODUCT_GRID_DEFAULT_ROWS
 export const FEATURED_PRODUCT_SLOTS = 4
 export const PRODUCT_TAB_SLOTS = 10
 export const MUST_ITEM_SLOTS = 10
@@ -307,6 +314,29 @@ function emptyImageSlot(): AdminEditorialImageSlot {
 
 function emptyProductIds(count: number): (number | null)[] {
   return Array.from({ length: count }, () => null)
+}
+
+function catalogGridDefaultSlotCount(): number {
+  return CATALOG_PRODUCT_GRID_COLUMNS * CATALOG_PRODUCT_GRID_DEFAULT_ROWS
+}
+
+/** Keeps catalog grid slots as multiples of 6 (min 1 row, max 6 rows). */
+export function normalizeCatalogProductGridIds(ids: unknown): (number | null)[] {
+  const source = Array.isArray(ids) ? ids : []
+  const parsed: (number | null)[] = source.map((value) => {
+    if (value == null) return null
+    const numeric = Number(value)
+    if (!Number.isFinite(numeric)) return null
+    return numeric
+  })
+
+  const minSlots = CATALOG_PRODUCT_GRID_COLUMNS * CATALOG_PRODUCT_GRID_MIN_ROWS
+  const maxSlots = CATALOG_PRODUCT_GRID_COLUMNS * CATALOG_PRODUCT_GRID_MAX_ROWS
+  let length = Math.max(minSlots, parsed.length)
+  length = Math.ceil(length / CATALOG_PRODUCT_GRID_COLUMNS) * CATALOG_PRODUCT_GRID_COLUMNS
+  length = Math.min(length, maxSlots)
+
+  return Array.from({ length }, (_, index) => parsed[index] ?? null)
 }
 
 function defaultProductSection(
@@ -409,12 +439,12 @@ export function createDefaultCatalogProductGrids(): AdminEditorialCatalogProduct
     {
       id: 'shoes',
       title: 'SHOES',
-      productIds: emptyProductIds(CATALOG_PRODUCT_GRID_SLOTS),
+      productIds: emptyProductIds(catalogGridDefaultSlotCount()),
     },
     {
       id: 'bagacc',
       title: 'BAG & ACC',
-      productIds: emptyProductIds(CATALOG_PRODUCT_GRID_SLOTS),
+      productIds: emptyProductIds(catalogGridDefaultSlotCount()),
     },
   ]
 }
@@ -953,13 +983,13 @@ function catalogGridsFromCollectionBlocks(
     if (grid.id === 'shoes' && shoesBlock) {
       return {
         ...grid,
-        productIds: normalizeProductIds(shoesBlock.productIds, CATALOG_PRODUCT_GRID_SLOTS),
+        productIds: normalizeCatalogProductGridIds(shoesBlock.productIds),
       }
     }
     if (grid.id === 'bagacc' && bagBlock) {
       return {
         ...grid,
-        productIds: normalizeProductIds(bagBlock.productIds, CATALOG_PRODUCT_GRID_SLOTS),
+        productIds: normalizeCatalogProductGridIds(bagBlock.productIds),
       }
     }
     return grid
@@ -979,7 +1009,7 @@ function normalizeCatalogProductGrid(
       typeof grid.title === 'string' && grid.title.trim()
         ? grid.title
         : defaultGrid.title,
-    productIds: normalizeProductIds(grid.productIds, CATALOG_PRODUCT_GRID_SLOTS),
+    productIds: normalizeCatalogProductGridIds(grid.productIds),
   }
 }
 

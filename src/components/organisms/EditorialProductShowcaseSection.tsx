@@ -187,7 +187,7 @@ export function EditorialProductShowcaseSection({
         <div className={isCollection ? 'pt-6 lg:pt-8' : 'pt-8'}>
           <button
             type="button"
-            className={`inline-flex items-center gap-3 bg-dark font-medium leading-[1.4] tracking-[-0.04em] text-white hover:opacity-90 ${
+            className={`inline-flex items-center gap-3 bg-dark font-normal leading-[1.4] tracking-[-0.04em] text-white hover:opacity-90 ${
               isCollection
                 ? 'rounded-sm px-4 py-2 text-[13px] lg:h-[54px] lg:rounded-[4px] lg:px-6 lg:text-[16px]'
                 : 'h-[48px] rounded-[4px] px-6 text-[14px] lg:h-[54px] lg:text-[16px]'
