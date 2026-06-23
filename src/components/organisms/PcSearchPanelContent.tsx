@@ -1,4 +1,5 @@
 import { useCallback, useEffect, useMemo, useRef, useState, type RefObject } from 'react'
+import { ProductThumbImage } from '../atoms/ProductThumbImage'
 import { useHorizontalMouseDragScroll } from '../../hooks/useHorizontalMouseDragScroll'
 import { SearchHighlightText } from '../molecules/SearchHighlightText'
 import { PC_POPULAR_SEARCHES, PC_SEASON_KEYWORDS, type SearchProductThumb } from '../../data/searchContent'
@@ -51,7 +52,7 @@ function PcSearchProductThumb({
     >
       <div className="flex h-full w-full items-center justify-center bg-light">
         <div className="aspect-square w-full max-h-full">
-          <img
+          <ProductThumbImage
             src={product.image}
             alt={product.title}
             className="size-full object-contain object-center mix-blend-multiply"

@@ -53,6 +53,7 @@ export function buildCartItemFromProduct(
       regionalShippingFee: 0,
       total: price + shippingFee,
     },
+    addedAt: Date.now(),
   }
 }
 

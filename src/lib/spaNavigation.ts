@@ -5,6 +5,7 @@ import { isCartPath } from './cartRoutes'
 import { isCheckoutPath } from './checkoutRoutes'
 import { isOrderCompletePath, isOrderDetailPath } from './orderRoutes'
 import { isMyPagePath } from './myPageRoutes'
+import { isWishlistPath } from './wishlistRoutes'
 import { isProductDetailPath } from './productRoutes'
 import { isSearchResultsPath } from './searchRoutes'
 
@@ -17,6 +18,7 @@ export type SpaPath =
   | '/brand-story'
   | '/category/shoes'
   | '/mypage'
+  | '/wishlist'
   | '/cart'
   | '/checkout'
   | '/checkout/complete'
@@ -77,6 +79,7 @@ export function isSpaPath(path: string): path is SpaPath {
   if (path.startsWith('/brand-story')) return true
   if (path.startsWith('/category/shoes')) return true
   if (isMyPagePath(path)) return true
+  if (isWishlistPath(path)) return true
   if (isCartPath(path)) return true
   if (isCheckoutPath(path)) return true
   if (isOrderCompletePath(path)) return true

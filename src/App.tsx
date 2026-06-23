@@ -9,6 +9,7 @@ import { HomeMainPromoPopup } from './components/organisms/HomeMainPromoPopup'
 import { MobileGnbDrawer } from './components/organisms/MobileGnbDrawer'
 import { MobileGnbProvider } from './contexts/MobileGnbContext'
 import { CartProvider } from './contexts/CartContext'
+import { WishlistProvider } from './contexts/WishlistContext'
 import { EditorialConfigProvider } from './contexts/EditorialConfigContext'
 import { HomeMainConfigProvider } from './contexts/HomeMainConfigContext'
 import { hydrateArchiveDetailConfig } from './lib/archiveLookbooksApi'
@@ -24,6 +25,7 @@ import { isCartPath } from './lib/cartRoutes'
 import { isCheckoutPath } from './lib/checkoutRoutes'
 import { isOrderCompletePath, isOrderDetailPath, parseOrderDetailId } from './lib/orderRoutes'
 import { isMyPagePath } from './lib/myPageRoutes'
+import { isWishlistPath } from './lib/wishlistRoutes'
 import { parseProductId } from './lib/productRoutes'
 import { BestPage } from './pages/BestPage'
 import { EditorialPage } from './pages/EditorialPage'
@@ -44,6 +46,7 @@ import { MyPage } from './pages/MyPage'
 import { PcMyPage } from './pages/PcMyPage'
 import { PcSearchResultsPage } from './pages/PcSearchResultsPage'
 import { SearchPage } from './pages/SearchPage'
+import { WishlistPage } from './pages/WishlistPage'
 import { isSearchOverlayPath, isSearchResultsPath } from './lib/searchRoutes'
 import {
   getAdminActiveMenu,
@@ -138,6 +141,7 @@ export default function App() {
   const isSearchResults = isSearchResultsPath(pathname)
   const isSearch = isSearchOverlay || isSearchResults
   const isMyPage = isMyPagePath(pathname)
+  const isWishlist = isWishlistPath(pathname)
   const isCart = isCartPath(pathname)
   const isCheckout = isCheckoutPath(pathname)
   const isOrderComplete = isOrderCompletePath(pathname)
@@ -214,6 +218,7 @@ export default function App() {
       ) : (
     <MobileGnbProvider>
       <CartProvider>
+      <WishlistProvider>
       <div className="min-h-screen bg-[#ebebeb]">
         <div
           className={`app-home-shell mx-auto w-full bg-white lg:pb-0 ${
@@ -257,6 +262,8 @@ export default function App() {
               <MobileCartPage />
               <PcCartPage />
             </>
+          ) : isWishlist ? (
+            <WishlistPage />
           ) : isMyPage ? (
             <>
               <MyPage />
@@ -297,6 +304,7 @@ export default function App() {
         </div>
         <MobileGnbDrawer />
       </div>
+      </WishlistProvider>
       </CartProvider>
     </MobileGnbProvider>
       )}

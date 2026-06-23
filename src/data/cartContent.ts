@@ -21,6 +21,8 @@ export interface CartItem {
   deliveryEstimate?: string
   /** Per-unit discount for order summary. */
   discountAmount?: number
+  /** Unix ms when the line was first added — used for 30-day cart retention. */
+  addedAt?: number
 }
 
 export const CART_GUIDE_SECTIONS = [
@@ -28,6 +30,7 @@ export const CART_GUIDE_SECTIONS = [
     id: 'usage',
     title: '장바구니 이용안내',
     lines: [
+      '- 장바구니에 담긴 상품은 30일 동안 보관됩니다. 더 오래 상품을 보관하시려면 관심상품에 담아주시기 바랍니다.',
       '- 해외배송 상품과 국내배송 상품은 함께 결제하실 수 없으니 장바구니 별로 따로 결제해 주시기 바랍니다.',
       '- 해외배송 가능 상품의 경우 국내배송 장바구니에 담았다가 해외배송 장바구니로 이동하여 결제하실 수 있습니다.',
       '- 선택하신 상품의 수량을 변경하시려면 수량변경 후 [변경] 버튼을 누르시면 됩니다.',

@@ -1,7 +1,14 @@
 import type { SearchProductThumb } from '../data/searchContent'
+import { ensureWorkingProductImageUrl } from './productImage'
 
 const STORAGE_KEY = 'otz-recently-viewed-products'
 const MAX_ITEMS = 12
+export const RECENTLY_VIEWED_CHANGED_EVENT = 'otz-recently-viewed-changed'
+
+function notifyRecentlyViewedChanged() {
+  if (typeof window === 'undefined') return
+  window.dispatchEvent(new Event(RECENTLY_VIEWED_CHANGED_EVENT))
+}
 
 export function readRecentlyViewedProducts(): SearchProductThumb[] {
   try {
@@ -24,6 +31,7 @@ export function readRecentlyViewedProducts(): SearchProductThumb[] {
 
 export function writeRecentlyViewedProducts(items: SearchProductThumb[]) {
   localStorage.setItem(STORAGE_KEY, JSON.stringify(items.slice(0, MAX_ITEMS)))
+  notifyRecentlyViewedChanged()
 }
 
 export function seedRecentlyViewedIfEmpty(items: SearchProductThumb[]) {
@@ -51,7 +59,11 @@ export function recordRecentlyViewedProduct(product: {
   image: string
 }): void {
   const thumb = productToRecentlyViewedThumb(product)
-  const current = readRecentlyViewedProducts()
-  const next = [thumb, ...current.filter((item) => item.id !== thumb.id)]
-  writeRecentlyViewedProducts(next)
+
+  void ensureWorkingProductImageUrl(thumb.image).then((image) => {
+    const resolvedThumb = { ...thumb, image }
+    const current = readRecentlyViewedProducts()
+    const next = [resolvedThumb, ...current.filter((item) => item.id !== resolvedThumb.id)]
+    writeRecentlyViewedProducts(next)
+  })
 }

@@ -3,6 +3,7 @@ import { CartCheckbox } from '../components/cart/CartItemCard'
 import { CartOptionChangePopup } from '../components/cart/CartOptionChangePopup'
 import { PcCartBulkHeader } from '../components/cart/PcCartBulkHeader'
 import { PcCartItemCard } from '../components/cart/PcCartItemCard'
+import { CartRetentionNotice } from '../components/cart/CartRetentionNotice'
 import { PcCartOrderSidebar } from '../components/cart/PcCartOrderSidebar'
 import { useCart } from '../contexts/CartContext'
 
@@ -80,10 +81,7 @@ export function PcCartPage() {
                   ))}
                 </div>
 
-                <p className="m-0 pt-6 text-bodySmall text-subtleText">
-                  * 장바구니에 담긴 상품은 30일 동안 보관됩니다. 더 오래 상품을 보관하시려면 관심 상품에
-                  담아주시기 바랍니다.
-                </p>
+                <CartRetentionNotice className="pt-6" />
               </>
             )}
           </div>

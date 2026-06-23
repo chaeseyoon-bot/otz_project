@@ -27,6 +27,7 @@ import {
 import { getProductDetailPath } from '../lib/productRoutes'
 import { navigateSpa } from '../lib/spaNavigation'
 import { useMobileGnb } from '../contexts/MobileGnbContext'
+import { useWishlist } from '../contexts/WishlistContext'
 import { useLockBodyScroll } from '../hooks/useLockBodyScroll'
 import { useMobileShellFixedPin } from '../hooks/useMobileShellFixedPin'
 import { figmaAsset } from '../lib/figmaAssetUrl'
@@ -137,7 +138,7 @@ export function CategoryShoesPage() {
   const route = useCategoryPlpRoute()
   const { products: rawProducts, isLoading, error } = useProducts()
   const [appliedPcFilters, setAppliedPcFilters] = useState(() => clonePcFilters(EMPTY_PC_FILTERS))
-  const [likedIds, setLikedIds] = useState<Set<string>>(new Set())
+  const { isLiked, toggleLike } = useWishlist()
   const [activeMainId, setActiveMainId] = useState<CategoryPlpMainId>(route.mainId)
   const [activeSubIndex, setActiveSubIndex] = useState(route.subIndex)
   const [mainMenuOpen, setMainMenuOpen] = useState(false)
@@ -173,12 +174,7 @@ export function CategoryShoesPage() {
     : undefined
 
   const handleToggleLike = (productId: string) => {
-    setLikedIds((prev) => {
-      const next = new Set(prev)
-      if (next.has(productId)) next.delete(productId)
-      else next.add(productId)
-      return next
-    })
+    toggleLike(productId)
   }
 
   useEffect(() => {
@@ -393,7 +389,7 @@ export function CategoryShoesPage() {
                   >
                     <ProductCardUnit
                       product={product}
-                      liked={likedIds.has(product.id)}
+                      liked={isLiked(product.id)}
                       onToggleLike={() => handleToggleLike(product.id)}
                       articleClassName="group flex w-full flex-col"
                       titleClassName="min-w-0 truncate pt-[7px] text-[13px] font-normal leading-[1.35] tracking-[-0.02em] text-textDefault lg:pt-3 lg:text-[14px] lg:leading-[1.4]"

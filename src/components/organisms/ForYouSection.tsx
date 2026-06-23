@@ -2,6 +2,7 @@ import { useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState, typ
 import { tokens } from '../../design-system/tokens'
 import { useHorizontalMouseDragScroll } from '../../hooks/useHorizontalMouseDragScroll'
 import { useProducts } from '../../hooks/useProducts'
+import { useWishlist } from '../../contexts/WishlistContext'
 import { getProductDetailPath } from '../../lib/productRoutes'
 import { navigateSpa } from '../../lib/spaNavigation'
 import { ProductCardUnit, type ProductCardItem } from '../molecules/ProductCardUnit'
@@ -134,7 +135,7 @@ function ForYouProductTile({
 
 export function ForYouSection() {
   const { products, isLoading, error } = useProducts({ flag: 'is_foru' })
-  const [likedIds, setLikedIds] = useState<Set<string>>(() => new Set())
+  const { isLiked, toggleLike } = useWishlist()
   const mobileScrollerRef = useRef<HTMLDivElement>(null)
   const pcTrackViewportRef = useRef<HTMLDivElement>(null)
   const pcClipRef = useRef<HTMLDivElement>(null)
@@ -146,15 +147,6 @@ export function ForYouSection() {
   const [pcTrackGap, setPcTrackGap] = useState(FOR_U_PC_GAP_MIN_PX)
   const [pcTileWidth, setPcTileWidth] = useState(FOR_U_PC_TILE_WIDTH_PX)
   useHorizontalMouseDragScroll(mobileScrollerRef)
-
-  const toggleLike = (id: string) => {
-    setLikedIds((prev) => {
-      const next = new Set(prev)
-      if (next.has(id)) next.delete(id)
-      else next.add(id)
-      return next
-    })
-  }
 
   useEffect(() => {
     const el = mobileScrollerRef.current
@@ -278,7 +270,7 @@ export function ForYouSection() {
                 <ForYouProductTile
                   key={product.id}
                   product={product}
-                  liked={likedIds.has(product.id)}
+                  liked={isLiked(product.id)}
                   onToggleLike={() => toggleLike(product.id)}
                   className="w-32 snap-start self-stretch"
                 />
@@ -350,7 +342,7 @@ export function ForYouSection() {
                             <ForYouProductTile
                               key={product.id}
                               product={product}
-                              liked={likedIds.has(product.id)}
+                              liked={isLiked(product.id)}
                               onToggleLike={() => toggleLike(product.id)}
                               className="min-w-0 max-w-full overflow-hidden"
                               style={{
@@ -376,7 +368,7 @@ export function ForYouSection() {
                         <ForYouProductTile
                           key={product.id}
                           product={product}
-                          liked={likedIds.has(product.id)}
+                          liked={isLiked(product.id)}
                           onToggleLike={() => toggleLike(product.id)}
                           className="min-w-0 max-w-full overflow-hidden"
                           style={{

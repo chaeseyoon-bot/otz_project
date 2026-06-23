@@ -1,8 +1,12 @@
 import { useMemo } from 'react'
+import { ProductThumbImage } from '../atoms/ProductThumbImage'
 import { useMobileGnb } from '../../contexts/MobileGnbContext'
+import { useRecentlyViewedProducts } from '../../hooks/useRecentlyViewedProducts'
 import { useSpaPathname } from '../../hooks/useSpaPathname'
 import { isProductDetailPath } from '../../lib/productRoutes'
 import { MY_PAGE_PATH } from '../../lib/myPageRoutes'
+import { isSearchOverlayPath } from '../../lib/searchRoutes'
+import { isWishlistPath, WISHLIST_PATH } from '../../lib/wishlistRoutes'
 import { navigateSpa } from '../../lib/spaNavigation'
 
 /** Tab bar icons: `public/assets/figma/icons/tab_*.svg` */
@@ -23,14 +27,46 @@ const TAB_CONFIG = [
 
 function getActiveTabIndex(pathname: string, menuOpen: boolean) {
   if (menuOpen || pathname.startsWith('/category')) return 1
+  if (isWishlistPath(pathname)) return 2
   if (pathname.startsWith(MY_PAGE_PATH)) return 3
+  if (isSearchOverlayPath(pathname)) return 4
   if (pathname === '/' || pathname === '') return 0
   return -1
+}
+
+/** Figma 0:720 — default clock icon; Figma 0:722 — 30×30 product thumb after PDP visit. */
+function RecentTabIcon({ active, imageUrl, title }: { active: boolean; imageUrl?: string; title?: string }) {
+  if (!imageUrl) {
+    return (
+      <img
+        src={tabIconSrc('recent')}
+        alt=""
+        className={`size-6 shrink-0 object-contain ${active ? 'opacity-100' : 'opacity-40'}`}
+        draggable={false}
+      />
+    )
+  }
+
+  return (
+    <div
+      className="flex size-[30px] shrink-0 items-center justify-center overflow-hidden rounded-[5px] bg-light"
+      aria-hidden
+    >
+      <ProductThumbImage
+        src={imageUrl}
+        alt={title ?? ''}
+        className="size-full object-contain object-center mix-blend-multiply"
+        draggable={false}
+      />
+    </div>
+  )
 }
 
 export function BottomTabBar() {
   const { isOpen: menuOpen, open: openMenu, close: closeMenu } = useMobileGnb()
   const pathname = useSpaPathname()
+  const recentlyViewed = useRecentlyViewedProducts()
+  const latestViewed = recentlyViewed[0] ?? null
 
   const activeIndex = useMemo(() => getActiveTabIndex(pathname, menuOpen), [menuOpen, pathname])
 
@@ -48,9 +84,19 @@ export function BottomTabBar() {
       openMenu()
       return
     }
+    if (tabId === 'wish') {
+      closeMenu()
+      navigateSpa(WISHLIST_PATH)
+      return
+    }
     if (tabId === 'mypage') {
       closeMenu()
       navigateSpa(MY_PAGE_PATH)
+      return
+    }
+    if (tabId === 'recent') {
+      closeMenu()
+      navigateSpa('/search')
     }
   }
 
@@ -68,17 +114,21 @@ export function BottomTabBar() {
             <button
               key={tab.id}
               type="button"
-              aria-label={tab.ariaLabel}
+              aria-label={tab.id === 'recent' && latestViewed ? `최근본: ${latestViewed.title}` : tab.ariaLabel}
               aria-current={active ? 'page' : undefined}
               onClick={() => handleTabClick(tab.id)}
               className="flex h-full min-w-0 flex-1 items-center justify-center rounded-none border-0 bg-transparent p-0 outline-none focus-visible:ring-2 focus-visible:ring-dark focus-visible:ring-offset-2"
             >
-              <img
-                src={tabIconSrc(tab.iconFile)}
-                alt=""
-                className={`size-6 shrink-0 object-contain ${active ? 'opacity-100' : 'opacity-40'}`}
-                draggable={false}
-              />
+              {tab.id === 'recent' ? (
+                <RecentTabIcon active={active} imageUrl={latestViewed?.image} title={latestViewed?.title} />
+              ) : (
+                <img
+                  src={tabIconSrc(tab.iconFile)}
+                  alt=""
+                  className={`size-6 shrink-0 object-contain ${active ? 'opacity-100' : 'opacity-40'}`}
+                  draggable={false}
+                />
+              )}
             </button>
           )
         })}

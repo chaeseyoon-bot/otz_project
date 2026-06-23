@@ -6,6 +6,7 @@ import { CartOptionChangeSheet } from '../components/cart/CartOptionChangeSheet'
 import { CartMobileBulkHeader } from '../components/cart/CartMobileBulkHeader'
 import { MobileCartItemCard } from '../components/cart/MobileCartItemCard'
 import { CartGuideSection } from '../components/cart/CartSummarySections'
+import { CartRetentionNotice } from '../components/cart/CartRetentionNotice'
 import { CartMobileHeader } from '../components/organisms/CartMobileHeader'
 import { useCart } from '../contexts/CartContext'
 
@@ -77,6 +78,8 @@ export function MobileCartPage() {
                 />
               ))}
             </div>
+
+            <CartRetentionNotice />
           </div>
         )}
       </div>

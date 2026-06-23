@@ -1,5 +1,6 @@
-import { createContext, useCallback, useContext, useMemo, useState, type ReactNode } from 'react'
+import { createContext, useCallback, useContext, useEffect, useMemo, useState, type ReactNode } from 'react'
 import { DEMO_CART_ITEMS_EMPTY, type CartItem } from '../data/cartContent'
+import { pruneExpiredCartItems, readCartItems, writeCartItems } from '../lib/cartStorage'
 
 interface CartContextValue {
   items: CartItem[]
@@ -20,45 +21,65 @@ function sumQuantities(items: CartItem[]) {
   return items.reduce((total, item) => total + item.quantity, 0)
 }
 
+function withPersistedItems(items: CartItem[]) {
+  const next = pruneExpiredCartItems(items)
+  writeCartItems(next)
+  return next
+}
+
 export function CartProvider({ children }: { children: ReactNode }) {
-  const [items, setItems] = useState<CartItem[]>(DEMO_CART_ITEMS_EMPTY)
+  const [items, setItemsState] = useState<CartItem[]>(() => readCartItems())
+
+  const setItems = useCallback((nextItems: CartItem[]) => {
+    setItemsState(withPersistedItems(nextItems))
+  }, [])
+
+  useEffect(() => {
+    setItemsState((current) => withPersistedItems(current))
+  }, [])
 
   const addItem = useCallback((item: CartItem) => {
-    setItems((current) => {
+    setItemsState((current) => {
       const existing = current.find((entry) => entry.id === item.id)
-      if (existing) {
-        return current.map((entry) =>
-          entry.id === item.id ? { ...entry, quantity: entry.quantity + item.quantity } : entry,
-        )
-      }
-      return [...current, item]
+      const next = existing
+        ? current.map((entry) =>
+            entry.id === item.id
+              ? { ...entry, quantity: entry.quantity + item.quantity, selected: item.selected ?? entry.selected }
+              : entry,
+          )
+        : [...current, { ...item, addedAt: item.addedAt ?? Date.now() }]
+      return withPersistedItems(next)
     })
   }, [])
 
   const removeItem = useCallback((id: string) => {
-    setItems((current) => current.filter((entry) => entry.id !== id))
+    setItemsState((current) => withPersistedItems(current.filter((entry) => entry.id !== id)))
   }, [])
 
   const updateItem = useCallback((id: string, patch: Partial<CartItem>) => {
-    setItems((current) => current.map((entry) => (entry.id === id ? { ...entry, ...patch } : entry)))
+    setItemsState((current) =>
+      withPersistedItems(current.map((entry) => (entry.id === id ? { ...entry, ...patch } : entry))),
+    )
   }, [])
 
   const toggleItemSelected = useCallback((id: string) => {
-    setItems((current) =>
-      current.map((entry) => (entry.id === id ? { ...entry, selected: !entry.selected } : entry)),
+    setItemsState((current) =>
+      withPersistedItems(
+        current.map((entry) => (entry.id === id ? { ...entry, selected: !entry.selected } : entry)),
+      ),
     )
   }, [])
 
   const selectAll = useCallback((selected: boolean) => {
-    setItems((current) => current.map((entry) => ({ ...entry, selected })))
+    setItemsState((current) => withPersistedItems(current.map((entry) => ({ ...entry, selected }))))
   }, [])
 
   const removeSelected = useCallback(() => {
-    setItems((current) => current.filter((entry) => !entry.selected))
+    setItemsState((current) => withPersistedItems(current.filter((entry) => !entry.selected)))
   }, [])
 
   const clearCart = useCallback(() => {
-    setItems([])
+    setItemsState(withPersistedItems([]))
   }, [])
 
   const value = useMemo(
@@ -74,7 +95,7 @@ export function CartProvider({ children }: { children: ReactNode }) {
       removeSelected,
       clearCart,
     }),
-    [items, addItem, removeItem, updateItem, toggleItemSelected, selectAll, removeSelected, clearCart],
+    [items, setItems, addItem, removeItem, updateItem, toggleItemSelected, selectAll, removeSelected, clearCart],
   )
 
   return <CartContext.Provider value={value}>{children}</CartContext.Provider>

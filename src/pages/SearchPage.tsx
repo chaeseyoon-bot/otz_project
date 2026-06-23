@@ -1,4 +1,5 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
+import { ProductThumbImage } from '../components/atoms/ProductThumbImage'
 import { MobileSearchSectionHeader } from '../components/molecules/MobileSearchSectionHeader'
 import { SearchHighlightText } from '../components/molecules/SearchHighlightText'
 import { MobileSearchHeader } from '../components/organisms/MobileSearchHeader'
@@ -44,7 +45,7 @@ function HorizontalProductRow({
           aria-label={product.title}
           onClick={() => navigateSpa(getProductDetailPath(product.id))}
         >
-          <img
+          <ProductThumbImage
             src={product.image}
             alt={product.title}
             className="size-[80px] object-contain object-center mix-blend-multiply"

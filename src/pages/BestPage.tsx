@@ -1,5 +1,6 @@
 import { useMemo, useState } from 'react'
 import { ProductCardUnit } from '../components/molecules/ProductCardUnit'
+import { useWishlist } from '../contexts/WishlistContext'
 import { useBestProducts } from '../hooks/useProducts'
 import type { ProductCategory } from '../lib/productsApi'
 import { getProductDetailPath } from '../lib/productRoutes'
@@ -15,17 +16,8 @@ const BEST_FILTERS: ReadonlyArray<{ label: string; category: 'all' | ProductCate
 /** Route body only — shell, header, footer, tab bar live in `App`. Figma 2627:40242 */
 export function BestPage() {
   const { products, isLoading, error } = useBestProducts()
-  const [likedIds, setLikedIds] = useState<Set<string>>(() => new Set())
+  const { isLiked, toggleLike } = useWishlist()
   const [activeFilterIndex, setActiveFilterIndex] = useState(0)
-
-  const toggleLike = (id: string) => {
-    setLikedIds((prev) => {
-      const next = new Set(prev)
-      if (next.has(id)) next.delete(id)
-      else next.add(id)
-      return next
-    })
-  }
 
   const activeCategory = BEST_FILTERS[activeFilterIndex].category
   const visibleProducts = useMemo(() => {
@@ -110,7 +102,7 @@ export function BestPage() {
                 <ProductCardUnit
                   product={product}
                   rank={rank}
-                  liked={likedIds.has(product.id)}
+                  liked={isLiked(product.id)}
                   onToggleLike={() => toggleLike(product.id)}
                   articleClassName="flex w-full flex-col"
                   titleClassName="min-w-0 truncate pt-[7px] text-[13px] font-normal leading-[1.35] tracking-[-0.02em] text-textDefault lg:pt-3 lg:text-[14px] lg:leading-[1.4]"

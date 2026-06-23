@@ -2,6 +2,7 @@ import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { CartAddedPopup } from '../components/cart/CartAddedPopup'
 import { ProductOptionRequiredPopup } from '../components/cart/ProductOptionRequiredPopup'
 import { useCart } from '../contexts/CartContext'
+import { useWishlist } from '../contexts/WishlistContext'
 import { usePdpOptionGate } from '../hooks/usePdpOptionGate'
 import { buildCartItemFromProduct, applyBuyNowSelection } from '../lib/buildCartItemFromProduct'
 import { CART_PATH } from '../lib/cartRoutes'
@@ -180,7 +181,7 @@ export function MobileProductDetailPage({ productId }: MobileProductDetailPagePr
   const isCsvProduct = csvDetail.product != null
   const product = csvDetail.product ?? fallbackProduct
   const { addItem, setItems } = useCart()
-  const [liked, setLiked] = useState(false)
+  const { isLiked, toggleLike } = useWishlist()
   const [cartPopupOpen, setCartPopupOpen] = useState(false)
   const [couponSheetOpen, setCouponSheetOpen] = useState(false)
   const [claimedCouponIds, setClaimedCouponIds] = useState<Set<string>>(() => new Set())
@@ -647,8 +648,8 @@ export function MobileProductDetailPage({ productId }: MobileProductDetailPagePr
       </section>
 
       <ProductDetailFixedActionBar
-        liked={liked}
-        onToggleLike={() => setLiked((v) => !v)}
+        liked={isLiked(productId)}
+        onToggleLike={() => toggleLike(productId)}
         onAddToCart={handleAddToCart}
         onBuyNow={handleBuyNow}
       />

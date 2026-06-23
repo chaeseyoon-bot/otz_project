@@ -11,6 +11,7 @@ import { isCartPath } from '../../lib/cartRoutes'
 import { isCheckoutPath } from '../../lib/checkoutRoutes'
 import { isOrderCompletePath, isOrderDetailPath } from '../../lib/orderRoutes'
 import { isMyPagePath } from '../../lib/myPageRoutes'
+import { isWishlistPath } from '../../lib/wishlistRoutes'
 import { isProductDetailPath } from '../../lib/productRoutes'
 import { navigateExternalOrSpa, navigateSpa } from '../../lib/spaNavigation'
 import { useSpaPathname } from '../../hooks/useSpaPathname'
@@ -79,6 +80,7 @@ export function HeaderSection() {
   const isCheckout = isCheckoutPath(pathname)
   const isOrderComplete = isOrderCompletePath(pathname)
   const isOrderDetail = isOrderDetailPath(pathname)
+  const isWishlist = isWishlistPath(pathname)
   const hideMobileHomeHeader =
     isCategoryShoes ||
     isBrandStory ||
@@ -87,6 +89,7 @@ export function HeaderSection() {
     isSearch ||
     isProductDetail ||
     isMyPage ||
+    isWishlist ||
     isCart ||
     isCheckout ||
     isOrderComplete ||

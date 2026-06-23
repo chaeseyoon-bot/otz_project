@@ -4,6 +4,7 @@ import { ProductOptionRequiredPopup } from '../components/cart/ProductOptionRequ
 import { CouponNoticePopup } from '../components/atoms/CouponNoticePopup'
 import { ProductCouponBenefitsModal } from '../components/product/ProductCouponBenefitsModal'
 import { useCart } from '../contexts/CartContext'
+import { useWishlist } from '../contexts/WishlistContext'
 import { usePdpOptionGate } from '../hooks/usePdpOptionGate'
 import { buildCartItemFromProduct, parseProductPrice, applyBuyNowSelection } from '../lib/buildCartItemFromProduct'
 import { CART_PATH } from '../lib/cartRoutes'
@@ -55,7 +56,7 @@ export function PcProductDetailPage({ productId }: PcProductDetailPageProps) {
   const isCsvProduct = csvDetail.product != null
   const product = csvDetail.product ?? fallbackProduct
   const { addItem, setItems } = useCart()
-  const [liked, setLiked] = useState(false)
+  const { isLiked, toggleLike } = useWishlist()
   const [cartPopupOpen, setCartPopupOpen] = useState(false)
   const [couponModalOpen, setCouponModalOpen] = useState(false)
   const [claimedCouponIds, setClaimedCouponIds] = useState<Set<string>>(() => new Set())
@@ -395,8 +396,8 @@ export function PcProductDetailPage({ productId }: PcProductDetailPageProps) {
             onSizeSelect={setSelectedSize}
             unitPrice={unitPrice}
             isShoesProduct={isShoesProduct}
-            liked={liked}
-            onToggleLike={() => setLiked((value) => !value)}
+            liked={isLiked(productId)}
+            onToggleLike={() => toggleLike(productId)}
             onAddToCart={handleAddToCart}
             onBuyNow={handleBuyNow}
             sizeSectionRef={sizeSectionRef}

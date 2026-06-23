@@ -13,6 +13,8 @@
  * Resulting URL shape (Free plan):
  *   https://<ref>.supabase.co/storage/v1/object/public/products/<id>.png?format=webp&quality=80
  */
+import { probeImageUrl } from './probeImageUrl'
+
 const PRODUCTS_BUCKET = 'products'
 
 /** Source extension stored on the bucket. */
@@ -136,6 +138,22 @@ export function swapImageExtension(url: string): string | null {
   if (/\.png(\?|$)/i.test(url)) return url.replace(/\.png(\?|$)/i, '.webp$1')
   if (/\.webp(\?|$)/i.test(url)) return url.replace(/\.webp(\?|$)/i, '.png$1')
   return null
+}
+
+/**
+ * Returns a loadable product image URL, trying the opposite extension when the
+ * bucket stores only png or webp for a given cut.
+ */
+export async function ensureWorkingProductImageUrl(url: string): Promise<string> {
+  const trimmed = url?.trim()
+  if (!trimmed) return url
+
+  if (await probeImageUrl(trimmed)) return trimmed
+
+  const swapped = swapImageExtension(trimmed)
+  if (swapped && (await probeImageUrl(swapped))) return swapped
+
+  return swapped ?? trimmed
 }
 
 /** Square / 누끼 cuts — fit inside the frame. */
