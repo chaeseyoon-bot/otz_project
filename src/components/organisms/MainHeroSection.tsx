@@ -20,13 +20,12 @@ function getHeroSlideRadiusClass(slidePosition: number): string {
   return slidePosition % 2 === 0 ? 'lg:rounded-t-[30px]' : 'lg:rounded-b-[30px]'
 }
 
-function measureSlideStep(viewport: HTMLDivElement | null): number {
+function measureSlideStep(viewport: HTMLDivElement | null, desktop: boolean): number {
   if (!viewport) return 376
+  if (!desktop) return Math.max(1, viewport.clientWidth)
   const art = viewport.querySelector('article')
   const w = art?.getBoundingClientRect().width ?? viewport.clientWidth
-  const gap =
-    typeof window !== 'undefined' && window.matchMedia(DESKTOP_MEDIA_QUERY).matches ? HERO_SLIDE_GAP_LG_PX : 0
-  return Math.max(1, w) + gap
+  return Math.max(1, w) + HERO_SLIDE_GAP_LG_PX
 }
 
 export function MainHeroSection() {
@@ -116,13 +115,13 @@ export function MainHeroSection() {
     const viewport = viewportRef.current
     if (!viewport) return
 
-    const updateSlideStep = () => setSlideStep(measureSlideStep(viewport))
+    const desktopQuery = window.matchMedia(DESKTOP_MEDIA_QUERY)
+    const updateSlideStep = () => setSlideStep(measureSlideStep(viewport, desktopQuery.matches))
     updateSlideStep()
 
     const resizeObserver = new ResizeObserver(updateSlideStep)
     resizeObserver.observe(viewport)
 
-    const desktopQuery = window.matchMedia(DESKTOP_MEDIA_QUERY)
     const onDesktopChange = () => {
       setIsDesktop(desktopQuery.matches)
       updateSlideStep()
@@ -210,7 +209,7 @@ export function MainHeroSection() {
         onPointerCancel={handlePointerEnd}
       >
         <div
-          className={`flex h-full w-full lg:gap-5 ${
+          className={`flex h-full lg:gap-5 ${
             transitionEnabled && !isDragging
               ? 'transition-transform duration-300 ease-out motion-reduce:transition-none'
               : ''
@@ -223,7 +222,7 @@ export function MainHeroSection() {
             return (
               <article
                 key={`${slide.id}-${index}`}
-                className={`relative h-[540px] w-full shrink-0 overflow-hidden lg:h-[663px] lg:w-[530px] lg:max-w-[min(530px,100%)] ${getHeroSlideRadiusClass(slidePosition)}`}
+                className={`relative h-[540px] shrink-0 grow-0 basis-full overflow-hidden lg:h-[663px] lg:basis-auto lg:w-[530px] lg:max-w-[min(530px,100%)] ${getHeroSlideRadiusClass(slidePosition)}`}
               >
                 <img src={slide.imageUrl} alt={slide.title} className="block h-full w-full object-cover" draggable={false} />
                 <div
