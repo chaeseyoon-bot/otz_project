@@ -6,6 +6,7 @@ import { useAdminHomeMainConfig } from '../../hooks/useAdminHomeMainConfig'
 import { figmaAsset } from '../../lib/figmaAssetUrl'
 import { resolveTopAnnouncementBar } from '../../lib/homeMainContentResolver'
 import { CART_PATH } from '../../lib/cartRoutes'
+import { WISHLIST_PATH } from '../../lib/wishlistRoutes'
 import { PC_HOME_MAX_WIDTH_PX } from '../../design-system/layout'
 import { GNB_MEGA_MENU_GROUPS } from '../../data/gnbMegaMenu'
 import { PcSearchPanelContent } from './PcSearchPanelContent'
@@ -608,7 +609,19 @@ export function PcHeaderSection() {
               >
                 <img src={iconSearch} alt="" className="size-7 object-contain" draggable={false} />
               </button>
-              <button type="button" className="border-0 bg-transparent p-0" aria-label="찜 목록">
+              <button
+                type="button"
+                className="border-0 bg-transparent p-0"
+                aria-label="찜 목록"
+                onClick={() => {
+                  setCategoryMenuOpen(false)
+                  setMegaEntered(false)
+                  setSearchOpen(false)
+                  setSearchEntered(false)
+                  setUserMenuOpen(false)
+                  navigateSpa(WISHLIST_PATH)
+                }}
+              >
                 <img src={iconHeart} alt="" className="size-7 object-contain opacity-90" draggable={false} />
               </button>
               <button

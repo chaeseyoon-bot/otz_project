@@ -5,7 +5,7 @@ import { pruneExpiredCartItems, readCartItems, writeCartItems } from '../lib/car
 interface CartContextValue {
   items: CartItem[]
   itemCount: number
-  setItems: (items: CartItem[]) => void
+  setItems: (items: CartItem[] | ((current: CartItem[]) => CartItem[])) => void
   addItem: (item: CartItem) => void
   removeItem: (id: string) => void
   updateItem: (id: string, patch: Partial<CartItem>) => void
@@ -30,8 +30,11 @@ function withPersistedItems(items: CartItem[]) {
 export function CartProvider({ children }: { children: ReactNode }) {
   const [items, setItemsState] = useState<CartItem[]>(() => readCartItems())
 
-  const setItems = useCallback((nextItems: CartItem[]) => {
-    setItemsState(withPersistedItems(nextItems))
+  const setItems = useCallback((nextItems: CartItem[] | ((current: CartItem[]) => CartItem[])) => {
+    setItemsState((current) => {
+      const resolved = typeof nextItems === 'function' ? nextItems(current) : nextItems
+      return withPersistedItems(resolved)
+    })
   }, [])
 
   useEffect(() => {

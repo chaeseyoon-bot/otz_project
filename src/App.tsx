@@ -47,6 +47,7 @@ import { PcMyPage } from './pages/PcMyPage'
 import { PcSearchResultsPage } from './pages/PcSearchResultsPage'
 import { SearchPage } from './pages/SearchPage'
 import { WishlistPage } from './pages/WishlistPage'
+import { PcWishlistPage } from './pages/PcWishlistPage'
 import { isSearchOverlayPath, isSearchResultsPath } from './lib/searchRoutes'
 import {
   getAdminActiveMenu,
@@ -263,7 +264,10 @@ export default function App() {
               <PcCartPage />
             </>
           ) : isWishlist ? (
-            <WishlistPage />
+            <>
+              <WishlistPage />
+              <PcWishlistPage />
+            </>
           ) : isMyPage ? (
             <>
               <MyPage />

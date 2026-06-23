@@ -1,9 +1,7 @@
-import { ProductCardUnit } from '../components/molecules/ProductCardUnit'
+import { WishlistProductCard } from '../components/molecules/WishlistProductCard'
 import { WishlistMobileHeader } from '../components/organisms/WishlistMobileHeader'
 import { useWishlist } from '../contexts/WishlistContext'
 import { useWishlistProducts } from '../hooks/useWishlistProducts'
-import { getProductDetailPath } from '../lib/productRoutes'
-import { navigateSpa } from '../lib/spaNavigation'
 
 /** Mobile wishlist — products liked via heart across the storefront. */
 export function WishlistPage() {
@@ -28,28 +26,13 @@ export function WishlistPage() {
         ) : (
           <div className="grid grid-cols-2 gap-x-[6px] gap-y-[50px]">
             {products.map((product) => (
-              <div
+              <WishlistProductCard
                 key={product.id}
-                className="cursor-pointer p-0"
-                role="link"
-                tabIndex={0}
-                onClick={() => navigateSpa(getProductDetailPath(product.id))}
-                onKeyDown={(event) => {
-                  if (event.key === 'Enter' || event.key === ' ') {
-                    event.preventDefault()
-                    navigateSpa(getProductDetailPath(product.id))
-                  }
-                }}
-              >
-                <ProductCardUnit
-                  product={product}
-                  liked={isLiked(product.id)}
-                  onToggleLike={() => toggleLike(product.id)}
-                  articleClassName="flex w-full flex-col"
-                  titleClassName="min-w-0 truncate pt-[7px] text-[13px] font-normal leading-[1.35] tracking-[-0.02em] text-textDefault"
-                  showSizeQuickSelect
-                />
-              </div>
+                product={product}
+                liked={isLiked(product.id)}
+                onToggleLike={() => toggleLike(product.id)}
+                variant="mobile"
+              />
             ))}
           </div>
         )}
