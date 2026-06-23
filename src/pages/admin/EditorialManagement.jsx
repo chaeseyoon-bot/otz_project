@@ -5,6 +5,7 @@ import { EditorialCollectionPcDetailContent } from '../../components/organisms/E
 import { useEditorialConfigContext } from '../../contexts/EditorialConfigContext'
 import { uploadAdminBannerImage } from '../../lib/adminBannerUpload'
 import {
+  buildEventOrder,
   createEmptyEditorialEvent,
   createDefaultEditorialConfig,
   createDefaultCollectionBlocks,
@@ -15,7 +16,7 @@ import {
   getEditorialImageBlockLabel,
   getNextEditorialId,
   MAX_EDITORIAL_EVENTS,
-  sortEditorialEventsNewestFirst,
+  moveEditorialEvent,
 } from '../../lib/adminEditorialConfig'
 import { hydrateEditorialConfig, upsertEditorialConfig } from '../../lib/editorialConfigApi'
 import { resolveEditorialEventDetail } from '../../lib/editorialContentResolver'
@@ -254,16 +255,13 @@ export function EditorialManagement() {
   const [sectionToAdd, setSectionToAdd] = useState('')
   const [pendingDeleteEventId, setPendingDeleteEventId] = useState(null)
 
-  const sortedEvents = useMemo(
-    () => sortEditorialEventsNewestFirst(config.events),
-    [config.events],
-  )
+  const listEvents = config.events
 
   useEffect(() => {
     void (async () => {
       const loaded = await hydrateEditorialConfig()
       setConfig(loaded)
-      const first = sortEditorialEventsNewestFirst(loaded.events)[0]
+      const first = loaded.events[0]
       setSelectedEventId(first?.id ?? null)
     })()
   }, [])
@@ -326,7 +324,10 @@ export function EditorialManagement() {
 
     setIsSaving(true)
     try {
-      const saved = saveConfig({ events: config.events })
+      const saved = saveConfig({
+        events: config.events,
+        eventOrder: buildEventOrder(config.events),
+      })
       setConfig(saved)
       showMessage('서버에 저장하는 중…')
       const result = await upsertEditorialConfig(saved)
@@ -350,26 +351,42 @@ export function EditorialManagement() {
     }
     const index = Number(nextId.replace('editorial-', ''))
     const nextEvent = createEmptyEditorialEvent(index)
-    setConfig((prev) => ({
-      ...prev,
-      events: sortEditorialEventsNewestFirst([nextEvent, ...prev.events]),
-    }))
+    setConfig((prev) => {
+      const nextEvents = [nextEvent, ...prev.events]
+      return {
+        ...prev,
+        events: nextEvents,
+        eventOrder: buildEventOrder(nextEvents),
+      }
+    })
     setSelectedEventId(nextId)
   }
 
   const handleRemoveEvent = (eventId) => {
     const nextEvents = config.events.filter((event) => event.id !== eventId)
-    setConfig((prev) => ({ ...prev, events: nextEvents }))
+    const nextOrder = buildEventOrder(nextEvents)
+    setConfig((prev) => ({ ...prev, events: nextEvents, eventOrder: nextOrder }))
     if (selectedEventId === eventId) {
-      setSelectedEventId(sortEditorialEventsNewestFirst(nextEvents)[0]?.id ?? null)
+      setSelectedEventId(nextEvents[0]?.id ?? null)
     }
     try {
-      const saved = saveConfig({ events: nextEvents })
+      const saved = saveConfig({ events: nextEvents, eventOrder: nextOrder })
       setConfig(saved)
       showMessage('기획전이 삭제되었습니다.')
     } catch {
       showMessage('삭제 저장에 실패했습니다.')
     }
+  }
+
+  const moveEvent = (index, direction) => {
+    setConfig((prev) => {
+      const nextEvents = moveEditorialEvent(prev.events, index, direction)
+      return {
+        ...prev,
+        events: nextEvents,
+        eventOrder: buildEventOrder(nextEvents),
+      }
+    })
   }
 
   const moveSection = (index, direction) => {
@@ -434,7 +451,7 @@ export function EditorialManagement() {
         <header className="flex shrink-0 items-center justify-between gap-3 border-b border-lightGray px-5 py-3">
           <div>
             <h2 className="m-0 text-[18px] font-bold text-dark">기획전 관리</h2>
-            <p className="m-0 text-[11px] text-subtleText">기획전을 한 개씩 추가하면 최신 항목이 목록 맨 위에 노출됩니다.</p>
+            <p className="m-0 text-[11px] text-subtleText">+ 기획전 추가 후 목록에서 순서를 조정할 수 있습니다.</p>
           </div>
           <button
             type="button"
@@ -499,13 +516,33 @@ export function EditorialManagement() {
               +추가
             </button>
           </div>
-          <p className="m-0 mt-1 text-[9px] leading-snug text-subtleText">최신 등록이 위 · editorial-01이 가장 오래됨</p>
+          <p className="m-0 mt-1 text-[9px] leading-snug text-subtleText">↑↓로 순서 변경 · 저장 후 쇼핑몰 목록 반영</p>
           <ul className="m-0 mt-2 min-h-0 flex-1 list-none space-y-0.5 overflow-y-auto p-0">
-            {sortedEvents.map((event) => {
+            {listEvents.map((event, index) => {
               const isActive = event.id === selectedEventId
               return (
                 <li key={event.id}>
                   <div className="flex items-stretch gap-0.5">
+                    <div className="flex shrink-0 flex-col gap-0.5">
+                      <button
+                        type="button"
+                        disabled={index === 0}
+                        className="rounded-sm border border-lightGray bg-white px-1 py-0.5 text-[9px] leading-none disabled:opacity-30"
+                        onClick={() => moveEvent(index, -1)}
+                        aria-label={`${event.id} 위로`}
+                      >
+                        ↑
+                      </button>
+                      <button
+                        type="button"
+                        disabled={index >= listEvents.length - 1}
+                        className="rounded-sm border border-lightGray bg-white px-1 py-0.5 text-[9px] leading-none disabled:opacity-30"
+                        onClick={() => moveEvent(index, 1)}
+                        aria-label={`${event.id} 아래로`}
+                      >
+                        ↓
+                      </button>
+                    </div>
                     <button
                       type="button"
                       className={`flex min-w-0 flex-1 flex-col rounded-sm border-0 px-2 py-1.5 text-left ${

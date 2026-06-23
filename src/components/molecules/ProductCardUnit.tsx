@@ -87,10 +87,12 @@ function NewMultiCutMedia({
   productTitle,
   slides,
   hideDots = false,
+  isDesktop = false,
 }: {
   productTitle: string
   slides: ProductMultiCutSlide[]
   hideDots?: boolean
+  isDesktop?: boolean
 }) {
   const [active, setActive] = useState(0)
   const [dragOffset, setDragOffset] = useState(0)
@@ -99,7 +101,8 @@ function NewMultiCutMedia({
   const dragStartXRef = useRef<number | null>(null)
   const dragStartIndexRef = useRef(0)
 
-  const canSwipe = slides.length > 1
+  const canSwipe = slides.length > 1 && !isDesktop
+  const canHoverSecondSlide = slides.length > 1 && isDesktop
 
   const goToIndex = useCallback(
     (index: number) => {
@@ -140,7 +143,11 @@ function NewMultiCutMedia({
     : `-${slideIndex * slideShare}%`
 
   return (
-    <div className="relative h-full w-full overflow-hidden bg-light">
+    <div
+      className="relative h-full w-full overflow-hidden bg-light"
+      onMouseEnter={canHoverSecondSlide ? () => goToIndex(1) : undefined}
+      onMouseLeave={canHoverSecondSlide ? () => goToIndex(0) : undefined}
+    >
       <div
         ref={viewportRef}
         className={`product-multicut-viewport relative h-full w-full touch-pan-y overflow-hidden ${
@@ -233,7 +240,10 @@ function NewMultiCutMedia({
               className={`pointer-events-auto size-[6px] shrink-0 rounded-full transition-colors ${
                 i === active ? 'bg-[#1a1a1a]' : 'bg-[#d0d0d0]'
               }`}
-              onClick={() => goToIndex(i)}
+              onClick={(event) => {
+                event.stopPropagation()
+                goToIndex(i)
+              }}
             />
           ))}
         </div>
@@ -428,6 +438,7 @@ export function ProductCardUnit({
             productTitle={product.title}
             slides={slides}
             hideDots={hideMultiCutDots || sizePanelOpen}
+            isDesktop={isDesktop}
           />
         ) : (
           <div className={`relative h-full w-full overflow-hidden ${mediaInnerClassName}`.trim()}>

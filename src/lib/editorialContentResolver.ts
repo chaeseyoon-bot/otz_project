@@ -29,7 +29,7 @@ import {
   getEffectiveEditorialConfig,
   MAX_COUPON_NOTES,
   normalizeSectionOrder,
-  sortEditorialEventsNewestFirst,
+  normalizeEventOrder,
 } from './adminEditorialConfig'
 import { fetchProductById } from './productsApi'
 
@@ -290,7 +290,7 @@ async function resolveStandaloneShowcases(
 }
 
 export function resolveEditorialListItems(config: AdminEditorialConfig = getEffectiveEditorialConfig()): EditorialEventItem[] {
-  return sortEditorialEventsNewestFirst(config.events)
+  return normalizeEventOrder(config.events, config.eventOrder)
     .filter((event) => event.enabled)
     .map((event) => ({
       id: event.id,

@@ -14,7 +14,7 @@ export const FILTER_SHOE_SIZES = [
 
 export type FilterShoeSize = (typeof FILTER_SHOE_SIZES)[number]
 
-/** PC PLP filter bar — Figma 2895:23931 (13-column size row). */
+/** PC PLP filter bar — Figma 2895:23931 (10-column size row: 220–260 + FREE). */
 export const FILTER_PC_SHOE_SIZES = [
   '220',
   '225',
@@ -25,10 +25,7 @@ export const FILTER_PC_SHOE_SIZES = [
   '250',
   '255',
   '260',
-  '265',
-  '270',
-  '275',
-  '280',
+  'FREE',
 ] as const
 
 export type FilterPcShoeSize = (typeof FILTER_PC_SHOE_SIZES)[number]

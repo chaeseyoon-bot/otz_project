@@ -242,6 +242,8 @@ export interface AdminEditorialEvent {
 export interface AdminEditorialConfig {
   version: 1
   events: AdminEditorialEvent[]
+  /** Top-to-bottom list order for admin + storefront. */
+  eventOrder?: string[]
   updatedAt: string | null
 }
 
@@ -548,6 +550,49 @@ export function sortEditorialEventsNewestFirst(events: AdminEditorialEvent[]): A
   return [...events].sort(compareEditorialEventsNewestFirst)
 }
 
+export function buildEventOrder(events: AdminEditorialEvent[]): string[] {
+  return events.map((event) => event.id)
+}
+
+/** Applies saved list order; falls back to newest-first when order is missing. */
+export function normalizeEventOrder(
+  events: AdminEditorialEvent[],
+  order: unknown,
+): AdminEditorialEvent[] {
+  const byId = new Map(events.map((event) => [event.id, event]))
+  if (!Array.isArray(order) || order.length === 0) {
+    return sortEditorialEventsNewestFirst(events)
+  }
+
+  const seen = new Set<string>()
+  const ordered: AdminEditorialEvent[] = []
+  for (const id of order) {
+    if (typeof id !== 'string' || seen.has(id)) continue
+    const event = byId.get(id)
+    if (!event) continue
+    seen.add(id)
+    ordered.push(event)
+  }
+
+  for (const event of events) {
+    if (!seen.has(event.id)) ordered.push(event)
+  }
+
+  return ordered
+}
+
+export function moveEditorialEvent(
+  events: AdminEditorialEvent[],
+  index: number,
+  direction: -1 | 1,
+): AdminEditorialEvent[] {
+  const target = index + direction
+  if (target < 0 || target >= events.length) return events
+  const next = [...events]
+  ;[next[index], next[target]] = [next[target], next[index]]
+  return next
+}
+
 export function normalizeSectionOrder(order: unknown): EditorialSectionType[] {
   if (!Array.isArray(order)) return [...DEFAULT_EDITORIAL_SECTION_ORDER]
   const seen = new Set<EditorialSectionType>()
@@ -792,7 +837,8 @@ function createListOnlyEvent(item: (typeof EDITORIAL_EVENTS)[number]): AdminEdit
 }
 
 export function createDefaultEditorialConfig(): AdminEditorialConfig {
-  return { version: 1, events: [createEditorial01Preset()], updatedAt: null }
+  const events = [createEditorial01Preset()]
+  return { version: 1, events, eventOrder: buildEventOrder(events), updatedAt: null }
 }
 
 function parseAdminProductId(value: unknown): number | null {
@@ -1308,17 +1354,17 @@ function normalizeEvent(event: Partial<AdminEditorialEvent>, fallback: AdminEdit
 export function normalizeEditorialConfig(raw: Partial<AdminEditorialConfig> | null | undefined): AdminEditorialConfig {
   if (!raw || !Array.isArray(raw.events)) return createDefaultEditorialConfig()
 
-  const events = sortEditorialEventsNewestFirst(
-    raw.events
-      .slice(0, MAX_EDITORIAL_EVENTS)
-      .map((event) =>
-        normalizeEvent(event, getEventFallback(typeof event.id === 'string' ? event.id : undefined)),
-      ),
-  )
+  const normalizedEvents = raw.events
+    .slice(0, MAX_EDITORIAL_EVENTS)
+    .map((event) =>
+      normalizeEvent(event, getEventFallback(typeof event.id === 'string' ? event.id : undefined)),
+    )
+  const events = normalizeEventOrder(normalizedEvents, raw.eventOrder)
 
   return {
     version: 1,
     events,
+    eventOrder: buildEventOrder(events),
     updatedAt: typeof raw.updatedAt === 'string' ? raw.updatedAt : null,
   }
 }
@@ -1340,11 +1386,17 @@ export function loadAdminEditorialConfig(): AdminEditorialConfig {
 export function saveAdminEditorialConfig(
   config: Omit<AdminEditorialConfig, 'version' | 'updatedAt'>,
 ): AdminEditorialConfig {
+  const normalizedEvents = config.events.map((event) =>
+    normalizeEvent(event, getEventFallback(event.id)),
+  )
+  const events = normalizeEventOrder(
+    normalizedEvents,
+    config.eventOrder ?? buildEventOrder(config.events),
+  )
   const next: AdminEditorialConfig = {
     version: 1,
-    events: config.events.map((event) =>
-      normalizeEvent(event, getEventFallback(event.id)),
-    ),
+    events,
+    eventOrder: buildEventOrder(events),
     updatedAt: new Date().toISOString(),
   }
 

@@ -306,22 +306,24 @@ export function PcHeaderSection() {
             {GNB_MEGA_MENU_GROUPS.map((group) => (
               <div key={group.title} className="flex w-full flex-wrap items-start gap-[30px]">
                 <div className="w-[100px] shrink-0">
-                  {group.title === 'SHOES' ? (
-                    <a
-                      href="/category/shoes"
-                      className={`block ${MEGA_CATEGORY_TITLE_CLASS}`}
-                      onClick={(event) => {
-                        event.preventDefault()
-                        setCategoryMenuOpen(false)
-                        setMegaEntered(false)
-                        navigateSpa('/category/shoes')
-                      }}
-                    >
-                      {group.title}
-                    </a>
-                  ) : (
-                    <p className={MEGA_CATEGORY_TITLE_CLASS}>{group.title}</p>
-                  )}
+                  {(() => {
+                    const mainId = mainIdFromGnbGroupTitle(group.title)
+                    const groupHref = buildCategoryPlpPath(mainId)
+                    return (
+                      <a
+                        href={groupHref}
+                        className={`block ${MEGA_CATEGORY_TITLE_CLASS}`}
+                        onClick={(event) => {
+                          event.preventDefault()
+                          setCategoryMenuOpen(false)
+                          setMegaEntered(false)
+                          navigateCategoryPlp(mainId)
+                        }}
+                      >
+                        {group.title}
+                      </a>
+                    )
+                  })()}
                 </div>
                 <div className="flex min-w-0 flex-1 flex-wrap gap-x-5 gap-y-2 text-[var(--otz-color-text-secondary)]">
                   {group.items.map((label) => {

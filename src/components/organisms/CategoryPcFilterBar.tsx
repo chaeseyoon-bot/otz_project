@@ -156,8 +156,8 @@ export function CategoryPcFilterBar<T extends CategoryFilterableProduct>({
   return (
     <section ref={rootRef} className="hidden lg:block" aria-label="상품 필터">
       <div
-        className={`flex h-[60px] items-start gap-2 pt-3.5 ${
-          openFilter === null ? 'border-b border-solid border-light2 pb-3.5' : 'pb-2.5'
+        className={`flex h-[60px] items-start gap-2 ${
+          openFilter === null ? 'border-b border-solid border-light2 pb-3.5' : ''
         }`}
       >
         {FILTER_CHIPS.map(({ id, label, countKey }) => (
@@ -182,9 +182,9 @@ export function CategoryPcFilterBar<T extends CategoryFilterableProduct>({
       {openFilter !== null ? (
         <>
           <div className="h-px w-full bg-light2" aria-hidden />
-          <div className="bg-whiteGray p-[25px]">
+          <div className="bg-whiteGray p-6">
             {openFilter === 'size' ? (
-              <div className="grid grid-cols-[repeat(13,minmax(0,1fr))] gap-2.5">
+              <div className="grid grid-cols-[repeat(10,minmax(0,1fr))] gap-2.5">
                 {FILTER_PC_SHOE_SIZES.map((size) => {
                   const isSelected = draftFilters.sizes.has(size)
                   return (

@@ -28,14 +28,14 @@ export function BestPage() {
   }
 
   const activeCategory = BEST_FILTERS[activeFilterIndex].category
-  // Keep the overall BEST rank (array order) stable even when filtering by category.
-  const visibleProducts = useMemo(
-    () =>
-      products
-        .map((product, index) => ({ product, rank: index + 1 }))
-        .filter(({ product }) => activeCategory === 'all' || product.category === activeCategory),
-    [products, activeCategory],
-  )
+  const visibleProducts = useMemo(() => {
+    const filtered =
+      activeCategory === 'all'
+        ? products
+        : products.filter((product) => product.category === activeCategory)
+
+    return filtered.map((product, index) => ({ product, rank: index + 1 }))
+  }, [products, activeCategory])
 
   return (
     <main className="bg-white lg:w-full">
