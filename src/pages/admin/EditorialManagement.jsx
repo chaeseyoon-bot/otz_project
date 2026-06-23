@@ -668,6 +668,15 @@ export function EditorialManagement() {
                   }}
                   onClear={() => updateSelectedEvent({ mainBannerUrl: null, mainBannerFileName: null })}
                 />
+                {selectedEvent.category === 'collabo' ? (
+                  <FormRow label="콜라보 타이틀" hint="메인 배너 딤 + 중앙 텍스트">
+                    <TextInput
+                      value={selectedEvent.collaboBannerTitle ?? ''}
+                      onChange={(value) => updateSelectedEvent({ collaboBannerTitle: value })}
+                      placeholder="OTZ x LOFA Seoul"
+                    />
+                  </FormRow>
+                ) : null}
               </SectionBlock>
 
               <SectionBlock title="히어로 하단 정보">

@@ -1,5 +1,6 @@
 import { Fragment, useCallback, useMemo, useRef, useState } from 'react'
 import type { EditorialCollectionBlock, EditorialCouponItem, EditorialEventDetail, EditorialHeroInfo, EditorialProductSection } from '../../data/editorialEventDetails'
+import { EditorialCollaboMainBanner } from '../molecules/EditorialCollaboMainBanner'
 import { EditorialMainTab, EDITORIAL_PC_TAB_SCROLL_MARGIN_PX, type EditorialMainTabId } from '../molecules/EditorialMainTab'
 import { ProductCardUnit } from '../molecules/ProductCardUnit'
 import { EditorialHeroInfoSection } from './EditorialHeroInfoSection'
@@ -73,8 +74,26 @@ function CollectionDetailHeader({ detail }: { detail: EditorialEventDetail }) {
   )
 }
 
-function CollectionHero({ mainBanner }: { mainBanner: string }) {
+function CollectionHero({
+  mainBanner,
+  collaboBannerTitle,
+  isCollabo,
+}: {
+  mainBanner: string
+  collaboBannerTitle: string
+  isCollabo: boolean
+}) {
   if (!mainBanner) return null
+
+  if (isCollabo) {
+    return (
+      <EditorialCollaboMainBanner
+        src={mainBanner}
+        overlayTitle={collaboBannerTitle}
+        variant="pc"
+      />
+    )
+  }
 
   return (
     <section className="mx-auto flex h-[862px] w-full max-w-[1400px] flex-col items-center justify-center pb-16">
@@ -261,7 +280,11 @@ export function EditorialCollectionPcDetailContent({ detail }: EditorialCollecti
       {hasProductTab ? (
         <EditorialMainTab activeTab={activeTab} onTabChange={handleTabChange} />
       ) : null}
-      <CollectionHero mainBanner={detail.mainBanner} />
+      <CollectionHero
+        mainBanner={detail.mainBanner}
+        collaboBannerTitle={detail.collaboBannerTitle}
+        isCollabo={detail.category === 'collabo'}
+      />
       <div ref={contentSectionRef} className="w-full" style={{ scrollMarginTop: EDITORIAL_PC_TAB_SCROLL_MARGIN_PX }}>
         <EditorialHeroInfoSection heroInfo={catalogHeroInfo} variant="catalog-pc" />
         {heroGalleryImages.length > 0 ? (

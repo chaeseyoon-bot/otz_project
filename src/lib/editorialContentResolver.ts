@@ -355,6 +355,10 @@ export async function resolveEditorialEventDetail(
     layout,
     heroTabs: resolveHeroTabs(event, mainBanner),
     mainBanner,
+    collaboBannerTitle:
+      event.category === 'collabo' && typeof event.collaboBannerTitle === 'string'
+        ? event.collaboBannerTitle.trim()
+        : '',
     middleBanner,
     heroInfo: resolveHeroInfo(event, coupons),
     heroGallery: resolveHeroGallery(event),

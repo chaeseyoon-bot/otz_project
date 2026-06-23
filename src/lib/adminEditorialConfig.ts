@@ -201,6 +201,8 @@ export interface AdminEditorialEvent {
   heroTabs: AdminEditorialHeroTab[]
   mainBannerUrl: string | null
   mainBannerFileName: string | null
+  /** Figma 196:5779 — collabo main banner overlay title */
+  collaboBannerTitle: string
   middleBannerUrl: string | null
   middleBannerFileName: string | null
   brandIntroHeading: string
@@ -482,6 +484,7 @@ export function createEmptyEditorialEvent(index = 1): AdminEditorialEvent {
     heroTabs: [createEmptyEditorialHeroTab()],
     mainBannerUrl: null,
     mainBannerFileName: null,
+    collaboBannerTitle: '',
     middleBannerUrl: null,
     middleBannerFileName: null,
     brandIntroHeading: '',
@@ -629,6 +632,7 @@ export function createEditorial01Preset(): AdminEditorialEvent {
     ],
     mainBannerUrl: editorialAsset('01.png'),
     mainBannerFileName: null,
+    collaboBannerTitle: '',
     middleBannerUrl: editorialAsset('02.png'),
     middleBannerFileName: null,
     brandIntroHeading: 'OTZ ROMARY : DAY DOT EDITION',
@@ -1280,6 +1284,7 @@ function normalizeEvent(event: Partial<AdminEditorialEvent>, fallback: AdminEdit
     heroTabs,
     mainBannerUrl,
     mainBannerFileName,
+    collaboBannerTitle: typeof event.collaboBannerTitle === 'string' ? event.collaboBannerTitle : '',
     middleBannerUrl: typeof event.middleBannerUrl === 'string' ? event.middleBannerUrl : null,
     middleBannerFileName: typeof event.middleBannerFileName === 'string' ? event.middleBannerFileName : null,
     brandIntroHeading: typeof event.brandIntroHeading === 'string' ? event.brandIntroHeading : '',

@@ -6,6 +6,7 @@ import type {
   EditorialHeroInfo,
   EditorialProductSection,
 } from '../../data/editorialEventDetails'
+import { EditorialCollaboMainBanner } from '../molecules/EditorialCollaboMainBanner'
 import { ProductCardUnit } from '../molecules/ProductCardUnit'
 import { EditorialHeroInfoSection } from './EditorialHeroInfoSection'
 import { EditorialLookbookMasonrySection } from './EditorialLookbookMasonrySection'
@@ -190,13 +191,21 @@ export function EditorialCollectionMobileDetailContent({ detail }: EditorialColl
 
       <div className="px-[15px]">
         {detail.mainBanner ? (
-          <img
-            src={detail.mainBanner}
-            alt=""
-            className="block aspect-[345/460] w-full object-cover"
-            loading="eager"
-            draggable={false}
-          />
+          detail.category === 'collabo' ? (
+            <EditorialCollaboMainBanner
+              src={detail.mainBanner}
+              overlayTitle={detail.collaboBannerTitle}
+              variant="mobile"
+            />
+          ) : (
+            <img
+              src={detail.mainBanner}
+              alt=""
+              className="block aspect-[345/460] w-full object-cover"
+              loading="eager"
+              draggable={false}
+            />
+          )
         ) : null}
 
         <EditorialHeroInfoSection heroInfo={catalogHeroInfo} variant="catalog-mobile" />

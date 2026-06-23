@@ -132,6 +132,8 @@ export interface EditorialEventDetail {
   layout: EditorialDetailLayout
   heroTabs: EditorialHeroTab[]
   mainBanner: string
+  /** Figma 196:5779 — collabo main banner overlay title */
+  collaboBannerTitle: string
   middleBanner: string
   heroInfo: EditorialHeroInfo
   brandIntro: {
@@ -184,6 +186,7 @@ const EDITORIAL_01_DETAIL: Omit<EditorialEventDetail, 'id'> = {
     },
   ],
   mainBanner: editorialAsset('01.png'),
+  collaboBannerTitle: '',
   middleBanner: editorialAsset('02.png'),
   heroInfo: {
     showPeriod: true,
@@ -349,6 +352,7 @@ function fallbackDetailFromListItem(item: EditorialEventItem): EditorialEventDet
       },
     ],
     mainBanner: item.thumbnail,
+    collaboBannerTitle: item.category === 'collabo' ? item.title : '',
     middleBanner: '',
     heroInfo: {
       showPeriod: Boolean(item.period?.trim()),
