@@ -393,6 +393,10 @@ export function PcHeaderSection() {
               setSearchOpen(false)
               setSearchEntered(false)
             }}
+            onProductNavigate={() => {
+              setSearchOpen(false)
+              setSearchEntered(false)
+            }}
           />
         </div>
       </div>,

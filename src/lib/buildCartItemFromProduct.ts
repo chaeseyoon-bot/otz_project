@@ -55,3 +55,17 @@ export function buildCartItemFromProduct(
     },
   }
 }
+
+/** Select only the buy-now line for checkout while keeping other cart rows. */
+export function applyBuyNowSelection(current: CartItem[], buyNowItem: CartItem): CartItem[] {
+  const deselected = current.map((entry) => ({ ...entry, selected: false }))
+  const existingIndex = deselected.findIndex((entry) => entry.id === buyNowItem.id)
+
+  if (existingIndex >= 0) {
+    return deselected.map((entry, index) =>
+      index === existingIndex ? { ...buyNowItem, selected: true } : entry,
+    )
+  }
+
+  return [...deselected, buyNowItem]
+}

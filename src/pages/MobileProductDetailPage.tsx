@@ -3,8 +3,9 @@ import { CartAddedPopup } from '../components/cart/CartAddedPopup'
 import { ProductOptionRequiredPopup } from '../components/cart/ProductOptionRequiredPopup'
 import { useCart } from '../contexts/CartContext'
 import { usePdpOptionGate } from '../hooks/usePdpOptionGate'
-import { buildCartItemFromProduct } from '../lib/buildCartItemFromProduct'
+import { buildCartItemFromProduct, applyBuyNowSelection } from '../lib/buildCartItemFromProduct'
 import { CART_PATH } from '../lib/cartRoutes'
+import { CHECKOUT_PATH } from '../lib/checkoutRoutes'
 import { useAvailableProductSlides } from '../hooks/useAvailableProductSlides'
 import { figmaAsset } from '../lib/figmaAssetUrl'
 import { getPdpColorVariantsForProduct } from '../data/productColorVariants'
@@ -178,7 +179,7 @@ export function MobileProductDetailPage({ productId }: MobileProductDetailPagePr
   const fallbackProduct = getProductById(productId)
   const isCsvProduct = csvDetail.product != null
   const product = csvDetail.product ?? fallbackProduct
-  const { addItem } = useCart()
+  const { addItem, setItems } = useCart()
   const [liked, setLiked] = useState(false)
   const [cartPopupOpen, setCartPopupOpen] = useState(false)
   const [couponSheetOpen, setCouponSheetOpen] = useState(false)
@@ -347,6 +348,13 @@ export function MobileProductDetailPage({ productId }: MobileProductDetailPagePr
 
   const handleBuyNow = () => {
     if (!ensureOptionSelected()) return
+    const cartItem = buildCartItemFromProduct(product, {
+      size: selectedSize!,
+      productName: title,
+      price,
+    })
+    setItems((current) => applyBuyNowSelection(current, cartItem))
+    navigateSpa(CHECKOUT_PATH)
   }
 
   const handleGoToCart = () => {

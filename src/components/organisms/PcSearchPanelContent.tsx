@@ -32,13 +32,22 @@ function chunkProducts<T>(items: readonly T[], pageSize: number): T[][] {
   return pages
 }
 
-function PcSearchProductThumb({ product }: { product: SearchProductThumb }) {
+function PcSearchProductThumb({
+  product,
+  onNavigate,
+}: {
+  product: SearchProductThumb
+  onNavigate?: () => void
+}) {
   return (
     <button
       type="button"
       className="aspect-[170/212] w-[calc((100%-1.5rem)/4)] shrink-0 overflow-hidden border-0 bg-light p-0"
       aria-label={product.title}
-      onClick={() => navigateSpa(getProductDetailPath(product.id))}
+      onClick={() => {
+        onNavigate?.()
+        navigateSpa(getProductDetailPath(product.id))
+      }}
     >
       <div className="flex h-full w-full items-center justify-center bg-light">
         <div className="aspect-square w-full max-h-full">
@@ -54,7 +63,13 @@ function PcSearchProductThumb({ product }: { product: SearchProductThumb }) {
   )
 }
 
-function PcRecentlyViewedCarousel({ products }: { products: readonly SearchProductThumb[] }) {
+function PcRecentlyViewedCarousel({
+  products,
+  onProductNavigate,
+}: {
+  products: readonly SearchProductThumb[]
+  onProductNavigate?: () => void
+}) {
   const scrollerRef = useRef<HTMLDivElement>(null)
   const [indicator, setIndicator] = useState({ widthPercent: 100, leftPercent: 0 })
   const pages = useMemo(
@@ -127,7 +142,11 @@ function PcRecentlyViewedCarousel({ products }: { products: readonly SearchProdu
             className="flex w-full shrink-0 snap-start snap-always gap-2"
           >
             {pageProducts.map((product) => (
-              <PcSearchProductThumb key={product.id} product={product} />
+              <PcSearchProductThumb
+                key={product.id}
+                product={product}
+                onNavigate={onProductNavigate}
+              />
             ))}
           </div>
         ))}
@@ -150,10 +169,18 @@ export interface PcSearchPanelContentProps {
   onQueryChange: (value: string) => void
   inputRef: RefObject<HTMLInputElement | null>
   onSearchCommit?: () => void
+  /** Close search panel when navigating to a product from recently viewed. */
+  onProductNavigate?: () => void
 }
 
 /** Figma 2685:20208 — PC GNB search dropdown (conditional sections). */
-export function PcSearchPanelContent({ query, onQueryChange, inputRef, onSearchCommit }: PcSearchPanelContentProps) {
+export function PcSearchPanelContent({
+  query,
+  onQueryChange,
+  inputRef,
+  onSearchCommit,
+  onProductNavigate,
+}: PcSearchPanelContentProps) {
   const pathname = useSpaPathname()
   const [recentSearches, setRecentSearches] = useState<string[]>(() => readRecentSearches())
   const [recentlyViewed, setRecentlyViewed] = useState<SearchProductThumb[]>(() => readRecentlyViewedProducts())
@@ -293,7 +320,10 @@ export function PcSearchPanelContent({ query, onQueryChange, inputRef, onSearchC
                     <h2 className="m-0 text-[18px] font-medium leading-[1.2] tracking-[-0.02em] text-dark">
                       최근 본 상품
                     </h2>
-                    <PcRecentlyViewedCarousel products={visibleRecentlyViewed} />
+                    <PcRecentlyViewedCarousel
+                      products={visibleRecentlyViewed}
+                      onProductNavigate={onProductNavigate}
+                    />
                   </section>
                 ) : null}
               </div>

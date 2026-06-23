@@ -5,8 +5,9 @@ import { CouponNoticePopup } from '../components/atoms/CouponNoticePopup'
 import { ProductCouponBenefitsModal } from '../components/product/ProductCouponBenefitsModal'
 import { useCart } from '../contexts/CartContext'
 import { usePdpOptionGate } from '../hooks/usePdpOptionGate'
-import { buildCartItemFromProduct, parseProductPrice } from '../lib/buildCartItemFromProduct'
+import { buildCartItemFromProduct, parseProductPrice, applyBuyNowSelection } from '../lib/buildCartItemFromProduct'
 import { CART_PATH } from '../lib/cartRoutes'
+import { CHECKOUT_PATH } from '../lib/checkoutRoutes'
 import { ProductDetailPcGallery } from '../components/organisms/ProductDetailPcGallery'
 import { AdaptiveProductImage } from '../components/molecules/AdaptiveProductImage'
 import { ProductDetailReviewSummary } from '../components/molecules/ProductDetailReviewSummary'
@@ -53,7 +54,7 @@ export function PcProductDetailPage({ productId }: PcProductDetailPageProps) {
   const fallbackProduct = getProductById(productId)
   const isCsvProduct = csvDetail.product != null
   const product = csvDetail.product ?? fallbackProduct
-  const { addItem } = useCart()
+  const { addItem, setItems } = useCart()
   const [liked, setLiked] = useState(false)
   const [cartPopupOpen, setCartPopupOpen] = useState(false)
   const [couponModalOpen, setCouponModalOpen] = useState(false)
@@ -204,6 +205,13 @@ export function PcProductDetailPage({ productId }: PcProductDetailPageProps) {
 
   const handleBuyNow = () => {
     if (!ensureOptionSelected()) return
+    const cartItem = buildCartItemFromProduct(product, {
+      size: selectedSize!,
+      productName: title,
+      price,
+    })
+    setItems((current) => applyBuyNowSelection(current, cartItem))
+    navigateSpa(CHECKOUT_PATH)
   }
 
   const handleGoToCart = () => {
