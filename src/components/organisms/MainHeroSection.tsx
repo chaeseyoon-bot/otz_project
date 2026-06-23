@@ -145,7 +145,7 @@ export function MainHeroSection() {
                 aria-hidden
               />
               <div className="pointer-events-none absolute bottom-10 left-5 right-5 text-center text-white lg:pointer-events-auto lg:bottom-14 lg:left-8 lg:right-8">
-                <h1 className="m-0 whitespace-pre-line text-[34px] font-extrabold leading-[1.2] tracking-[-0.02em] lg:text-h3">{slide.title}</h1>
+                <h1 className="m-0 whitespace-pre-line text-[28px] font-extrabold leading-[1.2] tracking-[-0.02em] lg:text-h3">{slide.title}</h1>
                 <p className="mb-3 mt-2 text-bodySmall lg:text-bodyRegular1">{slide.subtitle}</p>
                 <span className="pointer-events-auto inline-block">
                   <CtaLink label={slide.ctaLabel} href={slide.ctaHref} />
