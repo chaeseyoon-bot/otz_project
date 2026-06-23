@@ -14,9 +14,27 @@ const TABS: { id: EditorialMainTabId; label: string }[] = [
 ]
 
 const PC_GNB_HEIGHT_PX = 70
+const DESKTOP_MEDIA_QUERY = '(min-width: 1024px)'
+
+function useIsDesktopViewport() {
+  const [isDesktop, setIsDesktop] = useState(
+    () => typeof window !== 'undefined' && window.matchMedia(DESKTOP_MEDIA_QUERY).matches,
+  )
+
+  useEffect(() => {
+    const mediaQuery = window.matchMedia(DESKTOP_MEDIA_QUERY)
+    const sync = () => setIsDesktop(mediaQuery.matches)
+    sync()
+    mediaQuery.addEventListener('change', sync)
+    return () => mediaQuery.removeEventListener('change', sync)
+  }, [])
+
+  return isDesktop
+}
 
 /** Figma g60Jix8lxQjYRzn3l7MNWf 174:4784 — CONTENT / PRODUCT tabs; pins below PC GNB on scroll. */
 export function EditorialMainTab({ activeTab, onTabChange }: EditorialMainTabProps) {
+  const isDesktop = useIsDesktopViewport()
   const anchorRef = useRef<HTMLDivElement>(null)
   const pinThresholdRef = useRef(0)
   const barHeightRef = useRef(66)
@@ -47,6 +65,11 @@ export function EditorialMainTab({ activeTab, onTabChange }: EditorialMainTabPro
   }, [isPinned, measureAnchor, syncPin])
 
   useEffect(() => {
+    if (!isDesktop) {
+      setIsPinned(false)
+      return
+    }
+
     const onScroll = () => syncPin()
     const onResize = () => {
       if (window.scrollY < pinThresholdRef.current) {
@@ -61,7 +84,9 @@ export function EditorialMainTab({ activeTab, onTabChange }: EditorialMainTabPro
       window.removeEventListener('scroll', onScroll)
       window.removeEventListener('resize', onResize)
     }
-  }, [measureAnchor, syncPin])
+  }, [isDesktop, measureAnchor, syncPin])
+
+  if (!isDesktop) return null
 
   const tabBar = (
     <nav className="w-full bg-white" aria-label="에디토리얼 섹션">

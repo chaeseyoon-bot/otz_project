@@ -127,7 +127,7 @@ export function MainHeroSection() {
       <div
         ref={scrollerRef}
         onScroll={syncFromScroll}
-        className="pointer-events-none h-full w-full overflow-x-hidden scroll-smooth snap-x snap-mandatory [scrollbar-width:none] [-ms-overflow-style:none] [&::-webkit-scrollbar]:hidden lg:pointer-events-auto lg:h-[663px] lg:shrink-0 lg:cursor-grab lg:overflow-x-auto lg:active:cursor-grabbing"
+        className="h-full w-full touch-pan-x overflow-x-auto scroll-smooth snap-x snap-mandatory overscroll-x-contain [scrollbar-width:none] [-ms-overflow-style:none] [&::-webkit-scrollbar]:hidden lg:h-[663px] lg:shrink-0 lg:cursor-grab lg:active:cursor-grabbing"
         style={{ WebkitOverflowScrolling: 'touch' }}
       >
         <div className="flex h-full w-full lg:gap-5">
@@ -136,18 +136,20 @@ export function MainHeroSection() {
             return (
             <article
               key={`${slide.id}-${index}`}
-              className={`pointer-events-none relative h-[540px] w-full shrink-0 snap-start overflow-hidden lg:pointer-events-auto lg:h-[663px] lg:w-[530px] lg:max-w-[min(530px,100%)] ${getHeroSlideRadiusClass(slidePosition)}`}
+              className={`relative h-[540px] w-full shrink-0 snap-start overflow-hidden lg:h-[663px] lg:w-[530px] lg:max-w-[min(530px,100%)] ${getHeroSlideRadiusClass(slidePosition)}`}
             >
-              <img src={slide.imageUrl} alt={slide.title} className="pointer-events-none block h-full w-full object-cover" draggable={false} />
+              <img src={slide.imageUrl} alt={slide.title} className="block h-full w-full object-cover" draggable={false} />
               <div
                 className="pointer-events-none absolute inset-0 rounded-none"
                 style={{ background: 'linear-gradient(180deg, rgba(0,0,0,0) 55%, rgba(0,0,0,0.35) 100%)' }}
                 aria-hidden
               />
-              <div className="pointer-events-auto absolute bottom-10 left-5 right-5 text-center text-white lg:bottom-14 lg:left-8 lg:right-8">
+              <div className="pointer-events-none absolute bottom-10 left-5 right-5 text-center text-white lg:pointer-events-auto lg:bottom-14 lg:left-8 lg:right-8">
                 <h1 className="m-0 whitespace-pre-line text-[34px] font-extrabold leading-[1.2] tracking-[-0.02em] lg:text-h3">{slide.title}</h1>
                 <p className="mb-3 mt-2 text-bodySmall lg:text-bodyRegular1">{slide.subtitle}</p>
-                <CtaLink label={slide.ctaLabel} href={slide.ctaHref} />
+                <span className="pointer-events-auto inline-block">
+                  <CtaLink label={slide.ctaLabel} href={slide.ctaHref} />
+                </span>
               </div>
             </article>
             )

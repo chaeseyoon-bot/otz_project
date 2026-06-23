@@ -1,6 +1,7 @@
 import { Fragment, useRef, useState } from 'react'
 import { useHorizontalMouseDragScroll } from '../../hooks/useHorizontalMouseDragScroll'
 import { figmaAsset } from '../../lib/figmaAssetUrl'
+import { navigateSpa } from '../../lib/spaNavigation'
 
 const LINKS_TOP = ['브랜드스토리', '멤버십혜택', '공지사항', '대량주문문의']
 const LINKS_BOTTOM = ['개인정보처리방침', '이용약관', '자주 묻는 질문 FAQ']
@@ -217,7 +218,14 @@ export function FooterSection() {
                 <div className="flex flex-col gap-4">
                   <p className="m-0 text-[14px] font-bold leading-[1.4] tracking-[-0.02em] text-dark">MORE</p>
                   <nav className="flex flex-col gap-2.5 text-[13px] font-medium leading-[1.2] tracking-[-0.02em] text-textDefault">
-                    <a href="#" className="hover:text-dark">
+                    <a
+                      href="/brand-story"
+                      className="hover:text-dark"
+                      onClick={(event) => {
+                        event.preventDefault()
+                        navigateSpa('/brand-story')
+                      }}
+                    >
                       브랜드스토리
                     </a>
                     <a href="#" className="hover:text-dark">
