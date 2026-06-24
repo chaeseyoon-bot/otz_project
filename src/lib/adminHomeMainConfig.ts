@@ -1,4 +1,21 @@
 import { deepRewriteHomeBannerUrls } from './homeBannersAssetUrl'
+import {
+  createDefaultHomeContentSections,
+  normalizeHomeContentSections,
+  type HomeContentSectionEntry,
+} from './homeContentSections'
+
+export type { HomeContentSectionEntry, HomeContentSectionId } from './homeContentSections'
+export {
+  HOME_CONTENT_SECTION_IDS,
+  HOME_CONTENT_SECTION_LABELS,
+  HOME_CONTENT_SECTION_SHORT_LABELS,
+  createDefaultHomeContentSections,
+  moveHomeContentSection,
+  normalizeHomeContentSections,
+  setHomeContentSectionEnabled,
+  getPcHomeContentSections,
+} from './homeContentSections'
 
 export type QuickMenuSlotType = 'image' | 'text' | 'cutout' | 'mixed'
 
@@ -155,10 +172,12 @@ export interface AdminTopAnnouncementBar {
 }
 
 export interface AdminHomeMainConfig {
-  version: 9
+  version: 10
   topAnnouncementBar: AdminTopAnnouncementBar
   mainBanners: AdminMainBannerSlide[]
   quickMenuSlots: AdminQuickMenuSlot[]
+  /** Admin tabs 3–9: display order + enabled flag for storefront home. */
+  homeContentSections: HomeContentSectionEntry[]
   brandBanner: AdminBrandBanner
   seriesBanners: AdminSeriesBanner[]
   planningBanners: AdminPlanningBanner[]
@@ -754,7 +773,7 @@ export function normalizeTopAnnouncementBar(
 
 export function createDefaultHomeMainConfig(): AdminHomeMainConfig {
   return {
-    version: 9,
+    version: 10,
     topAnnouncementBar: { ...DEFAULT_TOP_ANNOUNCEMENT },
     mainBanners: [
       {
@@ -768,6 +787,7 @@ export function createDefaultHomeMainConfig(): AdminHomeMainConfig {
       },
     ],
     quickMenuSlots: DEFAULT_QUICK_MENU.map((slot) => ({ ...slot })),
+    homeContentSections: createDefaultHomeContentSections(),
     brandBanner: {
       imageUrl: null,
       imageFileName: null,
@@ -830,7 +850,7 @@ function migrateHomeMainConfig(parsed: Partial<AdminHomeMainConfig>): AdminHomeM
       : defaults.planningBanners
 
   return {
-    version: 9,
+    version: 10,
     topAnnouncementBar: normalizeTopAnnouncementBar(
       parsed.topAnnouncementBar as Partial<AdminTopAnnouncementBar> | undefined,
       defaults.topAnnouncementBar,
@@ -848,6 +868,10 @@ function migrateHomeMainConfig(parsed: Partial<AdminHomeMainConfig>): AdminHomeM
             ),
           )
         : defaults.quickMenuSlots,
+    homeContentSections: normalizeHomeContentSections(
+      parsed.homeContentSections,
+      defaults.homeContentSections,
+    ),
     brandBanner: { ...defaults.brandBanner, ...parsed.brandBanner },
     seriesBanners:
       Array.isArray(parsed.seriesBanners) && parsed.seriesBanners.length === 4
@@ -901,7 +925,8 @@ export function loadAdminHomeMainConfig(): AdminHomeMainConfig {
       parsed.version !== 6 &&
       parsed.version !== 7 &&
       parsed.version !== 8 &&
-      parsed.version !== 9
+      parsed.version !== 9 &&
+      parsed.version !== 10
     ) {
       return deepRewriteHomeBannerUrls(migrateLegacyConfig(parsed))
     }
@@ -916,9 +941,10 @@ export function saveAdminHomeMainConfig(
   config: Omit<AdminHomeMainConfig, 'version' | 'updatedAt'>,
 ): AdminHomeMainConfig {
   const next: AdminHomeMainConfig = {
-    version: 9,
+    version: 10,
     ...config,
     topAnnouncementBar: normalizeTopAnnouncementBar(config.topAnnouncementBar),
+    homeContentSections: normalizeHomeContentSections(config.homeContentSections),
     styleBannerSection: normalizeStyleBannerSection(config.styleBannerSection),
     lookbookSection: normalizeLookbookSection(config.lookbookSection),
     marketingPopupSlides: normalizeMarketingPopupSlides(config.marketingPopupSlides),

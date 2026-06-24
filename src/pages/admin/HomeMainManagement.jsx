@@ -39,7 +39,11 @@ import {
   createEmptyQuickMenuSlot,
   createEmptyStyleBannerCard,
   CURATION_PRODUCT_SLOTS,
+  HOME_CONTENT_SECTION_LABELS,
+  HOME_CONTENT_SECTION_SHORT_LABELS,
   loadAdminHomeMainConfig,
+  moveHomeContentSection,
+  setHomeContentSectionEnabled,
   LOOKBOOK_IMAGE_SLOTS,
   countFilledPlanningCollectionProducts,
   MAX_PLANNING_COLLECTIONS,
@@ -93,6 +97,43 @@ const SECTION_SAVE_LABELS = {
   styling: '스타일 배너',
   lookbook: '룩북',
   marketingPopup: '마케팅 팝업',
+}
+
+function HomeSectionOrderToolbar({ index, total, enabled, onMoveUp, onMoveDown, onToggleEnabled }) {
+  return (
+    <div className="flex shrink-0 items-center gap-0.5">
+      <button
+        type="button"
+        disabled={index === 0}
+        className="flex size-5 items-center justify-center rounded-sm border border-lightGray bg-white text-[10px] leading-none disabled:opacity-30"
+        onClick={onMoveUp}
+        aria-label="위로"
+      >
+        ↑
+      </button>
+      <button
+        type="button"
+        disabled={index >= total - 1}
+        className="flex size-5 items-center justify-center rounded-sm border border-lightGray bg-white text-[10px] leading-none disabled:opacity-30"
+        onClick={onMoveDown}
+        aria-label="아래로"
+      >
+        ↓
+      </button>
+      <button
+        type="button"
+        className={`rounded-sm border px-1.5 py-0.5 text-[10px] leading-none ${
+          enabled
+            ? 'border-dark bg-dark text-white'
+            : 'border-lightGray bg-white text-subtleText'
+        }`}
+        onClick={onToggleEnabled}
+        aria-label={enabled ? '미노출로 전환' : '노출로 전환'}
+      >
+        {enabled ? 'ON' : 'OFF'}
+      </button>
+    </div>
+  )
 }
 
 function validateHomeMainActiveTab(activeTab, config) {
@@ -1612,6 +1653,43 @@ export function HomeMainManagement() {
     }
   }
 
+  const buildConfigSaveInput = (source) => ({
+    topAnnouncementBar: source.topAnnouncementBar,
+    mainBanners: source.mainBanners,
+    quickMenuSlots: source.quickMenuSlots,
+    homeContentSections: source.homeContentSections,
+    brandBanner: source.brandBanner,
+    seriesBanners: source.seriesBanners,
+    planningBanners: source.planningBanners,
+    planningCollectionTags: source.planningCollectionTags,
+    planningCollections: source.planningCollections,
+    curationProducts: source.curationProducts,
+    styleBannerSection: source.styleBannerSection,
+    lookbookSection: source.lookbookSection,
+    marketingPopupSlides: source.marketingPopupSlides,
+  })
+
+  const persistHomeSectionLayout = async (nextConfig) => {
+    setIsSaving(true)
+    try {
+      const saved = saveConfig(buildConfigSaveInput(nextConfig))
+      const supabaseResult = await upsertHomeBannerSection('sectionLayout', buildConfigSaveInput(saved))
+
+      if (!supabaseResult.ok) {
+        showMessage(supabaseResult.message)
+        return
+      }
+
+      setConfig(saved)
+      await reloadConfig()
+      showMessage('모바일 구역 순서가 저장되었습니다. 홈 화면에 반영됩니다.')
+    } catch {
+      showMessage('구역 순서 저장에 실패했습니다.')
+    } finally {
+      setIsSaving(false)
+    }
+  }
+
   const handleSave = async () => {
     const validationError = validateHomeMainActiveTab(activeTab, config)
     if (validationError) {
@@ -1621,35 +1699,9 @@ export function HomeMainManagement() {
 
     setIsSaving(true)
     try {
-      const saved = saveConfig({
-        topAnnouncementBar: config.topAnnouncementBar,
-        mainBanners: config.mainBanners,
-        quickMenuSlots: config.quickMenuSlots,
-        brandBanner: config.brandBanner,
-        seriesBanners: config.seriesBanners,
-        planningBanners: config.planningBanners,
-        planningCollectionTags: config.planningCollectionTags,
-        planningCollections: config.planningCollections,
-        curationProducts: config.curationProducts,
-        styleBannerSection: config.styleBannerSection,
-        lookbookSection: config.lookbookSection,
-        marketingPopupSlides: config.marketingPopupSlides,
-      })
+      const saved = saveConfig(buildConfigSaveInput(config))
 
-      const supabaseResult = await upsertHomeBannerSection(activeTab, {
-        topAnnouncementBar: saved.topAnnouncementBar,
-        mainBanners: saved.mainBanners,
-        quickMenuSlots: saved.quickMenuSlots,
-        brandBanner: saved.brandBanner,
-        seriesBanners: saved.seriesBanners,
-        planningBanners: saved.planningBanners,
-        planningCollectionTags: saved.planningCollectionTags,
-        planningCollections: saved.planningCollections,
-        curationProducts: saved.curationProducts,
-        styleBannerSection: saved.styleBannerSection,
-        lookbookSection: saved.lookbookSection,
-        marketingPopupSlides: saved.marketingPopupSlides,
-      })
+      const supabaseResult = await upsertHomeBannerSection(activeTab, buildConfigSaveInput(saved))
 
       if (!supabaseResult.ok) {
         showMessage(supabaseResult.message)
@@ -1729,6 +1781,31 @@ export function HomeMainManagement() {
       quickMenuSlots: prev.quickMenuSlots.filter((_, i) => i !== index),
     }))
     setQuickSlotDeleteIndex(null)
+  }
+
+  const moveHomeSection = (index, direction) => {
+    setConfig((prev) => ({
+      ...prev,
+      homeContentSections: moveHomeContentSection(prev.homeContentSections, index, direction),
+    }))
+  }
+
+  const toggleHomeSectionEnabled = (id) => {
+    setConfig((prev) => {
+      const current = prev.homeContentSections.find((entry) => entry.id === id)
+      return {
+        ...prev,
+        homeContentSections: setHomeContentSectionEnabled(
+          prev.homeContentSections,
+          id,
+          !(current?.enabled ?? true),
+        ),
+      }
+    })
+  }
+
+  const handleSaveSectionLayout = () => {
+    void persistHomeSectionLayout(config)
   }
 
   const updateSeries = (index, patch) =>
@@ -1992,9 +2069,52 @@ export function HomeMainManagement() {
       <header className="mb-6 border-b border-lightGray pb-6">
         <h2 className="m-0 text-h3 text-dark">홈메인관리</h2>
         <p className="m-0 mt-2 text-bodyRegular2 text-textDefault">
-          홈 화면 11개 섹션(상단 공지·메인·퀵메뉴·브랜드·시리즈·기획전·컬렉션·큐레이션·스타일배너·룩북·마케팅팝업)을 관리합니다.
+          홈 화면 섹션(상단 공지·메인·퀵메뉴·브랜드~룩북·마케팅팝업)을 관리합니다.
         </p>
       </header>
+
+      <section className="mb-4 rounded-sm border border-lightGray bg-light3 px-3 py-2">
+        <div className="mb-1.5 flex flex-wrap items-center justify-between gap-x-2 gap-y-1">
+          <div className="flex flex-wrap items-baseline gap-x-2 gap-y-0.5">
+            <h3 className="m-0 text-[11px] font-semibold text-dark">3~9 구역 순서 (모바일)</h3>
+            <span className="text-[10px] text-subtleText">모바일 홈만 적용 · PC는 기본 순서 · 이름 클릭 시 탭 이동</span>
+          </div>
+          <button
+            type="button"
+            disabled={isSaving}
+            className="shrink-0 rounded-sm border border-dark bg-dark px-2.5 py-1 text-[10px] text-white hover:opacity-90 disabled:opacity-50"
+            onClick={handleSaveSectionLayout}
+          >
+            {isSaving ? '저장 중…' : '순서 저장'}
+          </button>
+        </div>
+        <div className="flex flex-wrap gap-1.5">
+          {config.homeContentSections.map((entry, index) => (
+            <div
+              key={entry.id}
+              className={`inline-flex items-center gap-1 rounded-sm border px-1.5 py-1 ${
+                entry.enabled ? 'border-lightGray bg-white' : 'border-lightGray bg-white/60 opacity-60'
+              }`}
+            >
+              <button
+                type="button"
+                className="border-0 bg-transparent p-0 text-[11px] font-medium text-dark hover:underline"
+                onClick={() => setActiveTab(entry.id)}
+              >
+                {HOME_CONTENT_SECTION_SHORT_LABELS[entry.id]}
+              </button>
+              <HomeSectionOrderToolbar
+                index={index}
+                total={config.homeContentSections.length}
+                enabled={entry.enabled}
+                onMoveUp={() => moveHomeSection(index, -1)}
+                onMoveDown={() => moveHomeSection(index, 1)}
+                onToggleEnabled={() => toggleHomeSectionEnabled(entry.id)}
+              />
+            </div>
+          ))}
+        </div>
+      </section>
 
       <nav className="mb-6 flex flex-wrap gap-2">
         {SECTION_TABS.map((tab) => (

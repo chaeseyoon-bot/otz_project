@@ -3,6 +3,7 @@ import type {
   AdminMainBannerSlide,
 } from './adminHomeMainConfig'
 import { normalizeLookbookSection, normalizeMarketingPopupSlides, normalizeTopAnnouncementBar } from './adminHomeMainConfig'
+import { normalizeHomeContentSections } from './homeContentSections'
 import { deepRewriteHomeBannerUrls, rewriteHomeBannerImageUrl } from './homeBannersAssetUrl'
 
 /** Admin tab id → Supabase `home_banners.section_id` */
@@ -10,6 +11,7 @@ export const ADMIN_TAB_TO_SECTION_ID = {
   topAnnouncement: 'top_announcement',
   main: 'main_banner',
   quick: 'quick_menu',
+  sectionLayout: 'home_section_layout',
   brand: 'brand_banner',
   series: 'series_banner',
   planning: 'planning_banner',
@@ -73,6 +75,13 @@ export function buildHomeBannerSectionPayload(
         image_url: config.quickMenuSlots.find((s) => s.imageUrl?.trim())?.imageUrl?.trim() ?? null,
         link_url: config.quickMenuSlots.find((s) => s.href?.trim())?.href?.trim() ?? null,
         metadata: { quickMenuSlots: config.quickMenuSlots },
+      }
+    case 'sectionLayout':
+      return {
+        section_id,
+        image_url: null,
+        link_url: null,
+        metadata: { homeContentSections: config.homeContentSections },
       }
     case 'brand':
       return {
@@ -173,6 +182,7 @@ export function mergeHomeBannerRowsIntoConfig(
       imageSlots: base.lookbookSection.imageSlots.map((slot) => ({ ...slot })),
     },
     marketingPopupSlides: base.marketingPopupSlides.map((item) => ({ ...item })),
+    homeContentSections: base.homeContentSections.map((entry) => ({ ...entry })),
   }
 
   for (const row of rows) {
@@ -199,6 +209,14 @@ export function mergeHomeBannerRowsIntoConfig(
       case 'quick_menu':
         if (Array.isArray(meta.quickMenuSlots) && meta.quickMenuSlots.length > 0) {
           next.quickMenuSlots = meta.quickMenuSlots as AdminHomeMainConfig['quickMenuSlots']
+        }
+        break
+      case 'home_section_layout':
+        if (Array.isArray(meta.homeContentSections)) {
+          next.homeContentSections = normalizeHomeContentSections(
+            meta.homeContentSections,
+            next.homeContentSections,
+          )
         }
         break
       case 'brand_banner':

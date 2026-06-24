@@ -1,21 +1,13 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { getProductHeartIconDataUri } from '../../lib/productHeartIcon'
 import { figmaAsset } from '../../lib/figmaAssetUrl'
+import { STOREFRONT_SHOE_SIZES } from '../../lib/productSizeOptions'
 import { AdaptiveProductImage } from './AdaptiveProductImage'
 
 const iconListPlus = figmaAsset('icons/list_plus.svg')
 
 /** Figma 2718:38950 — default shoe sizes for PLP quick select (aligned with PDP). */
-export const DEFAULT_PRODUCT_SIZES = [
-  '220',
-  '225',
-  '230',
-  '235',
-  '240',
-  '245',
-  '250',
-  '260',
-] as const
+export const DEFAULT_PRODUCT_SIZES = STOREFRONT_SHOE_SIZES
 
 export interface ProductBadge {
   id: string

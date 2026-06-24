@@ -4,7 +4,7 @@ import {
   normalizeProductStockForCategory,
 } from './adminProductStock'
 
-/** Storefront PDP / PLP shoe sizes (legacy PDP set; excludes admin-only 255). */
+/** Storefront PDP / PLP shoe sizes — 220 through 260 in steps of 5 (aligned with admin stock). */
 export const STOREFRONT_SHOE_SIZES = [
   '220',
   '225',
@@ -13,6 +13,7 @@ export const STOREFRONT_SHOE_SIZES = [
   '240',
   '245',
   '250',
+  '255',
   '260',
 ] as const
 
