@@ -156,8 +156,8 @@ export function CategoryPcFilterBar<T extends CategoryFilterableProduct>({
   return (
     <section ref={rootRef} className="hidden lg:block" aria-label="상품 필터">
       <div
-        className={`flex h-[60px] items-start gap-2 ${
-          openFilter === null ? 'border-b border-solid border-light2 pb-3.5' : ''
+        className={`flex h-[60px] items-start gap-2 pt-3.5 ${
+          openFilter === null ? 'border-b border-solid border-light2' : ''
         }`}
       >
         {FILTER_CHIPS.map(({ id, label, countKey }) => (

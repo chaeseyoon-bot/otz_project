@@ -191,6 +191,7 @@ export function HomeMainPromoPopup() {
                       style={styles.bannerImg}
                       decoding="async"
                     />
+                    <div style={styles.bannerImgDim} aria-hidden />
                     <div style={styles.bannerText}>
                       <h2 id={popupTitleId} style={styles.bannerTitle}>
                         {slide.title}
@@ -209,6 +210,7 @@ export function HomeMainPromoPopup() {
                       style={styles.bannerImg}
                       decoding="async"
                     />
+                    <div style={styles.bannerImgDim} aria-hidden />
                     <div style={styles.bannerText}>
                       <h2 id={popupTitleId} style={styles.bannerTitle}>
                         {slide.title}
@@ -431,6 +433,12 @@ const styles: Record<string, CSSProperties> = {
     objectFit: 'cover',
     objectPosition: 'center top',
     display: 'block',
+  },
+  bannerImgDim: {
+    position: 'absolute',
+    inset: 0,
+    backgroundColor: 'rgba(0, 0, 0, 0.2)',
+    pointerEvents: 'none',
   },
   footer: {
     display: 'flex',

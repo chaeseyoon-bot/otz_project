@@ -421,6 +421,7 @@ function MarketingPopupPreviewContent({ slide, slideIndex, totalCount }) {
         style={{ height: MARKETING_POPUP_BANNER_HEIGHT }}
       >
         <img src={imageUrl} alt="" className="size-full object-cover object-top" draggable={false} />
+        <div className="pointer-events-none absolute inset-0 bg-black/20" aria-hidden />
         <div className="pointer-events-none absolute inset-0 flex flex-col items-start gap-4 px-[30px] py-10 text-white">
           <h2 className="m-0 max-w-[200px] whitespace-pre-line text-[24px] font-extrabold leading-[1.2] tracking-[-0.02em]">
             {slide.title || '대타이틀'}
@@ -2947,7 +2948,7 @@ export function HomeMainManagement() {
                   <div className="w-fit shrink-0">
                     <ImageUploader
                       label="배너 이미지"
-                      spec="375×340 권장"
+                      spec="750×680 권장"
                       aspectClass="aspect-[375/340] w-[200px]"
                       previewUrl={slide.imageUrl}
                       fileName={slide.imageFileName}
