@@ -18,6 +18,7 @@ export interface MobileShellFixedPinState {
 export function useMobileShellFixedPin(): MobileShellFixedPinState {
   const sentinelRef = useRef<HTMLDivElement>(null)
   const barRef = useRef<HTMLDivElement>(null)
+  const shellMetricsRef = useRef({ left: 0, width: 375 })
   const [pinned, setPinned] = useState(false)
   const [shellLeft, setShellLeft] = useState(0)
   const [shellWidth, setShellWidth] = useState(375)
@@ -27,12 +28,22 @@ export function useMobileShellFixedPin(): MobileShellFixedPinState {
     const sentinel = sentinelRef.current
     if (!sentinel) return
 
+    let pinRaf = 0
     const observer = new IntersectionObserver(
-      ([entry]) => setPinned(!entry.isIntersecting),
+      ([entry]) => {
+        cancelAnimationFrame(pinRaf)
+        pinRaf = requestAnimationFrame(() => {
+          const nextPinned = !entry.isIntersecting
+          setPinned((prev) => (prev === nextPinned ? prev : nextPinned))
+        })
+      },
       { threshold: 0 },
     )
     observer.observe(sentinel)
-    return () => observer.disconnect()
+    return () => {
+      cancelAnimationFrame(pinRaf)
+      observer.disconnect()
+    }
   }, [])
 
   useLayoutEffect(() => {
@@ -40,21 +51,26 @@ export function useMobileShellFixedPin(): MobileShellFixedPinState {
       const shell = document.querySelector(MOBILE_SHELL_SELECTOR)
       if (!shell) return
       const rect = shell.getBoundingClientRect()
-      setShellLeft(rect.left)
-      setShellWidth(rect.width)
+      const left = Math.round(rect.left)
+      const width = Math.round(rect.width)
+      const prev = shellMetricsRef.current
+      if (left === prev.left && width === prev.width) return
+      shellMetricsRef.current = { left, width }
+      setShellLeft(left)
+      setShellWidth(width)
     }
 
     const measureBar = () => {
       const bar = barRef.current
       if (!bar) return
       const next = Math.round(bar.getBoundingClientRect().height)
-      if (next > 0) setBarHeight(next)
+      if (next <= 0) return
+      setBarHeight((prev) => (prev === next ? prev : next))
     }
 
     measureShell()
     measureBar()
 
-    window.addEventListener('scroll', measureShell, { passive: true })
     window.addEventListener('resize', measureShell)
 
     const shell = document.querySelector(MOBILE_SHELL_SELECTOR)
@@ -69,7 +85,6 @@ export function useMobileShellFixedPin(): MobileShellFixedPinState {
     observers.push(ro)
 
     return () => {
-      window.removeEventListener('scroll', measureShell)
       window.removeEventListener('resize', measureShell)
       observers.forEach((o) => o.disconnect())
     }

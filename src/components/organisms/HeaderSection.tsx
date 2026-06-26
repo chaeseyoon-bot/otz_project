@@ -1,6 +1,15 @@
-import { useCallback, useEffect, useMemo, useRef, useState, type KeyboardEvent } from 'react'
+import {
+  useCallback,
+  useEffect,
+  useMemo,
+  useRef,
+  useState,
+  type CSSProperties,
+  type KeyboardEvent,
+} from 'react'
 import { useCenterHorizontalTabScroll } from '../../hooks/useCenterHorizontalTabScroll'
 import { useHorizontalMouseDragScroll } from '../../hooks/useHorizontalMouseDragScroll'
+import { useMobileShellFixedPin } from '../../hooks/useMobileShellFixedPin'
 import { useAdminHomeMainConfig } from '../../hooks/useAdminHomeMainConfig'
 
 import { figmaAsset } from '../../lib/figmaAssetUrl'
@@ -95,6 +104,7 @@ export function HeaderSection() {
     isOrderComplete ||
     isOrderDetail
   const [mobileNavOnlySticky, setMobileNavOnlySticky] = useState(false)
+  const { sentinelRef, barRef, pinned, shellLeft, shellWidth, barHeight } = useMobileShellFixedPin()
   const { scrollerRef: navRef, registerTabRef, scrollTabToCenter } = useCenterHorizontalTabScroll(activeIndex)
   const lastScrollYRef = useRef(0)
   const tickingRef = useRef(false)
@@ -135,7 +145,7 @@ export function HeaderSection() {
 
         if (currentY <= 4) {
           hiddenRef.current = false
-          setMobileNavOnlySticky(false)
+          setMobileNavOnlySticky((prev) => (prev ? false : prev))
           downAccumulatedRef.current = 0
           upAccumulatedRef.current = 0
           lastScrollYRef.current = currentY
@@ -153,7 +163,7 @@ export function HeaderSection() {
             downAccumulatedRef.current >= MOBILE_HIDE_TRIGGER_DELTA
           ) {
             hiddenRef.current = true
-            setMobileNavOnlySticky(true)
+            setMobileNavOnlySticky((prev) => (prev ? prev : true))
             downAccumulatedRef.current = 0
           }
         } else if (delta < 0) {
@@ -162,7 +172,7 @@ export function HeaderSection() {
 
           if (hiddenRef.current && upAccumulatedRef.current >= MOBILE_SHOW_TRIGGER_DELTA) {
             hiddenRef.current = false
-            setMobileNavOnlySticky(false)
+            setMobileNavOnlySticky((prev) => (prev ? false : prev))
             upAccumulatedRef.current = 0
           }
         }
@@ -192,10 +202,28 @@ export function HeaderSection() {
     [hasTopAnnouncementLink, topAnnouncementLink],
   )
 
+  const mobileStickyHeaderStyle: CSSProperties | undefined = pinned
+    ? {
+        position: 'fixed',
+        top: 0,
+        left: shellLeft,
+        width: shellWidth,
+        zIndex: 20,
+        transform: 'translateZ(0)',
+      }
+    : undefined
+
   return (
     <>
       {!hideMobileHomeHeader ? (
-        <header className="sticky top-0 z-20 overflow-visible bg-white lg:hidden">
+        <>
+        <div ref={sentinelRef} className="pointer-events-none h-px w-full shrink-0" aria-hidden />
+        {pinned ? <div aria-hidden className="shrink-0" style={{ height: barHeight }} /> : null}
+        <header
+          ref={barRef}
+          className="z-20 overflow-visible bg-white lg:hidden"
+          style={mobileStickyHeaderStyle}
+        >
           <div
             className="overflow-hidden transition-[height] duration-300 ease-out"
             style={{
@@ -283,6 +311,7 @@ export function HeaderSection() {
             ))}
           </nav>
         </header>
+        </>
       ) : null}
       <div className="hidden lg:contents">
         <PcHeaderSection />
