@@ -6,7 +6,14 @@ import { useAdminHomeMainConfig } from '../../hooks/useAdminHomeMainConfig'
 import { SCROLL_LOCK_ALLOW_ATTR, useLockBodyScroll } from '../../hooks/useLockBodyScroll'
 import { tokens } from '../../design-system/tokens'
 import { resolveMarketingPopupSlides } from '../../lib/homeMainContentResolver'
+import { figmaAsset } from '../../lib/figmaAssetUrl'
 import { isSpaPath, navigateSpa, type SpaPath } from '../../lib/spaNavigation'
+
+const iconChevronLeft = figmaAsset('icons/chevron-left.svg')
+const iconPause = figmaAsset('icons/pause.svg')
+const iconPlay = figmaAsset('icons/play.svg')
+
+const AUTOPLAY_MS = 5000
 
 function navigatePromoPopupHref(href: string) {
   const trimmed = href.trim()
@@ -40,6 +47,11 @@ function localYmd(d: Date): string {
 
 function readShouldShow(): boolean {
   if (typeof window === 'undefined') return false
+  const params = new URLSearchParams(window.location.search)
+  if (params.get('promo') === '1') {
+    sessionStorage.removeItem(STORAGE_SESSION_CLOSED)
+    return true
+  }
   if (sessionStorage.getItem(STORAGE_SESSION_CLOSED) === '1') return false
   const hideDay = localStorage.getItem(STORAGE_HIDE_TODAY)
   if (hideDay && hideDay === localYmd(new Date())) return false
@@ -59,15 +71,23 @@ export function HomeMainPromoPopup() {
   const [shellWidth, setShellWidth] = useState(MOBILE_SHELL_LAYOUT_WIDTH)
   const [shellLeft, setShellLeft] = useState(0)
   const [activeSlideIndex, setActiveSlideIndex] = useState(0)
+  const [isAutoplay, setIsAutoplay] = useState(true)
   const bannerScrollerRef = useRef<HTMLDivElement>(null)
+  const activeSlideIndexRef = useRef(0)
 
   useLockBodyScroll(show && !isDesktop)
 
   useEffect(() => {
     setActiveSlideIndex(0)
+    activeSlideIndexRef.current = 0
+    setIsAutoplay(true)
     const el = bannerScrollerRef.current
     if (el) el.scrollLeft = 0
   }, [updatedAt, slideCount])
+
+  useEffect(() => {
+    activeSlideIndexRef.current = activeSlideIndex
+  }, [activeSlideIndex])
 
   useEffect(() => {
     const desktopQuery = window.matchMedia('(min-width: 1024px)')
@@ -77,7 +97,24 @@ export function HomeMainPromoPopup() {
     }
     sync()
     desktopQuery.addEventListener('change', sync)
-    return () => desktopQuery.removeEventListener('change', sync)
+    window.addEventListener('popstate', sync)
+    return () => {
+      desktopQuery.removeEventListener('change', sync)
+      window.removeEventListener('popstate', sync)
+    }
+  }, [])
+
+  useEffect(() => {
+    if (!import.meta.env.DEV) return
+    const reopen = () => {
+      sessionStorage.removeItem(STORAGE_SESSION_CLOSED)
+      localStorage.removeItem(STORAGE_HIDE_TODAY)
+      setShow(true)
+    }
+    ;(window as Window & { showMarketingPopup?: () => void }).showMarketingPopup = reopen
+    return () => {
+      delete (window as Window & { showMarketingPopup?: () => void }).showMarketingPopup
+    }
   }, [])
 
   const measureMobileShell = useCallback(() => {
@@ -127,6 +164,35 @@ export function HomeMainPromoPopup() {
     const next = Math.min(Math.max(Math.round(el.scrollLeft / width), 0), slideCount - 1)
     setActiveSlideIndex(next)
   }, [slideCount])
+
+  const scrollToSlide = useCallback(
+    (index: number, behavior: ScrollBehavior = 'smooth') => {
+      const el = bannerScrollerRef.current
+      if (!el || slideCount <= 0) return
+      const width = el.clientWidth
+      if (width <= 0) return
+      const next = ((index % slideCount) + slideCount) % slideCount
+      el.scrollTo({ left: next * width, behavior })
+      setActiveSlideIndex(next)
+    },
+    [slideCount],
+  )
+
+  const goToPrevSlide = useCallback(() => {
+    scrollToSlide(activeSlideIndexRef.current - 1)
+  }, [scrollToSlide])
+
+  const goToNextSlide = useCallback(() => {
+    scrollToSlide(activeSlideIndexRef.current + 1)
+  }, [scrollToSlide])
+
+  useEffect(() => {
+    if (!show || !isAutoplay || slideCount < 2) return
+    const id = window.setInterval(() => {
+      scrollToSlide(activeSlideIndexRef.current + 1)
+    }, AUTOPLAY_MS)
+    return () => window.clearInterval(id)
+  }, [show, isAutoplay, slideCount, scrollToSlide])
 
   const closeForSession = useCallback(() => {
     sessionStorage.setItem(STORAGE_SESSION_CLOSED, '1')
@@ -225,12 +291,44 @@ export function HomeMainPromoPopup() {
             )
           })}
         </div>
-        {slideCount >= 2 ? (
+        {isDesktop && slideCount >= 2 ? (
           <div style={styles.counterRow} aria-hidden>
             <div style={styles.counterPill}>
               <span style={styles.counterCurrent}>{activeSlideIndex + 1} </span>
               <span style={styles.counterTotal}>/ {slideCount}</span>
             </div>
+          </div>
+        ) : null}
+        {isDesktop && slideCount >= 2 ? (
+          <div style={styles.pcControlBar}>
+            <button type="button" style={styles.pcControlButton} aria-label="이전 슬라이드" onClick={goToPrevSlide}>
+              <img src={iconChevronLeft} alt="" aria-hidden style={styles.pcControlIcon} draggable={false} />
+            </button>
+            <span style={styles.pcControlDivider} aria-hidden />
+            <button type="button" style={styles.pcControlButton} aria-label="다음 슬라이드" onClick={goToNextSlide}>
+              <img
+                src={iconChevronLeft}
+                alt=""
+                aria-hidden
+                style={{ ...styles.pcControlIcon, transform: 'scaleX(-1)' }}
+                draggable={false}
+              />
+            </button>
+            <span style={styles.pcControlDivider} aria-hidden />
+            <button
+              type="button"
+              style={styles.pcControlButton}
+              aria-label={isAutoplay ? '자동재생 일시정지' : '자동재생 시작'}
+              onClick={() => setIsAutoplay((prev) => !prev)}
+            >
+              <img
+                src={isAutoplay ? iconPause : iconPlay}
+                alt=""
+                aria-hidden
+                style={styles.pcControlPlayIcon}
+                draggable={false}
+              />
+            </button>
           </div>
         ) : null}
       </div>
@@ -397,6 +495,50 @@ const styles: Record<string, CSSProperties> = {
   },
   counterTotal: {
     color: 'rgba(255, 255, 255, 0.5)',
+  },
+  pcControlBar: {
+    position: 'absolute',
+    right: 16,
+    bottom: 16,
+    zIndex: 3,
+    display: 'flex',
+    alignItems: 'center',
+    borderRadius: 4,
+    backgroundColor: 'rgba(0, 0, 0, 0.3)',
+    padding: '6px 8px',
+  },
+  pcControlButton: {
+    display: 'flex',
+    alignItems: 'center',
+    justifyContent: 'center',
+    width: 28,
+    height: 28,
+    border: 'none',
+    padding: 0,
+    margin: 0,
+    background: 'transparent',
+    cursor: 'pointer',
+  },
+  pcControlIcon: {
+    display: 'block',
+    width: 16,
+    height: 16,
+    objectFit: 'contain',
+    filter: 'brightness(0) invert(1)',
+  },
+  pcControlPlayIcon: {
+    display: 'block',
+    height: 10,
+    width: 'auto',
+    maxWidth: 9,
+    objectFit: 'contain',
+    filter: 'brightness(0) invert(1)',
+  },
+  pcControlDivider: {
+    width: 1,
+    height: 14,
+    margin: '0 4px',
+    backgroundColor: 'rgba(255, 255, 255, 0.25)',
   },
   bannerText: {
     position: 'absolute',
